@@ -1,58 +1,63 @@
 package cl.app.pagoflex.ui.theme
 
-import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+private val EsquemaOscuro = darkColorScheme(
+    primary = PrimarioSobreOscuro,
+    onPrimary = PrimarioOscuro,
+    primaryContainer = PrimarioOscuro,
+    onPrimaryContainer = PrimarioClaro,
+    secondary = Secundario,
+    onSecondary = Blanco,
+    tertiary = Acento,
+    onTertiary = Blanco,
+    background = FondoOscuro,
+    onBackground = TextoClaro,
+    surface = SuperficieOscuro,
+    onSurface = TextoClaro
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+private val EsquemaClaro = lightColorScheme(
+    primary = Primario,
+    onPrimary = Blanco,
+    primaryContainer = PrimarioClaro,
+    onPrimaryContainer = PrimarioOscuro,
+    secondary = Secundario,
+    onSecondary = Blanco,
+    tertiary = Acento,
+    onTertiary = Blanco,
+    background = FondoClaro,
+    onBackground = TextoOscuro,
+    surface = SuperficieClaro,
+    onSurface = TextoOscuro
+)
 
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+// border radius
+private val Formas = Shapes(
+    small = RoundedCornerShape(8.dp),
+    medium = RoundedCornerShape(12.dp),
+    large = RoundedCornerShape(16.dp)
 )
 
 @Composable
 fun PagoFlexTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
+    // Sin color dinámico: la paleta es siempre la de PagoFlex, no la del fondo de pantalla del teléfono
+    val colorScheme = if (darkTheme) EsquemaOscuro else EsquemaClaro
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = tipografia,
+        shapes = Formas,
         content = content
     )
 }
