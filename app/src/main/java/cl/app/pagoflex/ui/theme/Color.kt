@@ -2,7 +2,6 @@ package cl.app.pagoflex.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Paleta sobria que transmite confianza (Aclaración 4: diseño propio, sin copiar la marca de PagoFlex)
 val Primario = Color(0xFF0B4F6C)
 val PrimarioClaro = Color(0xFFBFE3F2)
 val PrimarioOscuro = Color(0xFF073447)
@@ -23,8 +22,8 @@ val TextoClaro = Color(0xFFE6EDF2)
 
 val GrisDeshabilitado = Color(0xFFB0B8BF)
 
-// Estados de un compromiso (RN-01). El vencido usa un tono cálido y no un rojo fuerte
-// para no asustar ni culpar a la persona (RNF-04).
+// Estados de un compromiso. El vencido usa un tono cálido y no un rojo fuerte
+// para no asustar ni culpar a la persona.
 object ColoresEstado {
     val Pagado = Color(0xFF1B7F4B)
     val Pendiente = Color(0xFF9A6700)

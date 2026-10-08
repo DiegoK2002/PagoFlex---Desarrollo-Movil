@@ -51,7 +51,7 @@ fun PagoFlexTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    // Sin color dinámico: la paleta es siempre la de PagoFlex, no la del fondo de pantalla del teléfono
+    // Sin color dinámico: la paleta es siempre la de PagoFlex
     val colorScheme = if (darkTheme) EsquemaOscuro else EsquemaClaro
 
     MaterialTheme(
