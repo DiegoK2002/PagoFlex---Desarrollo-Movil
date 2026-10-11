@@ -1,3 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    res/values/strings.xml: TEXTOS de la app (no se escriben "en duro" en el código).
+    En Compose se leen con stringResource(R.string.nombre).
+-->
 <resources>
     <string name="app_name">PagoFlex</string>
+
+    <!-- Selección de sesión simulada -->
+    <string name="subtitulo_seleccion">Elige con qué persona quieres entrar (sesión simulada)</string>
+
+    <!-- Usuario final -->
+    <string name="titulo_mis_compromisos">Mis compromisos</string>
+    <string name="saludo">Hola, %1$s</string>
+    <string name="concepto_con_cuota">%1$s · cuota %2$d/%3$d</string>
+    <string name="vence_el">Vence el %1$s</string>
+
+    <!-- Agente y ejecutivo -->
+    <string name="titulo_agente">Reportes</string>
+    <string name="titulo_ejecutivo">Mi empresa</string>
+    <string name="en_construccion">Esta pantalla está en construcción</string>
+
+    <!-- Comunes -->
+    <string name="btn_salir">Salir</string>
 </resources>
