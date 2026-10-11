@@ -1,6 +1,7 @@
 package cl.app.pagoflex.util
 
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 // Formatos del caso (RN-17): montos como "$ 520.000" y fechas como DD-MM-AAAA.
@@ -12,3 +13,13 @@ fun formatearPesos(monto: Int): String {
 
 fun formatearFecha(fecha: LocalDate): String =
     fecha.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+
+fun formatearFechaHora(fechaHora: LocalDateTime): String =
+    fechaHora.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"))
+
+// RUT parcialmente oculto (RN-05 y RNF-07): "15.834.207-3" -> "15.***.***-3"
+fun ocultarRut(rut: String): String {
+    val primero = rut.substringBefore('.')
+    val digito = rut.substringAfterLast('-')
+    return "${primero}.***.***-${digito}"
+}

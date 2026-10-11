@@ -25,9 +25,9 @@ import cl.app.pagoflex.ui.theme.Dimens
 //  InicioUsuarioScreen.kt  —  INICIO DEL USUARIO FINAL (RF-02, RF-03)
 //  ---------------------------------------------------------------------
 //  Lista de compromisos con LazyColumn (dibuja solo los visibles).
-//  Por ahora solo se VE la lista. Falta: resumen del mes (total a pagar,
-//  próximo vencimiento), detalle con recargo y el botón Pagar.
-//  Recibe los datos y lambdas; no conoce el NavController.
+//  CAMBIO: al tocar una tarjeta se abre el detalle. "onVerDetalle"
+//  entrega el FOLIO del compromiso tocado (viaja en la ruta).
+//  Falta: resumen del mes (total a pagar, próximo vencimiento).
 // =====================================================================
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,6 +36,7 @@ fun InicioUsuarioScreen(
     usuario: Usuario,
     compromisos: List<Compromiso>,
     nombreEmpresa: (String) -> String,
+    onVerDetalle: (String) -> Unit,
     onSalir: () -> Unit
 ) {
     Scaffold(
@@ -66,7 +67,8 @@ fun InicioUsuarioScreen(
             items(compromisos) { compromiso ->
                 TarjetaCompromiso(
                     compromiso = compromiso,
-                    nombreEmpresa = nombreEmpresa(compromiso.codigoEmpresa)
+                    nombreEmpresa = nombreEmpresa(compromiso.codigoEmpresa),
+                    onClick = { onVerDetalle(compromiso.folio) }
                 )
             }
         }

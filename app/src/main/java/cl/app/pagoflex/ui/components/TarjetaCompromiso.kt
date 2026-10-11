@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,10 +27,13 @@ import cl.app.pagoflex.util.formatearPesos
 //  ---------------------------------------------------------------------
 //  Muestra un compromiso: empresa, concepto (con cuota), monto,
 //  vencimiento y estado en color. No sabe de datos ni de navegación:
-//  solo dibuja lo que recibe.
+//  solo dibuja lo que recibe y avisa con "onClick" cuando la tocan.
+//
+//  CAMBIO: ahora es presionable (abre el detalle) y el texto del
+//  concepto con cuota quedó en una función para reutilizarlo.
 // =====================================================================
 
-private fun colorDeEstado(estado: EstadoCompromiso): Color = when (estado) {
+fun colorDeEstado(estado: EstadoCompromiso): Color = when (estado) {
     EstadoCompromiso.PENDIENTE -> ColoresEstado.Pendiente
     EstadoCompromiso.VENCIDO -> ColoresEstado.Vencido
     EstadoCompromiso.PAGADO -> ColoresEstado.Pagado
@@ -37,21 +41,28 @@ private fun colorDeEstado(estado: EstadoCompromiso): Color = when (estado) {
     EstadoCompromiso.ANULADO -> ColoresEstado.Anulado
 }
 
+/** "Crédito de consumo · cuota 8/24" (o solo el concepto si no es en cuotas). */
 @Composable
-fun TarjetaCompromiso(
-    compromiso: Compromiso,
-    nombreEmpresa: String,
-    modifier: Modifier = Modifier
-) {
+fun textoConcepto(compromiso: Compromiso): String {
     val cuota = compromiso.numeroCuota
     val total = compromiso.totalCuotas
-    val concepto = if (cuota != null && total != null) {
+    return if (cuota != null && total != null) {
         stringResource(R.string.concepto_con_cuota, compromiso.concepto, cuota, total)
     } else {
         compromiso.concepto
     }
+}
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TarjetaCompromiso(
+    compromiso: Compromiso,
+    nombreEmpresa: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
+) {
     Card(
+        onClick = onClick,
         shape = EstilosTarjeta.forma,
         colors = EstilosTarjeta.colores(),
         elevation = EstilosTarjeta.elevacion(),
@@ -62,7 +73,7 @@ fun TarjetaCompromiso(
             verticalArrangement = Arrangement.spacedBy(Dimens.espacioMini)
         ) {
             Text(nombreEmpresa, style = MaterialTheme.typography.titleMedium)
-            Text(concepto, style = MaterialTheme.typography.bodyMedium)
+            Text(textoConcepto(compromiso), style = MaterialTheme.typography.bodyMedium)
             Text(formatearPesos(compromiso.monto), style = MaterialTheme.typography.titleLarge)
             Text(
                 stringResource(R.string.vence_el, formatearFecha(compromiso.fechaVencimiento)),
