@@ -19,6 +19,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import cl.app.pagoflex.R
 import cl.app.pagoflex.model.Compromiso
 import cl.app.pagoflex.model.MotivoNoPago
@@ -35,24 +37,8 @@ import cl.app.pagoflex.ui.components.colorDeEstado
 import cl.app.pagoflex.ui.components.textoConcepto
 import cl.app.pagoflex.ui.styles.EstilosBoton
 import cl.app.pagoflex.ui.styles.EstilosTarjeta
-import cl.app.pagoflex.ui.theme.Dimens
 import cl.app.pagoflex.util.formatearFecha
 import cl.app.pagoflex.util.formatearPesos
-
-// =====================================================================
-//  DetalleCompromisoScreen.kt  —  DETALLE Y PAGO (RF-04, RF-05, HU-02, HU-03)
-//  ---------------------------------------------------------------------
-//  Muestra el compromiso completo. Si está vencido, muestra días de
-//  atraso, recargo y total a pagar. El botón "Pagar" abre una
-//  CONFIRMACIÓN (se puede cancelar antes de pagar).
-//
-//  Si no se puede pagar, el botón queda desactivado y se explica por qué
-//  con un texto claro. La LÓGICA (si se puede o no) está en el ViewModel;
-//  esta pantalla solo recibe el resultado (motivoNoPago) y lo muestra.
-//
-//  "mostrarConfirmacion" es estado LOCAL de la pantalla (remember):
-//  solo importa aquí, no hace falta ponerlo en el ViewModel.
-// =====================================================================
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,17 +66,23 @@ fun DetalleCompromisoScreen(
                             contentDescription = stringResource(R.string.cd_volver)
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                )
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(Dimens.espacioPantalla),
-            verticalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Card(
                 shape = EstilosTarjeta.forma,
@@ -99,8 +91,8 @@ fun DetalleCompromisoScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
-                    modifier = Modifier.padding(Dimens.espacioMedio),
-                    verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     FilaDato(stringResource(R.string.dato_empresa), nombreEmpresa)
                     FilaDato(stringResource(R.string.dato_concepto), textoConcepto(compromiso))
@@ -110,7 +102,7 @@ fun DetalleCompromisoScreen(
                         formatearFecha(compromiso.fechaVencimiento)
                     )
                     FilaDato(stringResource(R.string.dato_monto), formatearPesos(compromiso.monto))
-                    // Solo si está vencido (RN-02, RN-03)
+
                     if (diasAtraso > 0) {
                         FilaDato(
                             stringResource(R.string.dato_dias_atraso),
@@ -132,7 +124,6 @@ fun DetalleCompromisoScreen(
                 }
             }
 
-            // Si no se puede pagar, se explica el motivo con un texto claro
             if (motivoNoPago != null) {
                 Text(
                     text = textoMotivo(motivoNoPago, anterior),
@@ -149,14 +140,13 @@ fun DetalleCompromisoScreen(
                 contentPadding = EstilosBoton.relleno,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(Dimens.alturaBoton)
+                    .height(48.dp)
             ) {
                 Text(stringResource(R.string.btn_pagar), style = MaterialTheme.typography.labelLarge)
             }
         }
     }
 
-    // Confirmación antes de pagar: se puede cancelar (HU-03)
     if (mostrarConfirmacion) {
         AlertDialog(
             onDismissRequest = { mostrarConfirmacion = false },
