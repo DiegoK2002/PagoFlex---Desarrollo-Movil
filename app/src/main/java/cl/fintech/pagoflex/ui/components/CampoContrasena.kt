@@ -1,4 +1,4 @@
-package cl.fintech.pagoflex.ui.components
+package cl.duocuc.miregistro.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding

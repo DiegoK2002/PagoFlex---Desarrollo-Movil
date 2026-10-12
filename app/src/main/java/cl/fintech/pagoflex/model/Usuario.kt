@@ -27,3 +27,18 @@ data class Usuario(
     val nombreCompleto: String
         get() = "$nombres $apellidos"
 }
+
+val usuarioEjemplo = Usuario(
+    codigo = "USR001",
+    rut = "12345678-5",
+    nombres = "Diego Alejandro",
+    apellidos = "Muñoz Torres",
+    correo = "diego.munoz@ejemplo.cl",
+    rol = Rol.USUARIO_FINAL,
+    comuna = "Santiago",
+    diasAnticipacion = 3,
+    area = "Tecnología",
+    codigoEmpresa = "EMP001",
+    cargo = "Desarrollador",
+    activo = true
+)
