@@ -4,44 +4,30 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import cl.fintech.pagoflex.navigation.AppNavegacion
 import cl.fintech.pagoflex.ui.theme.PagoflexTheme
+
+// =====================================================================
+//  MainActivity.kt  —  PUNTO DE ENTRADA DE LA APP
+//  ---------------------------------------------------------------------
+//      setContent {
+//          Tema {              <- colores / tipografía / formas
+//              AppNavegacion() <- el NavHost decide qué pantalla mostrar
+//          }
+//      }
+//
+//  CAMBIO (Bloque 1): se eliminaron el enum Pantalla y PANTALLA_INICIAL.
+//  Ya no cambiamos la pantalla a mano: ahora la app NAVEGA.
+// =====================================================================
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdge() // dibuja de borde a borde; el Scaffold respeta las barras del sistema
         setContent {
             PagoflexTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                AppNavegacion()
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    PagoflexTheme {
-        Greeting("Android")
     }
 }
