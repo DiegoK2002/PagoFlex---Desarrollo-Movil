@@ -6,38 +6,42 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// =====================================================================
-//  Type.kt  —  TIPOGRAFÍA (equivale a font-family / font-size en CSS)
-//  ---------------------------------------------------------------------
-//  Material 3 define "roles" de texto: titleLarge, bodyMedium, labelLarge...
-//  Aquí solo sobrescribimos los que usamos; el resto queda por defecto.
-//  Los botones usan automáticamente el rol "labelLarge".
-//  Unidad "sp": como "dp" pero respeta el tamaño de letra del usuario.
-// =====================================================================
-
-val Tipografia = Typography(
+// Tamaños un poco mayores que los de Material por defecto (textos legibles)
+val tipografia = Typography(
+    headlineMedium = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Bold,
+        fontSize = 28.sp,
+        lineHeight = 36.sp
+    ),
     titleLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
         fontSize = 24.sp,
-        lineHeight = 30.sp
+        lineHeight = 32.sp
     ),
     titleMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = FontFamily.Default,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 17.sp,
-        lineHeight = 22.sp
+        fontSize = 20.sp,
+        lineHeight = 28.sp
+    ),
+    bodyLarge = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Normal,
+        fontSize = 18.sp,
+        lineHeight = 26.sp
     ),
     bodyMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
-        fontSize = 15.sp,
-        lineHeight = 21.sp
+        fontSize = 16.sp,
+        lineHeight = 24.sp
     ),
-    labelLarge = TextStyle(             // <- texto de TODOS los botones
-        fontFamily = FontFamily.SansSerif,
+    labelLarge = TextStyle(
+        fontFamily = FontFamily.Default,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 15.sp,
-        letterSpacing = 0.3.sp
+        fontSize = 18.sp,
+        lineHeight = 24.sp
     )
 )
