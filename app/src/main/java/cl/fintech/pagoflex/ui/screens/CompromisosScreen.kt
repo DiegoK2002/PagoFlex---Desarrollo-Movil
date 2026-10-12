@@ -20,6 +20,7 @@ fun CompromisosScreen(
     compromisos: List<Compromiso>,
     nombreEmpresa: (String) -> String,
     onVerDetalle: (String) -> Unit,
+    onVerPerfil: () -> Unit,
     onSalir: () -> Unit
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -57,10 +58,23 @@ fun CompromisosScreen(
                 HorizontalDivider()
 
                 NavigationDrawerItem(
+                    label = { Text("Mi perfil") },
+                    selected = false,
+                    onClick = {
+                        scope.launch {
+                            drawerState.close()
+                        }
+                        onVerPerfil()
+                    }
+                )
+
+                NavigationDrawerItem(
                     label = { Text("Cerrar sesión") },
                     selected = false,
                     onClick = {
-                        scope.launch { drawerState.close() }
+                        scope.launch {
+                            drawerState.close()
+                        }
                         mostrarDialogo = true
                     }
                 )

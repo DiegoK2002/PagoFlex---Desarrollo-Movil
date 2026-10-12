@@ -1,4 +1,4 @@
-package cl.app.pagoflex.ui.screens
+package cl.fintech.pagoflex.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

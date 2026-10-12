@@ -1,5 +1,5 @@
 
-package cl.app.pagoflex.viewmodel
+package cl.fintech.pagoflex.viewmodel
 
 import androidx.lifecycle.ViewModel
 import cl.fintech.pagoflex.model.Rol

@@ -40,7 +40,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import cl.app.pagoflex.viewmodel.InicioSesionViewModel
+import cl.fintech.pagoflex.viewmodel.InicioSesionViewModel
 import cl.fintech.pagoflex.model.Rol
 import cl.fintech.pagoflex.model.SesionUiState
 import cl.fintech.pagoflex.model.Usuario
