@@ -5,7 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import cl.fintech.pagoflex.model.usuarioEjemplo
+import cl.fintech.pagoflex.ui.data.DatosEjemplo.usuarios
 import cl.fintech.pagoflex.ui.screens.InicioScreen
 import cl.fintech.pagoflex.ui.theme.PagoflexTheme
 
@@ -16,7 +16,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             PagoflexTheme {
-                InicioScreen("hola",usuarioEjemplo, { Unit })
+                InicioScreen("hola",usuarios[0], { Unit })
             }
         }
     }
