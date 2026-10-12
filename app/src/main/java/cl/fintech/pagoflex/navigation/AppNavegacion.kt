@@ -1,36 +1,54 @@
-
 package cl.fintech.pagoflex.ui.navigation
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-
-import java.time.LocalDateTime
-
-import cl.fintech.pagoflex.model.Pago
+import cl.fintech.pagoflex.data.RepositorioPagoFlex
 import cl.fintech.pagoflex.model.EstadoCompromiso
-import cl.fintech.pagoflex.model.MotivoNoPago
+import cl.fintech.pagoflex.model.Pago
+import cl.fintech.pagoflex.model.Rol
 import cl.fintech.pagoflex.model.Usuario
-import cl.fintech.pagoflex.ui.screens.MiPerfilScreen
 import cl.fintech.pagoflex.ui.data.DatosEjemplo
-import cl.fintech.pagoflex.ui.screens.InicioSesionScreen
+import cl.fintech.pagoflex.ui.screens.ComprobanteScreen
 import cl.fintech.pagoflex.ui.screens.CompromisosScreen
 import cl.fintech.pagoflex.ui.screens.DetalleCompromisoScreen
-import cl.fintech.pagoflex.ui.screens.ComprobanteScreen
+import cl.fintech.pagoflex.ui.screens.InicioSesionScreen
+import cl.fintech.pagoflex.ui.screens.MiPerfilScreen
+import cl.fintech.pagoflex.util.calcularDiasDeAtraso
+import cl.fintech.pagoflex.util.compromisoAnterior
+import cl.fintech.pagoflex.util.motivoNoPagable
+import cl.fintech.pagoflex.util.ocultarRut
+import java.time.LocalDateTime
+import java.time.LocalTime
+
+// =====================================================================
+//  AppNavegacion.kt  —  EL "MAPA" DE LA APP
+//  ---------------------------------------------------------------------
+//  CAMBIOS de este archivo:
+//   1) Cada rol ve solo lo que le corresponde (RN-22):
+//        usuario final -> SUS compromisos
+//        ejecutivo     -> los de SU empresa
+//   2) El detalle calcula días de atraso, recargo y total a pagar
+//      (RN-02, RN-03) y decide si se puede pagar (RN-04, RN-09).
+//   3) El pago se registra con el total (monto + recargo), un número de
+//      comprobante nuevo y la fecha de referencia de los datos de ejemplo.
+//   4) El comprobante muestra el RUT parcialmente oculto (RN-05).
+// =====================================================================
 
 @Composable
 fun AppNavegacion() {
@@ -49,9 +67,8 @@ fun AppNavegacion() {
         mutableStateOf(DatosEjemplo.compromisos)
     }
 
-    var pagoActual by remember {
-        mutableStateOf<Pago?>(null)
-    }
+    // "Hoy" para los cálculos: la fecha de referencia de los datos de ejemplo (06-10-2026)
+    val hoy = DatosEjemplo.FECHA_REFERENCIA
 
     NavHost(
         navController = navController,
@@ -74,12 +91,10 @@ fun AppNavegacion() {
                 }
             )
         }
+
         // Pantalla de Mi perfil
         composable("mi_perfil") {
             val usuario = usuarioActual
-
-            println("Usuario: ${usuario?.codigo}")
-            println("Código empresa: ${usuario?.codigoEmpresa}")
 
             if (usuario != null) {
                 MiPerfilScreen(
@@ -103,11 +118,17 @@ fun AppNavegacion() {
 
             if (usuario != null) {
 
-                val compromisosUsuario =
-                    compromisosRegistrados.filter { compromiso ->
-                        usuario.codigoEmpresa == null ||
-                                compromiso.codigoEmpresa == usuario.codigoEmpresa
+                // Cada rol ve solo lo suyo (RN-22)
+                val compromisosUsuario = compromisosRegistrados
+                    .filter { compromiso ->
+                        when (usuario.rol) {
+                            Rol.USUARIO_FINAL -> compromiso.codigoUsuario == usuario.codigo
+                            Rol.EJECUTIVO -> compromiso.codigoEmpresa == usuario.codigoEmpresa
+                            // El agente trabaja con reportes; hasta tener su pantalla ve la lista completa
+                            Rol.AGENTE -> true
+                        }
                     }
+                    .sortedBy { it.fechaVencimiento }
 
                 CompromisosScreen(
                     usuario = usuario,
@@ -162,22 +183,27 @@ fun AppNavegacion() {
                     it.codigo == compromiso.codigoEmpresa
                 }?.nombreFantasia ?: "Empresa no encontrada"
 
+                // ----- Cálculos (no se guardan, se calculan cada vez) -----
+                val diasAtraso = calcularDiasDeAtraso(compromiso, hoy)
+                val recargo = if (diasAtraso > 0) {
+                    RepositorioPagoFlex.recargoDe(compromiso.codigoEmpresa)
+                } else {
+                    0
+                }
+                val total = compromiso.monto + recargo
+
+                // ----- Reglas: ¿se puede pagar? -----
+                val anterior = compromisoAnterior(compromiso, compromisosRegistrados)
+                val motivoNoPago = motivoNoPagable(compromiso, anterior)
+
                 DetalleCompromisoScreen(
                     compromiso = compromiso,
                     nombreEmpresa = nombreEmpresa,
-                    diasAtraso = 0,
-                    recargo = 0,
-                    total = compromiso.monto,
-
-                    motivoNoPago = if (
-                        compromiso.estado == EstadoCompromiso.PAGADO
-                    ) {
-                        MotivoNoPago.YA_PAGADO
-                    } else {
-                        null
-                    },
-
-                    anterior = null,
+                    diasAtraso = diasAtraso,
+                    recargo = recargo,
+                    total = total,
+                    motivoNoPago = motivoNoPago,
+                    anterior = anterior,
 
                     onVolver = {
                         navController.popBackStack()
@@ -187,66 +213,45 @@ fun AppNavegacion() {
 
                         val usuario = usuarioActual
 
-                        // No permitir volver a pagar un compromiso pagado
-                        if (
-                            usuario != null &&
-                            compromiso.estado != EstadoCompromiso.PAGADO
-                        ) {
+                        // Solo se paga si realmente se puede pagar
+                        if (usuario != null && motivoNoPago == null) {
 
-                            val pagoExistente = pagosRegistrados.find {
-                                it.folioCompromiso == compromiso.folio
-                            }
+                            // Número nuevo: el mayor que existe + 1
+                            val siguiente = pagosRegistrados.maxOf {
+                                it.numeroComprobante.removePrefix("CPR-").toInt()
+                            } + 1
 
-                            if (pagoExistente != null) {
+                            val nuevoPago = Pago(
+                                numeroComprobante = "CPR-" + siguiente.toString().padStart(6, '0'),
+                                folioCompromiso = compromiso.folio,
+                                codigoUsuario = usuario.codigo,
+                                codigoEmpresa = compromiso.codigoEmpresa,
+                                concepto = compromiso.concepto,
+                                fechaHora = LocalDateTime.of(hoy, LocalTime.now()),
+                                montoPagado = total,
+                                canal = "App",
+                                // A tiempo si se paga hasta el día del vencimiento (RN-10)
+                                aTiempo = !hoy.isAfter(compromiso.fechaVencimiento),
+                                medioPago = "Pago simulado"
+                            )
 
-                                // Reutilizar el pago existente
-                                pagoActual = pagoExistente
-
-                            } else {
-
-                                // Crear el registro del nuevo pago
-                                val nuevoPago = Pago(
-                                    numeroComprobante = "CPR-${(pagosRegistrados.size + 454).toString().padStart(6, '0')}",
-                                    folioCompromiso = compromiso.folio,
-                                    codigoUsuario = usuario.codigo,
-                                    codigoEmpresa = compromiso.codigoEmpresa,
-                                    concepto = compromiso.concepto,
-                                    fechaHora = LocalDateTime.now(),
-                                    montoPagado = compromiso.monto,
-                                    canal = "App",
-                                    aTiempo = !compromiso.fechaVencimiento.isBefore(
-                                        LocalDateTime.now().toLocalDate()
-                                    ),
-                                    medioPago = "Pago simulado"
-                                )
-
-                                pagosRegistrados =
-                                    pagosRegistrados + nuevoPago
-
-                                pagoActual = nuevoPago
-                            }
+                            pagosRegistrados = pagosRegistrados + nuevoPago
 
                             // Cambiar el estado del compromiso a PAGADO
-                            compromisosRegistrados =
-                                compromisosRegistrados.map {
-                                        compromisoRegistrado ->
-
-                                    if (
-                                        compromisoRegistrado.folio ==
-                                        compromiso.folio
-                                    ) {
-                                        compromisoRegistrado.copy(
-                                            estado = EstadoCompromiso.PAGADO
-                                        )
-                                    } else {
-                                        compromisoRegistrado
-                                    }
+                            compromisosRegistrados = compromisosRegistrados.map { registrado ->
+                                if (registrado.folio == compromiso.folio) {
+                                    registrado.copy(estado = EstadoCompromiso.PAGADO)
+                                } else {
+                                    registrado
                                 }
+                            }
 
-                            // Abrir el comprobante
-                            navController.navigate(
-                                "comprobante/${compromiso.folio}"
-                            )
+                            // Abrir el comprobante; "atrás" vuelve a la lista, no al detalle
+                            navController.navigate("comprobante/${compromiso.folio}") {
+                                popUpTo("detalle/{folio}") {
+                                    inclusive = true
+                                }
+                            }
                         }
                     }
                 )
@@ -265,7 +270,8 @@ fun AppNavegacion() {
 
             val folio = entrada.arguments?.getString("folio")
 
-            val pago = pagosRegistrados.find {
+            // Si hubiera más de un pago del mismo folio, se muestra el último
+            val pago = pagosRegistrados.findLast {
                 it.folioCompromiso == folio
             }
 
@@ -285,7 +291,8 @@ fun AppNavegacion() {
                     pago = pago,
                     nombreEmpresa = nombreEmpresa,
                     nombrePagador = usuario?.nombreCompleto ?: "Usuario",
-                    rutParcial = usuario?.rut ?: "",
+                    // RUT parcialmente oculto (RN-05, RNF-07)
+                    rutParcial = if (usuario != null) ocultarRut(usuario.rut) else "",
 
                     onVolver = {
                         navController.popBackStack()
@@ -301,20 +308,16 @@ fun AppNavegacion() {
                     verticalArrangement = Arrangement.Center
                 ) {
 
-                    androidx.compose.material3.Text(
-                        text = "No se encontró el pago o el compromiso."
-                    )
+                    Text(text = "No se encontró el pago o el compromiso.")
 
-                    androidx.compose.material3.Text(
-                        text = "Folio buscado: ${folio ?: "sin folio"}"
-                    )
+                    Text(text = "Folio buscado: ${folio ?: "sin folio"}")
 
-                    androidx.compose.material3.Button(
+                    Button(
                         onClick = {
                             navController.popBackStack()
                         }
                     ) {
-                        androidx.compose.material3.Text("Volver")
+                        Text("Volver")
                     }
                 }
             }
