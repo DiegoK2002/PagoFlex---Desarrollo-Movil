@@ -2,14 +2,7 @@ package cl.fintech.pagoflex.model
 
 import java.time.LocalDate
 
-// =====================================================================
-//  Compromiso.kt  —  LO QUE UNA PERSONA DEBE PAGAR A UNA EMPRESA
-//  ---------------------------------------------------------------------
-//  Estados: Pendiente, Vencido, Pagado, En revisión, Anulado.
-//  Lo que se calcula y no se guarda: total a pagar, días de atraso,
-//  si el pago fue a tiempo.
-// =====================================================================
-
+/** Estados posibles de un compromiso de pago. [etiqueta] es el texto que ve la persona. */
 enum class EstadoCompromiso(val etiqueta: String) {
     PENDIENTE("Pendiente"),
     VENCIDO("Vencido"),
@@ -18,14 +11,20 @@ enum class EstadoCompromiso(val etiqueta: String) {
     ANULADO("Anulado")
 }
 
+/**
+ * Monto que una persona debe pagar a una empresa (una fila de la tabla "compromisos").
+ *
+ * [numeroCuota] y [totalCuotas] son nulos cuando el compromiso no es en cuotas.
+ * El recargo, los dias de atraso y el total a pagar no se guardan: se calculan.
+ */
 data class Compromiso(
     val folio: String,
-    val codigoUsuario: String,
+    val idUsuario: Long,
     val codigoEmpresa: String,
     val concepto: String,
-    val numeroCuota: Int?,        // null si no es en cuotas
+    val numeroCuota: Int?,
     val totalCuotas: Int?,
-    val monto: Int,               // pesos chilenos
+    val monto: Int,
     val fechaVencimiento: LocalDate,
     val estado: EstadoCompromiso
 )

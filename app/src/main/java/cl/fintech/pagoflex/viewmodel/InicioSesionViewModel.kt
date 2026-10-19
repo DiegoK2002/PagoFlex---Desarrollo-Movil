@@ -1,164 +1,77 @@
-
 package cl.fintech.pagoflex.viewmodel
 
-import androidx.lifecycle.ViewModel
-import cl.fintech.pagoflex.model.Rol
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import cl.fintech.pagoflex.data.PagoFlexDbHelper
 import cl.fintech.pagoflex.model.SesionUiState
 import cl.fintech.pagoflex.model.Usuario
-import cl.fintech.pagoflex.ui.data.DatosEjemplo
+import cl.fintech.pagoflex.util.Seguridad
+import cl.fintech.pagoflex.util.Validaciones
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-class InicioSesionViewModel : ViewModel() {
+/**
+ * Logica de la pantalla de inicio de sesion: guarda lo escrito, verifica los campos y busca
+ * la cuenta en la base de datos. El rol no se elige: viene de la cuenta guardada.
+ * Si las credenciales no coinciden se muestra un mensaje general, sin indicar si fallo el
+ * correo o la contrasena, para no entregar informacion a quien intente adivinarlas.
+ */
+class InicioSesionViewModel(application: Application) : AndroidViewModel(application) {
+
+    // Acceso a la base de datos SQLite
+    private val bd = PagoFlexDbHelper.obtener(application)
 
     private val _uiState = MutableStateFlow(SesionUiState())
     val uiState: StateFlow<SesionUiState> = _uiState.asStateFlow()
 
-    // Contraseñas de prueba para la demostración académica.
-    // Todas las cuentas utilizan Demo123.
-
-    private val contrasenasDemo = mapOf(
-        "crojas@correo.ejemplo" to "Demo123",
-        "lmunoz@correo.ejemplo" to "Demo123",
-        "rcontreras@correo.ejemplo" to "Demo123",
-        "msoto@correo.ejemplo" to "Demo123",
-        "fgodoy@correo.ejemplo" to "Demo123",
-        "hpizarro@correo.ejemplo" to "Demo123",
-        "jreyes@correo.ejemplo" to "Demo123",
-        "baraya@correo.ejemplo" to "Demo123",
-        "alagos@pagoflex.ejemplo" to "Demo123",
-        "dortiz@pagoflex.ejemplo" to "Demo123",
-        "rsalinas@pagoflex.ejemplo" to "Demo123",
-        "vparedes@pagoflex.ejemplo" to "Demo123",
-        "tvidal@pagoflex.ejemplo" to "Demo123",
-        "psaavedra@altosmaipo.ejemplo" to "Demo123",
-        "mfuentes@bosquenativo.ejemplo" to "Demo123",
-        "chenriquez@creditoandino.ejemplo" to "Demo123",
-        "fmorales@creditoandino.ejemplo" to "Demo123",
-        "gcarrasco@loshalcones.ejemplo" to "Demo123",
-        "snunez@itcordillera.ejemplo" to "Demo123",
-        "mleiva@plazaoriente.ejemplo" to "Demo123"
-    )
-
-    // Eventos de los campos.
-
+    /** Guarda el correo escrito y borra los errores anteriores. */
     fun onCorreoCambia(valor: String) {
         _uiState.update {
-            it.copy(
-                correo = valor.trim(),
-                errorCorreo = null,
-                errorContrasena = null,
-                inicioExitoso = false
-            )
+            it.copy(correo = valor.trim(), errorCorreo = null, errorGeneral = null)
         }
     }
 
+    /** Guarda la contrasena escrita y borra los errores anteriores. */
     fun onContrasenaCambia(valor: String) {
         _uiState.update {
-            it.copy(
-                contrasena = valor,
-                errorContrasena = null,
-                inicioExitoso = false
-            )
+            it.copy(contrasena = valor, errorContrasena = null, errorGeneral = null)
         }
     }
 
+    /** Muestra u oculta la contrasena. */
     fun onAlternarVisibilidad() {
-        _uiState.update {
-            it.copy(
-                contrasenaVisible = !it.contrasenaVisible
-            )
-        }
+        _uiState.update { it.copy(contrasenaVisible = !it.contrasenaVisible) }
     }
 
-    // Evento del selector de rol.
-
-    fun onRolSeleccionado(rol: Rol) {
-        _uiState.update {
-            it.copy(
-                rol = rol,
-                errorCorreo = null,
-                errorContrasena = null,
-                inicioExitoso = false
-            )
-        }
-    }
-
-    // Valida los campos y comprueba las credenciales.
-
+    /** Intenta iniciar sesion. Devuelve la cuenta si fue correcto; si no, devuelve null y deja los errores en pantalla. */
     fun onIniciar(): Usuario? {
         val estado = _uiState.value
 
-        val correo = estado.correo.trim()
+        // Verificacion de los campos antes de consultar la base de datos
+        val errorCorreo = Validaciones.validarCorreo(estado.correo)
+        val errorContrasena = if (estado.contrasena.isEmpty()) "Ingresa tu contrase\u00f1a" else null
 
-        val errorCorreo = when {
-            correo.isBlank() ->
-                "Ingresa tu correo"
-
-            !correo.contains("@") ||
-                    !correo.substringAfter("@").contains(".") ->
-                "Ingresa un correo válido"
-
-            else -> null
-        }
-
-        if (errorCorreo != null) {
+        if (errorCorreo != null || errorContrasena != null) {
             _uiState.update {
-                it.copy(
-                    errorCorreo = errorCorreo,
-                    errorContrasena = null,
-                    inicioExitoso = false
-                )
+                it.copy(errorCorreo = errorCorreo, errorContrasena = errorContrasena, errorGeneral = null)
             }
             return null
         }
 
-        if (estado.contrasena.isBlank()) {
-            _uiState.update {
-                it.copy(
-                    errorCorreo = null,
-                    errorContrasena = "Ingresa tu contraseña",
-                    inicioExitoso = false
-                )
-            }
+        // Se calcula el hash de lo escrito y se busca una cuenta que coincida
+        val hash = Seguridad.hashContrasena(estado.correo, estado.contrasena)
+        val usuario = bd.buscarPorCredenciales(estado.correo, hash)
+
+        if (usuario == null) {
+            _uiState.update { it.copy(errorGeneral = "Correo o contrase\u00f1a incorrectos") }
             return null
         }
-
-        // Busca un usuario que coincida con las credenciales
-        // y el rol seleccionado. Las cuentas inactivas se rechazan.
-
-        val usuarioEncontrado = DatosEjemplo.usuarios.firstOrNull { usuario ->
-            usuario.correo.equals(correo, ignoreCase = true) &&
-                    contrasenasDemo[usuario.correo] == estado.contrasena &&
-                    usuario.rol == estado.rol &&
-                    usuario.activo
-        }
-
-        // Actualiza el estado de la pantalla.
-
-        _uiState.update {
-            it.copy(
-                errorCorreo = if (usuarioEncontrado == null) {
-                    "No se pudo iniciar sesión"
-                } else {
-                    null
-                },
-                errorContrasena = if (usuarioEncontrado == null) {
-                    "Verifica tu correo, contraseña y rol"
-                } else {
-                    null
-                },
-                inicioExitoso = usuarioEncontrado != null
-            )
-        }
-
-        return usuarioEncontrado
+        return usuario
     }
 
-    // Restablece el formulario a su estado inicial.
-
+    /** Vuelve el formulario a su estado inicial. */
     fun onLimpiar() {
         _uiState.value = SesionUiState()
     }

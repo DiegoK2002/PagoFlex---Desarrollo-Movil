@@ -11,28 +11,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import cl.fintech.pagoflex.R
 import cl.fintech.pagoflex.model.Compromiso
 import cl.fintech.pagoflex.model.EstadoCompromiso
 import cl.fintech.pagoflex.ui.styles.EstilosTarjeta
-import cl.fintech.pagoflex.ui.theme.Dimens
 import cl.fintech.pagoflex.ui.theme.ColoresEstado
+import cl.fintech.pagoflex.ui.theme.Dimens
 import cl.fintech.pagoflex.util.formatearFecha
 import cl.fintech.pagoflex.util.formatearPesos
 
-// =====================================================================
-//  TarjetaCompromiso.kt  —  COMPONENTE REUTILIZABLE
-//  ---------------------------------------------------------------------
-//  Muestra un compromiso: empresa, concepto (con cuota), monto,
-//  vencimiento y estado en color. No sabe de datos ni de navegación:
-//  solo dibuja lo que recibe y avisa con "onClick" cuando la tocan.
-//
-//  CAMBIO: ahora es presionable (abre el detalle) y el texto del
-//  concepto con cuota quedó en una función para reutilizarlo.
-// =====================================================================
-
+/** Color con que se muestra cada estado de un compromiso. */
 fun colorDeEstado(estado: EstadoCompromiso): Color = when (estado) {
     EstadoCompromiso.PENDIENTE -> ColoresEstado.Pendiente
     EstadoCompromiso.VENCIDO -> ColoresEstado.Vencido
@@ -41,26 +29,39 @@ fun colorDeEstado(estado: EstadoCompromiso): Color = when (estado) {
     EstadoCompromiso.ANULADO -> ColoresEstado.Anulado
 }
 
-/** "Crédito de consumo · cuota 8/24" (o solo el concepto si no es en cuotas). */
-@Composable
+/** Concepto con su numero de cuota: "Credito de consumo · cuota 8/24". Si no es en cuotas, solo el concepto. */
 fun textoConcepto(compromiso: Compromiso): String {
     val cuota = compromiso.numeroCuota
     val total = compromiso.totalCuotas
     return if (cuota != null && total != null) {
-        stringResource(R.string.concepto_con_cuota, compromiso.concepto, cuota, total)
+        "${compromiso.concepto} · cuota $cuota/$total"
     } else {
         compromiso.concepto
     }
 }
 
+/**
+ * Tarjeta con el resumen de un compromiso: empresa, concepto, importe, vencimiento y estado.
+ * No consulta datos ni navega: dibuja lo que recibe y avisa con [onClick] cuando la tocan.
+ *
+ * @param importe lo que hay que pagar (monto mas recargo) o, si ya se pago, lo que se pago.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TarjetaCompromiso(
     compromiso: Compromiso,
     nombreEmpresa: String,
+    importe: Int,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
+    // Si el importe es mayor que el monto original, se aclara que incluye un recargo
+    val avisoRecargo = when {
+        importe == compromiso.monto -> null
+        compromiso.estado == EstadoCompromiso.PAGADO -> "Se pagó con recargo por atraso"
+        else -> "Incluye recargo por atraso"
+    }
+
     Card(
         onClick = onClick,
         shape = EstilosTarjeta.forma,
@@ -74,11 +75,15 @@ fun TarjetaCompromiso(
         ) {
             Text(nombreEmpresa, style = MaterialTheme.typography.titleMedium)
             Text(textoConcepto(compromiso), style = MaterialTheme.typography.bodyMedium)
-            Text(formatearPesos(compromiso.monto), style = MaterialTheme.typography.titleLarge)
+            Text(formatearPesos(importe), style = MaterialTheme.typography.titleLarge)
+            if (avisoRecargo != null) {
+                Text(avisoRecargo, style = MaterialTheme.typography.bodySmall)
+            }
             Text(
-                stringResource(R.string.vence_el, formatearFecha(compromiso.fechaVencimiento)),
+                "Vence el ${formatearFecha(compromiso.fechaVencimiento)}",
                 style = MaterialTheme.typography.bodyMedium
             )
+            // Estado con el color que le corresponde
             Text(
                 compromiso.estado.etiqueta,
                 style = MaterialTheme.typography.bodyMedium,

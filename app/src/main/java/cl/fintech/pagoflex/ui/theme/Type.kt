@@ -6,7 +6,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// Tamaños un poco mayores que los de Material por defecto (textos legibles)
+// Escala tipografica con tamanos algo mayores que los predeterminados, para mejorar la legibilidad.
 val tipografia = Typography(
     headlineMedium = TextStyle(
         fontFamily = FontFamily.Default,

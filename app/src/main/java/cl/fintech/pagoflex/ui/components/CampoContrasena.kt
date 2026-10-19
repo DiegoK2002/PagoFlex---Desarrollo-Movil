@@ -1,36 +1,32 @@
 package cl.fintech.pagoflex.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import cl.fintech.pagoflex.R
 import cl.fintech.pagoflex.ui.styles.EstilosCampo
 import cl.fintech.pagoflex.ui.theme.Dimens
-import cl.fintech.pagoflex.ui.theme.PagoflexTheme
 
-// =====================================================================
-//  CampoContrasena.kt  —  Campo con puntos (••••) y botón "ojo".
-//  ---------------------------------------------------------------------
-//  visualTransformation cambia CÓMO se muestra el texto, no lo que vale:
-//   - PasswordVisualTransformation() -> ••••••
-//   - VisualTransformation.None      -> texto normal
-//  Si la contraseña se ve o no es ESTADO: lo decide el ViewModel.
-// =====================================================================
-
+/**
+ * Campo para escribir una contrasena. Muestra puntos en lugar del texto y tiene un boton
+ * con forma de ojo para mostrarla u ocultarla.
+ *
+ * @param visible si es true, el texto se ve; si es false, se oculta.
+ * @param onAlternarVisible se llama al tocar el ojo; quien usa el campo decide el nuevo valor de [visible].
+ * @param error mensaje que se muestra bajo el campo; null significa que no hay error.
+ */
 @Composable
 fun CampoContrasena(
     valor: String,
@@ -46,22 +42,20 @@ fun CampoContrasena(
         onValueChange = onValorCambia,
         modifier = modifier.fillMaxWidth(),
         label = { Text(etiqueta) },
+        // Candado a la izquierda
         leadingIcon = {
             Icon(
-                painter = painterResource(R.drawable.ic_candado),
+                imageVector = Icons.Default.Lock,
                 contentDescription = null,
                 modifier = Modifier.size(Dimens.tamanoIcono)
             )
         },
-        trailingIcon = {                                   // ícono a la DERECHA, presionable
+        // Ojo a la derecha: cambia segun la contrasena este visible u oculta
+        trailingIcon = {
             IconButton(onClick = onAlternarVisible) {
                 Icon(
-                    painter = painterResource(
-                        if (visible) R.drawable.ic_ojo_tachado else R.drawable.ic_ojo
-                    ),
-                    contentDescription = stringResource(
-                        if (visible) R.string.cd_ocultar_contrasena else R.string.cd_mostrar_contrasena
-                    ),
+                    imageVector = if (visible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                    contentDescription = if (visible) "Ocultar contrase\u00f1a" else "Mostrar contrase\u00f1a",
                     modifier = Modifier.size(Dimens.tamanoIcono)
                 )
             }
@@ -74,19 +68,4 @@ fun CampoContrasena(
         shape = EstilosCampo.forma,
         colors = EstilosCampo.colores()
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun CampoContrasenaPreview() {
-    PagoflexTheme {
-        CampoContrasena(
-            valor = "secreto",
-            onValorCambia = {},
-            etiqueta = "Contraseña",
-            visible = false,
-            onAlternarVisible = {},
-            modifier = Modifier.padding(16.dp)
-        )
-    }
 }

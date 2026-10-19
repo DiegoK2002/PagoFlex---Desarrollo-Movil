@@ -1,6 +1,6 @@
 package cl.fintech.pagoflex.model
 
-// Empresa cliente de PagoFlex (la que cobra). "recargoAtraso" en pesos.
+/** Empresa que cobra un compromiso. [recargoAtraso] es el monto en pesos que suma si el pago se atrasa. */
 data class Empresa(
     val codigo: String,
     val nombreFantasia: String,

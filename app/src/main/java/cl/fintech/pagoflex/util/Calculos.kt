@@ -5,17 +5,10 @@ import cl.fintech.pagoflex.model.EstadoCompromiso
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
-// =====================================================================
-//  Calculos.kt  —  DATOS QUE SE CALCULAN Y NO SE GUARDAN
-//  ---------------------------------------------------------------------
-//  Días de atraso = hoy - fecha de vencimiento, solo si está Vencido.
-//  Total a pagar  = monto + recargo (el recargo solo si hay atraso.
-//  Ejemplo: CP-2026-0106 -> 6 días, $310.000 + $8.500 = $318.500.
-// =====================================================================
+/** Fecha que la app toma como "hoy". Coincide con la fecha de los datos de ejemplo. */
+val FECHA_REFERENCIA: LocalDate = LocalDate.of(2026, 10, 6)
 
-
-//IMPORTANTE: SE CAMBIÓ EL MINIMO SDK DE 24 A 26 PARA QUE FUNCIONE
-
+/** Dias transcurridos desde el vencimiento. Solo cuenta si el compromiso esta vencido; si no, devuelve 0. */
 fun calcularDiasDeAtraso(compromiso: Compromiso, hoy: LocalDate): Int {
     if (compromiso.estado != EstadoCompromiso.VENCIDO) return 0
     val dias = ChronoUnit.DAYS.between(compromiso.fechaVencimiento, hoy).toInt()

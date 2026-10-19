@@ -1,10 +1,6 @@
 package cl.fintech.pagoflex.ui.components
 
-import androidx.annotation.DrawableRes
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -12,29 +8,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import cl.fintech.pagoflex.R
+import androidx.compose.ui.graphics.vector.ImageVector
 import cl.fintech.pagoflex.ui.styles.EstilosBoton
 import cl.fintech.pagoflex.ui.styles.estiloAltoBoton
-import cl.fintech.pagoflex.ui.theme.PagoflexTheme
-
-// =====================================================================
-//  BotonPrincipal.kt  —  COMPONENTE REUTILIZABLE
-//  ---------------------------------------------------------------------
-//  Un componente es una función @Composable que:
-//   1) recibe DATOS por parámetro (texto, habilitado, icono)
-//   2) recibe EVENTOS por parámetro (onClick: () -> Unit)
-//   3) NO conoce el ViewModel: solo dibuja.
-//
-//  El parámetro "modifier" (valor por defecto Modifier) permite que la
-//  pantalla decida el ancho: fillMaxWidth(), weight(1f), etc.
-// =====================================================================
 
 /**
- * Botón de acción principal (relleno, con sombra y ícono opcional).
- * @param icono recurso R.drawable.xxx, o null si no lleva ícono.
+ * Boton de la accion principal de una pantalla: fondo del color primario y sombra.
+ *
+ * @param habilitado si es false, el boton se ve atenuado y no responde al toque.
+ * @param icono icono opcional (por ejemplo Icons.Default.Check) que se muestra antes del texto.
  */
 @Composable
 fun BotonPrincipal(
@@ -42,41 +24,26 @@ fun BotonPrincipal(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     habilitado: Boolean = true,
-    @DrawableRes icono: Int? = null
+    icono: ImageVector? = null
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier.estiloAltoBoton(),          // height: 52dp
+        modifier = modifier.estiloAltoBoton(),
         enabled = habilitado,
-        shape = EstilosBoton.forma,                     // border-radius
-        colors = EstilosBoton.coloresPrincipal(),       // background / color
-        elevation = EstilosBoton.elevacion(),           // box-shadow
-        contentPadding = EstilosBoton.relleno           // padding
+        shape = EstilosBoton.forma,
+        colors = EstilosBoton.coloresPrincipal(),
+        elevation = EstilosBoton.elevacion(),
+        contentPadding = EstilosBoton.relleno
     ) {
-        // El contenido del botón es un "slot": aquí se ordena en fila
+        // El icono y su separacion solo se dibujan si se entrego un icono
         if (icono != null) {
             Icon(
-                painter = painterResource(id = icono),
-                contentDescription = null,              // decorativo: el texto ya describe
+                imageVector = icono,
+                contentDescription = null,
                 modifier = Modifier.size(ButtonDefaults.IconSize)
             )
             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
         }
         Text(text = texto)
-    }
-}
-
-// @Preview: ver el componente en Android Studio SIN ejecutar la app (vista Split).
-@Preview(showBackground = true)
-@Composable
-private fun BotonPrincipalPreview() {
-    PagoflexTheme {
-        Column(Modifier.padding(16.dp)) {
-            BotonPrincipal(texto = "Registrarme", onClick = {}, modifier = Modifier.fillMaxWidth())
-            Spacer(Modifier.size(8.dp))
-            BotonPrincipal(texto = "Con ícono", onClick = {}, icono = R.drawable.ic_check, modifier = Modifier.fillMaxWidth())
-            Spacer(Modifier.size(8.dp))
-            BotonPrincipal(texto = "Deshabilitado", onClick = {}, habilitado = false, modifier = Modifier.fillMaxWidth())
-        }
     }
 }
