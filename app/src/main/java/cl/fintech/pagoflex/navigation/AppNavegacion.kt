@@ -25,6 +25,7 @@ import cl.fintech.pagoflex.viewmodel.ReportesViewModel
 import cl.fintech.pagoflex.viewmodel.FotoPerfilViewModel
 import cl.fintech.pagoflex.viewmodel.UfViewModel
 import cl.fintech.pagoflex.ui.screens.HistorialPagosScreen
+import cl.fintech.pagoflex.ui.screens.ReconocimientosScreen
 
 /**
  * Mapa de navegacion de la app: define que pantalla se muestra en cada ruta y como se pasa
@@ -50,6 +51,7 @@ fun AppNavegacion() {
     val compromisos by compromisosViewModel.compromisos.collectAsStateWithLifecycle()
     val pagos by compromisosViewModel.pagos.collectAsStateWithLifecycle()
     val indicadorCumplimiento by compromisosViewModel.indicadorCumplimiento.collectAsStateWithLifecycle()
+    val reconocimientos by compromisosViewModel.reconocimientos.collectAsStateWithLifecycle()
     val reportes by reportesViewModel.reportes.collectAsStateWithLifecycle()
     val estadoUf by ufViewModel.estado.collectAsStateWithLifecycle()
     val fotoPerfil by fotoPerfilViewModel.fotoPerfil.collectAsStateWithLifecycle()
@@ -112,6 +114,9 @@ fun AppNavegacion() {
                     onVerHistorial = {
                         navController.navigate(Ruta.HistorialPagos.ruta)
                     },
+                    onVerReconocimientos = {
+                        navController.navigate(Ruta.Reconocimientos.ruta)
+                    },
                     onVerPerfil = { navController.navigate(Ruta.MiPerfil.ruta) },
                     onSalir = cerrarSesion
                 )
@@ -131,6 +136,19 @@ fun AppNavegacion() {
                             Ruta.Comprobante.crear(folio)
                         )
                     },
+                    onVolver = {
+                        navController.navigateUp()
+                    }
+                )
+            }
+        }
+
+        composable(Ruta.Reconocimientos.ruta) {
+            val usuario = usuarioActual
+
+            if (usuario != null && usuario.rol == Rol.USUARIO_FINAL) {
+                ReconocimientosScreen(
+                    reconocimientos = reconocimientos,
                     onVolver = {
                         navController.navigateUp()
                     }

@@ -28,14 +28,17 @@ import cl.fintech.pagoflex.model.Reporte
  * Las claves foraneas (REFERENCES) se activan en [onConfigure], porque SQLite las trae desactivadas.
  * Las fechas se guardan como texto ISO ("2026-10-10") y se convierten al leerlas.
  */
-class PagoFlexDbHelper private constructor(context: Context) :
-    SQLiteOpenHelper(context, NOMBRE_BD, null, VERSION_BD) {
+
+class PagoFlexDbHelper private constructor(
+    context: Context,
+    nombreBase: String
+) : SQLiteOpenHelper(context, nombreBase, null, VERSION_BD) {
 
     companion object {
         private const val NOMBRE_BD = "pagoflex.db"
 
         // Al subir este numero, SQLite llama a onUpgrade y la base se vuelve a crear
-        private const val VERSION_BD = 3
+        private const val VERSION_BD = 4
 
         // Contrasena de las cuentas de ejemplo precargadas
         private const val CLAVE_DEMO = "Demo1234"
@@ -46,6 +49,10 @@ class PagoFlexDbHelper private constructor(context: Context) :
         private const val TABLA_COMPROMISOS = "compromisos"
         private const val TABLA_PAGOS = "pagos"
         private const val TABLA_REPORTES = "reportes"
+
+        private const val TABLA_RECONOCIMIENTOS = "reconocimientos"
+
+        private const val CODIGO_EJEMPLAR = "CUMPLIMIENTO_EJEMPLAR"
 
         private const val SQL_CREAR_ROLES =
             "CREATE TABLE $TABLA_ROLES (" +
@@ -109,15 +116,71 @@ class PagoFlexDbHelper private constructor(context: Context) :
                 "respuesta TEXT, " +
                 "fecha_creacion TEXT NOT NULL)"
 
+
+        private const val SQL_CREAR_RECONOCIMIENTOS =
+            "CREATE TABLE IF NOT EXISTS $TABLA_RECONOCIMIENTOS (" +
+                    "id_usuario INTEGER NOT NULL REFERENCES $TABLA_USUARIOS(id_usuario), " +
+                    "codigo TEXT NOT NULL, " +
+                    "fecha_obtenida TEXT NOT NULL, " +
+                    "PRIMARY KEY (id_usuario, codigo))"
+
+
         @Volatile
         private var instancia: PagoFlexDbHelper? = null
 
         /** Devuelve la unica instancia del helper, para que toda la app use una sola conexion. */
         fun obtener(context: Context): PagoFlexDbHelper =
             instancia ?: synchronized(this) {
-                instancia ?: PagoFlexDbHelper(context.applicationContext).also { instancia = it }
+                instancia ?: PagoFlexDbHelper(context.applicationContext, NOMBRE_BD).also { instancia = it }
             }
+
+        fun crearParaPruebas(context: Context): PagoFlexDbHelper =
+            PagoFlexDbHelper(
+                context.applicationContext,
+                "pagoflex_reconocimientos_test.db"
+            )
     }
+
+    fun registrarReconocimientoEjemplar(
+        idUsuario: Long,
+        fecha: LocalDate
+    ) {
+        if (idUsuario <= 0L) return
+
+        val valores = ContentValues().apply {
+            put("id_usuario", idUsuario)
+            put("codigo", CODIGO_EJEMPLAR)
+            put("fecha_obtenida", fecha.toString())
+        }
+
+        writableDatabase.insertWithOnConflict(
+            TABLA_RECONOCIMIENTOS,
+            null,
+            valores,
+            SQLiteDatabase.CONFLICT_IGNORE
+        )
+    }
+
+
+    fun fechaReconocimientoEjemplar(idUsuario: Long): LocalDate? {
+        if (idUsuario <= 0L) return null
+
+        return readableDatabase.rawQuery(
+            "SELECT fecha_obtenida FROM $TABLA_RECONOCIMIENTOS " +
+                    "WHERE id_usuario = ? AND codigo = ?",
+            arrayOf(
+                idUsuario.toString(),
+                CODIGO_EJEMPLAR
+            )
+        ).use { cursor ->
+            if (cursor.moveToFirst()) {
+                LocalDate.parse(cursor.getString(0))
+            } else {
+                null
+            }
+        }
+    }
+
 
     /** Se ejecuta antes de abrir la base: activa la verificacion de claves foraneas. */
     override fun onConfigure(db: SQLiteDatabase) {
@@ -133,6 +196,7 @@ class PagoFlexDbHelper private constructor(context: Context) :
         db.execSQL(SQL_CREAR_COMPROMISOS)
         db.execSQL(SQL_CREAR_PAGOS)
         db.execSQL(SQL_CREAR_REPORTES)
+        db.execSQL(SQL_CREAR_RECONOCIMIENTOS)
         precargarDatos(db)
     }
 
@@ -146,6 +210,9 @@ class PagoFlexDbHelper private constructor(context: Context) :
             db.execSQL(
                 "ALTER TABLE $TABLA_USUARIOS ADD COLUMN foto_perfil BLOB"
             )
+        }
+        if (oldVersion < 4) {
+            db.execSQL(SQL_CREAR_RECONOCIMIENTOS)
         }
     }
 

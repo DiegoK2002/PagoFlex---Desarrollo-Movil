@@ -18,7 +18,9 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import cl.fintech.pagoflex.util.IndicadorCumplimiento
 import cl.fintech.pagoflex.util.calcularIndicadorCumplimiento
-
+import cl.fintech.pagoflex.util.Reconocimiento
+import cl.fintech.pagoflex.util.calcularReconocimientosPorPagos
+import cl.fintech.pagoflex.util.cumpleMetaEjemplar
 
 /**
  * Compromisos y pagos de la persona con sesion iniciada, leidos desde SQLite. Lo comparten la
@@ -53,6 +55,15 @@ class CompromisosViewModel(application: Application) : AndroidViewModel(applicat
     val indicadorCumplimiento: StateFlow<IndicadorCumplimiento> =
         _indicadorCumplimiento.asStateFlow()
 
+
+    private val _reconocimientos = MutableStateFlow<List<Reconocimiento>>(
+        emptyList()
+    )
+
+    val reconocimientos: StateFlow<List<Reconocimiento>> =
+        _reconocimientos.asStateFlow()
+
+
     // Monto realmente pagado por cada compromiso ya pagado, indexado por folio
     private var montosPagados: Map<String, Int> = emptyMap()
 
@@ -72,6 +83,7 @@ class CompromisosViewModel(application: Application) : AndroidViewModel(applicat
         _compromisos.value = emptyList()
         _pagos.value = emptyList()
         _indicadorCumplimiento.value = IndicadorCumplimiento(0, 0)
+        _reconocimientos.value = emptyList()
     }
 
     /** Vuelve a leer desde la base de datos. Los montos pagados se actualizan antes que la lista. */
@@ -85,6 +97,22 @@ class CompromisosViewModel(application: Application) : AndroidViewModel(applicat
         _indicadorCumplimiento.value = calcularIndicadorCumplimiento(
             compromisos = _compromisos.value,
             pagos = _pagos.value
+        )
+
+        if (cumpleMetaEjemplar(_indicadorCumplimiento.value)) {
+            bd.registrarReconocimientoEjemplar(
+                idUsuario = idUsuario,
+                fecha = LocalDate.now()
+            )
+        }
+
+        _reconocimientos.value = calcularReconocimientosPorPagos(
+            _pagos.value
+        ) + Reconocimiento(
+            titulo = "Cumplimiento ejemplar",
+            descripcion = "Alcanzaste al menos un 95 % de cumplimiento en tus compromisos evaluables.",
+            fechaObtenida = bd.fechaReconocimientoEjemplar(idUsuario),
+            faltantes = 0
         )
     }
 

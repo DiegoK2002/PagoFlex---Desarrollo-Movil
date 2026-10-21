@@ -65,6 +65,7 @@ fun CompromisosScreen(
     importeDe: (Compromiso) -> Int,
     onVerDetalle: (String) -> Unit,
     onVerHistorial: () -> Unit,
+    onVerReconocimientos: () -> Unit,
     onVerPerfil: () -> Unit,
     onSalir: () -> Unit
 
@@ -113,6 +114,15 @@ fun CompromisosScreen(
                     onClick = {
                         scope.launch { drawerState.close() }
                         onVerHistorial()
+                    }
+                )
+
+                NavigationDrawerItem(
+                    label = { Text("Mis reconocimientos") },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        onVerReconocimientos()
                     }
                 )
 
