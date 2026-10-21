@@ -1,0 +1,24 @@
+PagoFlex — Índice de evidencias de interfaz
+Capturas tomadas el 21 de octubre de 2026.
+Las evidencias 01 a 09 corresponden a las principales pantallas solicitadas.
+
+01_inicio_usuario.png — Mis compromisos en CLP, resumen mensual y tarjetas de compromisos (original 185159).
+02_detalle_compromiso.png — Detalle de compromiso pendiente con la opción de pago (original 185321).
+03_comprobante.png — Comprobante del pago simulado (original 185436).
+04_historial.png — Historial de pagos, filtros e indicador de cumplimiento (original 185513).
+05_reconocimientos.png — Cuatro reconocimientos y su progreso (original 185620).
+06_perfil.png — Perfil del usuario con controles de cámara y galería (original 185657).
+07_reportes_agente.png — Listado de reportes abiertos del agente (original 190132).
+08_reporte_resuelto.png — Detalle del usuario con reporte resuelto y respuesta (original 190519).
+09_cotizaciones.png — Visualización EUR con cotización externa y equivalentes CLP (original 185807).
+10_inicio_sesion.png — Pantalla de inicio de sesión (original 185053).
+11_registro_usuario.png — Formulario de creación de cuenta (original 185129).
+12_detalle_compromiso_pagado.png — Detalle de compromiso pagado con enlace al comprobante (original 185238).
+13_detalle_compromiso_vencido.png — Detalle vencido con cálculo de días de atraso y recargo (original 185259).
+14_confirmacion_pago.png — Diálogo de confirmación del pago simulado (original 185419).
+15_reportar_problema.png — Formulario de reporte de problema (original 185905).
+16_reportar_problema_con_comentario.png — Formulario de reporte con comentario ingresado (original 185916).
+17_compromiso_en_revision.png — Detalle bloqueado por reporte en revisión (original 185946).
+18_menu_lateral.png — Menú lateral de usuario final (original 190056).
+19_confirmacion_cierre_sesion.png — Confirmación de cierre de sesión (original 190026).
+20_reportes_agente_en_gestion.png — Agente gestionando un reporte con respuesta (original 190238).
