@@ -159,7 +159,7 @@ class RegistroViewModel(application: Application) : AndroidViewModel(application
             correo = e.correo,
             contrasenaHash = Seguridad.hashContrasena(e.correo, e.contrasena),
             comuna = e.comuna,
-            rol = e.rol
+            rol = Rol.USUARIO_FINAL
         )
 
         if (id == -1L) {

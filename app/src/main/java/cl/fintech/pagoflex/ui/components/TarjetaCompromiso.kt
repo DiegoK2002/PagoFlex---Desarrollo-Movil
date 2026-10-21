@@ -76,7 +76,19 @@ fun TarjetaCompromiso(
         ) {
             Text(nombreEmpresa, style = MaterialTheme.typography.titleMedium)
             Text(textoConcepto(compromiso), style = MaterialTheme.typography.bodyMedium)
-            Text(formatearPesos(importe), style = MaterialTheme.typography.titleLarge)
+
+            Text(
+                importeConvertido ?: formatearPesos(importe),
+                style = MaterialTheme.typography.titleLarge
+            )
+
+            if (importeConvertido != null) {
+                Text(
+                    "Equivalente aproximado. Importe real: ${formatearPesos(importe)} CLP",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
             if (avisoRecargo != null) {
                 Text(avisoRecargo, style = MaterialTheme.typography.bodySmall)
             }

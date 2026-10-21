@@ -43,6 +43,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Card
 import cl.fintech.pagoflex.viewmodel.EstadoUf
 import java.util.Locale
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.FilterChip
+import androidx.compose.runtime.saveable.rememberSaveable
 
 /**
  * Pantalla principal del usuario final: lista de sus compromisos y menu lateral con
@@ -70,6 +73,8 @@ fun CompromisosScreen(
 
     // Indica si se muestra la confirmacion para cerrar sesion
     var mostrarDialogo by remember { mutableStateOf(false) }
+
+    var monedaSeleccionada by rememberSaveable { mutableStateOf("CLP") }
 
     if (mostrarDialogo) {
         AlertDialog(
@@ -161,71 +166,114 @@ fun CompromisosScreen(
                 ) {
 
                     item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth()
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Column(
-                                modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            Text(
+                                "Moneda de visualización",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Text(
-                                    "Indicador económico: UF",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-
-                                when {
-                                    estadoUf.cargando -> {
-                                        Text("Consultando valor de la UF...")
+                                listOf("CLP", "EUR", "USD").forEach { moneda ->
+                                    val disponible = when (moneda) {
+                                        "EUR" -> (estadoUf.valorEuro ?: 0.0) > 0.0
+                                        "USD" -> (estadoUf.valorDolar ?: 0.0) > 0.0
+                                        else -> true
                                     }
 
-                                    estadoUf.valor != null -> {
-                                        val valorFormateado = String.format(
-                                            Locale.forLanguageTag("es-CL"),
-                                            "%,.2f",
-                                            estadoUf.valor
-                                        )
+                                    FilterChip(
+                                        selected = monedaSeleccionada == moneda,
+                                        onClick = {
+                                            monedaSeleccionada = moneda
+                                        },
+                                        enabled = disponible,
+                                        label = { Text(moneda) }
+                                    )
+                                }
+                            }
 
-                                        val fechaFormateada = estadoUf.fecha
-                                            ?.split("-")
-                                            ?.reversed()
-                                            ?.joinToString("-") ?: "No disponible"
-
-                                        Text(
-                                            "1 UF = $ $valorFormateado",
-                                            style = MaterialTheme.typography.titleLarge
-                                        )
-
-                                        Text("Fecha: $fechaFormateada")
-                                    }
-
-                                    estadoUf.error != null -> {
-                                        Text(
-                                            estadoUf.error,
-                                            color = MaterialTheme.colorScheme.error
-                                        )
-                                    }
-
-                                    else -> {
-                                        Text("Valor de la UF no disponible.")
-                                    }
+                            if (monedaSeleccionada != "CLP") {
+                                val fecha = when (monedaSeleccionada) {
+                                    "EUR" -> estadoUf.fechaEuro
+                                    "USD" -> estadoUf.fechaDolar
+                                    else -> null
                                 }
 
+                                val fechaFormateada = fecha
+                                    ?.split("-")
+                                    ?.reversed()
+                                    ?.joinToString("-") ?: "No disponible"
+
+
+                                val cotizacionActual = when (monedaSeleccionada) {
+                                    "EUR" -> estadoUf.valorEuro
+                                    "USD" -> estadoUf.valorDolar
+                                    else -> null
+                                }
+
+                                if (cotizacionActual != null && cotizacionActual > 0.0) {
+                                    val cotizacionFormateada = String.format(
+                                        Locale.forLanguageTag("es-CL"),
+                                        "%,.2f",
+                                        cotizacionActual
+                                    )
+
+                                    Text(
+                                        "1 $monedaSeleccionada = $cotizacionFormateada CLP",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+
+
                                 Text(
-                                    "Fuente: mindicador.cl",
+                                    "Conversión aproximada al $fechaFormateada. " +
+                                            "Los pagos reales se realizan en CLP. " +
+                                            "Fuente: mindicador.cl",
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
                         }
                     }
 
+
+
                     items(compromisos) { compromiso ->
+                        val importe = importeDe(compromiso)
+
+                        val cotizacion = when (monedaSeleccionada) {
+                            "EUR" -> estadoUf.valorEuro
+                            "USD" -> estadoUf.valorDolar
+                            else -> null
+                        }
+
+                        val importeConvertido = if (
+                            cotizacion != null && cotizacion > 0.0
+                        ) {
+                            val idioma = if (monedaSeleccionada == "EUR") {
+                                Locale.GERMANY
+                            } else {
+                                Locale.US
+                            }
+
+                            val monto = importe.toDouble() / cotizacion
+
+                            "$monedaSeleccionada ${String.format(idioma, "%,.2f", monto)}"
+                        } else {
+                            null
+                        }
+
                         TarjetaCompromiso(
                             compromiso = compromiso,
                             nombreEmpresa = nombreEmpresa(compromiso.codigoEmpresa),
-                            importe = importeDe(compromiso),
+                            importe = importe,
+                            importeConvertido = importeConvertido,
                             onClick = { onVerDetalle(compromiso.folio) }
                         )
                     }
+
                 }
             }
         }
