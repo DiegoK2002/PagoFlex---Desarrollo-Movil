@@ -442,14 +442,21 @@ class PagoFlexDbHelper private constructor(
                 put("estado", EstadoCompromiso.PAGADO.name)
             }
             // Solo se actualiza si el compromiso sigue sin pagar; asi no se puede pagar dos veces
+
             val filas = db.update(
-                TABLA_COMPROMISOS, valoresEstado, "folio = ? AND estado IN (?, ?)",
+                TABLA_COMPROMISOS,
+                valoresEstado,
+                "folio = ? AND id_usuario = ? AND codigo_empresa = ? " +
+                        "AND estado IN (?, ?)",
                 arrayOf(
                     pago.folioCompromiso,
+                    pago.idUsuario.toString(),
+                    pago.codigoEmpresa,
                     EstadoCompromiso.PENDIENTE.name,
                     EstadoCompromiso.VENCIDO.name
                 )
             )
+
 
             if (idPago != -1L && filas == 1) {
                 db.setTransactionSuccessful()   // confirma los dos cambios

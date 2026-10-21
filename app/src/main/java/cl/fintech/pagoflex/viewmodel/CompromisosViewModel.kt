@@ -185,14 +185,17 @@ class CompromisosViewModel(application: Application) : AndroidViewModel(applicat
     // Pago
     // ------------------------------------------------------------------
 
-    /**
-     * Confirma el pago: guarda el comprobante y deja el compromiso como Pagado.
-     * Devuelve el comprobante, o null si no se pudo pagar.
-     */
+
     fun pagar(compromiso: Compromiso): Pago? {
-        // Se usa el estado actual guardado en memoria, no la copia que recibio la pantalla,
-        // que podria estar desactualizada si se toco el boton dos veces
-        val actual = _compromisos.value.firstOrNull { it.folio == compromiso.folio } ?: return null
+        if (idUsuario <= 0L || compromiso.idUsuario != idUsuario) {
+            return null
+        }
+
+        val actual = _compromisos.value.firstOrNull {
+            it.folio == compromiso.folio &&
+                    it.idUsuario == idUsuario
+        } ?: return null
+
         if (motivoDe(actual) != null) return null
 
         // Concepto del comprobante, con la cuota cuando corresponde: "Credito de consumo 8/24"

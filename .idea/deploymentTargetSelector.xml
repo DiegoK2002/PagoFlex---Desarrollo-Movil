@@ -13,18 +13,18 @@
         </DropdownSelection>
         <DialogSelection />
       </SelectionState>
-      <SelectionState runConfigName="ReconocimientoEjemplarDbTest">
+      <SelectionState runConfigName="Tests in 'cl.fintech.pagoflex'">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-10-21T19:16:07.679269100Z">
+        <DropdownSelection timestamp="2026-10-21T02:12:58.115148700Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\diego\.android\avd\Pixel_9a.avd" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=R7AY404YYPL" />
             </handle>
           </Target>
         </DropdownSelection>
         <DialogSelection />
       </SelectionState>
-      <SelectionState runConfigName="Tests in 'cl.fintech.pagoflex'">
+      <SelectionState runConfigName="RegistrarPagoDbTest">
         <option name="selectionMode" value="DROPDOWN" />
         <DropdownSelection timestamp="2026-10-21T02:12:58.115148700Z">
           <Target type="DEFAULT_BOOT">
