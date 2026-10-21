@@ -38,6 +38,11 @@ import cl.fintech.pagoflex.ui.styles.EstilosTarjeta
 import cl.fintech.pagoflex.ui.theme.Dimens
 import cl.fintech.pagoflex.util.formatearFecha
 import cl.fintech.pagoflex.util.formatearPesos
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.unit.dp
+import cl.fintech.pagoflex.model.Reporte
 
 /**
  * Detalle de un compromiso y pago. Si esta vencido muestra los dias de atraso y el recargo;
@@ -63,10 +68,17 @@ fun DetalleCompromisoScreen(
     anterior: Compromiso?,
     onVolver: () -> Unit,
     onConfirmarPago: () -> Unit,
-    onVerComprobante: () -> Unit
+    onVerComprobante: () -> Unit,
+    onCrearReporte: (String, String) -> Boolean,
+    reporteActual: Reporte?
 ) {
     // Indica si se muestra la ventana de confirmacion del pago
     var mostrarConfirmacion by remember { mutableStateOf(false) }
+
+    var mostrarFormulario by remember { mutableStateOf(false) }
+    var motivoReporte by remember { mutableStateOf("Ya pagué por otro medio") }
+    var comentarioReporte by remember { mutableStateOf("") }
+    var errorReporte by remember { mutableStateOf(false) }
 
     val estaPagado = compromiso.estado == EstadoCompromiso.PAGADO
 
@@ -159,6 +171,49 @@ fun DetalleCompromisoScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+
+
+            if (
+                compromiso.estado == EstadoCompromiso.PENDIENTE ||
+                compromiso.estado == EstadoCompromiso.VENCIDO
+            ) {
+                BotonSecundario(
+                    texto = "Reportar un problema",
+                    onClick = {
+                        motivoReporte = "Ya pagué por otro medio"
+                        comentarioReporte = ""
+                        errorReporte = false
+                        mostrarFormulario = true
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            if (reporteActual != null) {
+                Card(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(Dimens.espacioMedio),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
+                    ) {
+                        Text(
+                            "Seguimiento del reporte",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+
+                        Text("Estado: ${reporteActual.estado}")
+                        Text("Motivo: ${reporteActual.motivo}")
+
+                        if (reporteActual.respuesta.isNullOrBlank()) {
+                            Text("Todavía no hay respuesta del agente.")
+                        } else {
+                            Text("Respuesta del agente: ${reporteActual.respuesta}")
+                        }
+                    }
+                }
+            }
+
         }
     }
 
@@ -179,6 +234,92 @@ fun DetalleCompromisoScreen(
             }
         )
     }
+
+
+    if (mostrarFormulario) {
+        val motivos = listOf(
+            "Ya pagué por otro medio",
+            "No reconozco este cobro",
+            "El monto no corresponde",
+            "Otro"
+        )
+
+        AlertDialog(
+            onDismissRequest = { mostrarFormulario = false },
+            title = { Text("Reportar un problema") },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .heightIn(max = 380.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    motivos.forEach { opcion ->
+                        FilterChip(
+                            selected = motivoReporte == opcion,
+                            onClick = {
+                                motivoReporte = opcion
+                                errorReporte = false
+                            },
+                            label = { Text(opcion) },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    OutlinedTextField(
+                        value = comentarioReporte,
+                        onValueChange = {
+                            comentarioReporte = it
+                            errorReporte = false
+                        },
+                        label = {
+                            Text(
+                                if (motivoReporte == "Otro")
+                                    "Explicación obligatoria"
+                                else
+                                    "Comentario (opcional)"
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2
+                    )
+
+                    if (errorReporte) {
+                        Text(
+                            "No se pudo registrar el reporte.",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = motivoReporte != "Otro" ||
+                            comentarioReporte.isNotBlank(),
+                    onClick = {
+                        val guardado = onCrearReporte(
+                            motivoReporte,
+                            comentarioReporte
+                        )
+
+                        if (guardado) {
+                            mostrarFormulario = false
+                        } else {
+                            errorReporte = true
+                        }
+                    }
+                ) {
+                    Text("Enviar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarFormulario = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
 }
 
 /** Mensaje para la persona segun el motivo por el que no se puede pagar. */

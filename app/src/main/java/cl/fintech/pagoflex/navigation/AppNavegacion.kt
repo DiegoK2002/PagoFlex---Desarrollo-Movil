@@ -21,6 +21,7 @@ import cl.fintech.pagoflex.ui.screens.RegistroScreen
 import cl.fintech.pagoflex.util.ocultarRut
 import cl.fintech.pagoflex.viewmodel.CompromisosViewModel
 import cl.fintech.pagoflex.viewmodel.SesionViewModel
+import cl.fintech.pagoflex.viewmodel.ReportesViewModel
 
 /**
  * Mapa de navegacion de la app: define que pantalla se muestra en cada ruta y como se pasa
@@ -37,10 +38,12 @@ fun AppNavegacion() {
     val navController = rememberNavController()
     val sesionViewModel: SesionViewModel = viewModel()
     val compromisosViewModel: CompromisosViewModel = viewModel()
+    val reportesViewModel: ReportesViewModel = viewModel()
 
     // Estados observados: la pantalla se redibuja cuando cambian
     val usuarioActual by sesionViewModel.usuarioActual.collectAsStateWithLifecycle()
     val compromisos by compromisosViewModel.compromisos.collectAsStateWithLifecycle()
+    val reportes by reportesViewModel.reportes.collectAsStateWithLifecycle()
 
     // Cierra la sesion, borra los datos en memoria y vuelve al inicio de sesion sin dejar historial
     val cerrarSesion = {
@@ -49,6 +52,7 @@ fun AppNavegacion() {
         navController.navigate(Ruta.InicioSesion.ruta) {
             popUpTo(navController.graph.id) { inclusive = true }
         }
+        reportesViewModel.limpiar()
     }
 
     NavHost(navController = navController, startDestination = Ruta.InicioSesion.ruta) {
@@ -59,6 +63,7 @@ fun AppNavegacion() {
                 onInicioExitoso = { usuario ->
                     sesionViewModel.iniciarSesion(usuario)
                     compromisosViewModel.cargar(usuario.id)
+                    reportesViewModel.cargar(usuario)
                     val destino = when (usuario.rol) {
                         Rol.USUARIO_FINAL -> Ruta.Compromisos.ruta
                         Rol.AGENTE -> Ruta.InicioAgente.ruta
@@ -108,7 +113,17 @@ fun AppNavegacion() {
         composable(Ruta.InicioAgente.ruta) {
             val usuario = usuarioActual
             if (usuario != null) {
-                InicioAgenteScreen(usuario = usuario, onSalir = cerrarSesion)
+                InicioAgenteScreen(
+                    usuario = usuario,
+                    onSalir = cerrarSesion,
+                    reportes = reportes,
+                    onTomarReporte = { idReporte ->
+                        reportesViewModel.tomarReporte(idReporte)
+                    },
+                    onResolverReporte = { idReporte, respuesta ->
+                        reportesViewModel.resolverReporte(idReporte, respuesta)
+                    }
+                )
             }
         }
 
@@ -141,7 +156,27 @@ fun AppNavegacion() {
                     },
                     onVerComprobante = {
                         navController.navigate(Ruta.Comprobante.crear(compromiso.folio))
+                    },
+
+                    onCrearReporte = { motivo, comentario ->
+                        val guardado = reportesViewModel.crearReporte(
+                            compromiso.folio,
+                            motivo,
+                            comentario
+                        )
+
+                        if (guardado) {
+                            compromisosViewModel.actualizar()
+                        }
+
+                        guardado
+                    },
+
+                    reporteActual = reportes.firstOrNull {
+                        it.folio == compromiso.folio
                     }
+
+
                 )
             }
         }

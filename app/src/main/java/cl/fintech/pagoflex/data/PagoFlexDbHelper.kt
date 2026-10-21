@@ -13,6 +13,7 @@ import cl.fintech.pagoflex.model.Usuario
 import cl.fintech.pagoflex.util.Seguridad
 import java.time.LocalDate
 import java.time.LocalDateTime
+import cl.fintech.pagoflex.model.Reporte
 
 /**
  * Base de datos SQLite de la app (archivo pagoflex.db). Crea las tablas la primera vez que se abre,
@@ -34,7 +35,7 @@ class PagoFlexDbHelper private constructor(context: Context) :
         private const val NOMBRE_BD = "pagoflex.db"
 
         // Al subir este numero, SQLite llama a onUpgrade y la base se vuelve a crear
-        private const val VERSION_BD = 2
+        private const val VERSION_BD = 3
 
         // Contrasena de las cuentas de ejemplo precargadas
         private const val CLAVE_DEMO = "Demo1234"
@@ -59,8 +60,9 @@ class PagoFlexDbHelper private constructor(context: Context) :
                 "apellidos TEXT NOT NULL, " +
                 "correo TEXT NOT NULL UNIQUE, " +
                 "contrasena_hash TEXT NOT NULL, " +
-                "comuna TEXT NOT NULL, " +
-                "id_rol INTEGER NOT NULL REFERENCES $TABLA_ROLES(id_rol))"
+                "comuna TEXT NOT NULL, " + "id_rol INTEGER NOT NULL REFERENCES $TABLA_ROLES(id_rol), " +
+                "foto_perfil BLOB)"
+
 
         private const val SQL_CREAR_EMPRESAS =
             "CREATE TABLE $TABLA_EMPRESAS (" +
@@ -135,15 +137,18 @@ class PagoFlexDbHelper private constructor(context: Context) :
     }
 
     /** Al cambiar la version se borran las tablas (en orden inverso a su creacion) y se vuelven a crear. */
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        db.execSQL("DROP TABLE IF EXISTS $TABLA_REPORTES")
-        db.execSQL("DROP TABLE IF EXISTS $TABLA_PAGOS")
-        db.execSQL("DROP TABLE IF EXISTS $TABLA_COMPROMISOS")
-        db.execSQL("DROP TABLE IF EXISTS $TABLA_EMPRESAS")
-        db.execSQL("DROP TABLE IF EXISTS $TABLA_USUARIOS")
-        db.execSQL("DROP TABLE IF EXISTS $TABLA_ROLES")
-        onCreate(db)
+    override fun onUpgrade(
+        db: SQLiteDatabase,
+        oldVersion: Int,
+        newVersion: Int
+    ) {
+        if (oldVersion < 3) {
+            db.execSQL(
+                "ALTER TABLE $TABLA_USUARIOS ADD COLUMN foto_perfil BLOB"
+            )
+        }
     }
+
 
     // ------------------------------------------------------------------
     // Usuarios
@@ -165,6 +170,44 @@ class PagoFlexDbHelper private constructor(context: Context) :
         }
         return writableDatabase.insert(TABLA_USUARIOS, null, valores)
     }
+
+    fun guardarFotoPerfil(idUsuario: Long, foto: ByteArray): Boolean {
+        if (idUsuario <= 0L || foto.isEmpty()) {
+            return false
+        }
+
+        val valores = ContentValues().apply {
+            put("foto_perfil", foto)
+        }
+
+        val filasActualizadas = writableDatabase.update(
+            TABLA_USUARIOS,
+            valores,
+            "id_usuario = ?",
+            arrayOf(idUsuario.toString())
+        )
+
+        return filasActualizadas == 1
+    }
+
+
+    fun fotoPerfilDeUsuario(idUsuario: Long): ByteArray? {
+        if (idUsuario <= 0L) {
+            return null
+        }
+
+        return readableDatabase.rawQuery(
+            "SELECT foto_perfil FROM $TABLA_USUARIOS WHERE id_usuario = ?",
+            arrayOf(idUsuario.toString())
+        ).use { cursor ->
+            if (cursor.moveToFirst() && !cursor.isNull(0)) {
+                cursor.getBlob(0)
+            } else {
+                null
+            }
+        }
+    }
+
 
     /** Indica si ya existe una cuenta con ese correo. */
     fun existeCorreo(correo: String): Boolean =
@@ -298,6 +341,275 @@ class PagoFlexDbHelper private constructor(context: Context) :
         }
     }
 
+    fun compromisoPerteneceAUsuario(
+        folio: String,
+        idUsuario: Long
+    ): Boolean {
+        return readableDatabase.rawQuery(
+            "SELECT 1 FROM $TABLA_COMPROMISOS WHERE folio = ? AND id_usuario = ?",
+            arrayOf(folio, idUsuario.toString())
+        ).use { cursor ->
+            cursor.moveToFirst()
+        }
+    }
+
+    fun compromisoPermiteReporte(folio: String): Boolean {
+        return readableDatabase.rawQuery(
+            "SELECT 1 FROM $TABLA_COMPROMISOS WHERE folio = ? AND estado IN (?, ?)",
+            arrayOf(
+                folio,
+                EstadoCompromiso.PENDIENTE.name,
+                EstadoCompromiso.VENCIDO.name
+            )
+        ).use { cursor ->
+            cursor.moveToFirst()
+        }
+    }
+
+    fun existeReporteActivo(folio: String): Boolean {
+        return readableDatabase.rawQuery(
+            "SELECT 1 FROM $TABLA_REPORTES WHERE folio = ? AND estado IN (?, ?) LIMIT 1",
+            arrayOf(folio, "Abierto", "En gestión")
+        ).use { cursor ->
+            cursor.moveToFirst()
+        }
+    }
+
+    fun registrarReporte(
+        folio: String,
+        idUsuario: Long,
+        motivo: String,
+        comentario: String?
+    ): Long {
+        val motivoLimpio = motivo.trim()
+        val comentarioLimpio = comentario?.trim()
+
+        val motivosPermitidos = setOf(
+            "Ya pagué por otro medio",
+            "No reconozco este cobro",
+            "El monto no corresponde",
+            "Otro"
+        )
+
+        if (folio.isBlank() || idUsuario <= 0L || motivoLimpio !in motivosPermitidos) {
+            return -1L
+        }
+
+        if (motivoLimpio == "Otro" && comentarioLimpio.isNullOrBlank()) {
+            return -1L
+        }
+
+        val db = writableDatabase
+        db.beginTransaction()
+
+        try {
+            if (!compromisoPerteneceAUsuario(folio, idUsuario)) {
+                return -1L
+            }
+
+            if (!compromisoPermiteReporte(folio)) {
+                return -1L
+            }
+
+            if (existeReporteActivo(folio)) {
+                return -1L
+            }
+
+            val valores = ContentValues().apply {
+                put("folio", folio)
+                put("id_usuario", idUsuario)
+                put("motivo", motivoLimpio)
+                put("comentario", comentarioLimpio)
+                put("estado", "Abierto")
+                put("fecha_creacion", LocalDateTime.now().toString())
+            }
+
+            val idReporte = db.insert(TABLA_REPORTES, null, valores)
+
+            if (idReporte == -1L) {
+                return -1L
+            }
+
+            val valoresEstado = ContentValues().apply {
+                put("estado", EstadoCompromiso.EN_REVISION.name)
+            }
+
+            val filasActualizadas = db.update(
+                TABLA_COMPROMISOS,
+                valoresEstado,
+                "folio = ? AND id_usuario = ? AND estado IN (?, ?)",
+                arrayOf(
+                    folio,
+                    idUsuario.toString(),
+                    EstadoCompromiso.PENDIENTE.name,
+                    EstadoCompromiso.VENCIDO.name
+                )
+            )
+
+            if (filasActualizadas != 1) {
+                return -1L
+            }
+
+            db.setTransactionSuccessful()
+            return idReporte
+
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+
+    fun reportesDeUsuario(idUsuario: Long): List<Reporte> {
+        val lista = mutableListOf<Reporte>()
+
+        readableDatabase.rawQuery(
+            "SELECT * FROM $TABLA_REPORTES WHERE id_usuario = ? ORDER BY fecha_creacion DESC, id_reporte DESC",
+            arrayOf(idUsuario.toString())
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                lista.add(leerReporte(cursor))
+            }
+        }
+
+        return lista
+    }
+
+    fun reportesParaAgente(): List<Reporte> {
+        val lista = mutableListOf<Reporte>()
+
+        readableDatabase.rawQuery(
+            "SELECT * FROM $TABLA_REPORTES ORDER BY fecha_creacion DESC, id_reporte DESC",
+            null
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                lista.add(leerReporte(cursor))
+            }
+        }
+
+        return lista
+    }
+
+
+    fun tomarReporte(idReporte: Long, idAgente: Long): Boolean {
+        if (idReporte <= 0L || idAgente <= 0L) {
+            return false
+        }
+
+        val db = writableDatabase
+
+        val esAgente = db.rawQuery(
+            "SELECT 1 FROM $TABLA_USUARIOS WHERE id_usuario = ? AND id_rol = ? LIMIT 1",
+            arrayOf(idAgente.toString(), Rol.AGENTE.id.toString())
+        ).use { cursor ->
+            cursor.moveToFirst()
+        }
+
+        if (!esAgente) {
+            return false
+        }
+
+        val valores = ContentValues().apply {
+            put("id_agente", idAgente)
+            put("estado", "En gestión")
+        }
+
+        val filasActualizadas = db.update(
+            TABLA_REPORTES,
+            valores,
+            "id_reporte = ? AND estado = ? AND id_agente IS NULL",
+            arrayOf(idReporte.toString(), "Abierto")
+        )
+
+        return filasActualizadas == 1
+    }
+
+
+    fun resolverReporte(
+        idReporte: Long,
+        idAgente: Long,
+        respuesta: String
+    ): Boolean {
+        val respuestaLimpia = respuesta.trim()
+
+        if (idReporte <= 0L || idAgente <= 0L || respuestaLimpia.isBlank()) {
+            return false
+        }
+
+        val db = writableDatabase
+        db.beginTransaction()
+
+        try {
+            val compromiso = db.rawQuery(
+                """
+            SELECT c.folio, c.fecha_vencimiento
+            FROM $TABLA_REPORTES r
+            JOIN $TABLA_COMPROMISOS c ON r.folio = c.folio
+            JOIN $TABLA_USUARIOS u ON r.id_agente = u.id_usuario
+            WHERE r.id_reporte = ?
+            AND r.id_agente = ?
+            AND r.estado = ?
+            AND c.estado = ?
+            AND u.id_rol = ?
+            LIMIT 1
+            """.trimIndent(),
+                arrayOf(
+                    idReporte.toString(),
+                    idAgente.toString(),
+                    "En gestión",
+                    EstadoCompromiso.EN_REVISION.name,
+                    Rol.AGENTE.id.toString()
+                )
+            ).use { cursor ->
+                if (cursor.moveToFirst()) {
+                    Pair(cursor.getString(0), cursor.getString(1))
+                } else {
+                    null
+                }
+            } ?: return false
+
+            val valoresReporte = ContentValues().apply {
+                put("estado", "Resuelto")
+                put("respuesta", respuestaLimpia)
+            }
+
+            val filasReporte = db.update(
+                TABLA_REPORTES,
+                valoresReporte,
+                "id_reporte = ? AND id_agente = ? AND estado = ?",
+                arrayOf(idReporte.toString(), idAgente.toString(), "En gestión")
+            )
+
+            val vencimiento = LocalDate.parse(compromiso.second)
+
+            val nuevoEstado = if (vencimiento.isBefore(LocalDate.now())) {
+                EstadoCompromiso.VENCIDO
+            } else {
+                EstadoCompromiso.PENDIENTE
+            }
+
+            val valoresCompromiso = ContentValues().apply {
+                put("estado", nuevoEstado.name)
+            }
+
+            val filasCompromiso = db.update(
+                TABLA_COMPROMISOS,
+                valoresCompromiso,
+                "folio = ? AND estado = ?",
+                arrayOf(compromiso.first, EstadoCompromiso.EN_REVISION.name)
+            )
+
+            if (filasReporte != 1 || filasCompromiso != 1) {
+                return false
+            }
+
+            db.setTransactionSuccessful()
+            return true
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+
     // ------------------------------------------------------------------
     // Conversion de filas a objetos
     // ------------------------------------------------------------------
@@ -342,6 +654,24 @@ class PagoFlexDbHelper private constructor(context: Context) :
         aTiempo = c.getInt(c.getColumnIndexOrThrow("a_tiempo")) == 1,
         medioPago = c.getString(c.getColumnIndexOrThrow("medio_pago"))
     )
+
+    private fun leerReporte(c: Cursor): Reporte {
+        val indiceAgente = c.getColumnIndexOrThrow("id_agente")
+
+        return Reporte(
+            idReporte = c.getLong(c.getColumnIndexOrThrow("id_reporte")),
+            folio = c.getString(c.getColumnIndexOrThrow("folio")),
+            idUsuario = c.getLong(c.getColumnIndexOrThrow("id_usuario")),
+            motivo = c.getString(c.getColumnIndexOrThrow("motivo")),
+            comentario = c.getString(c.getColumnIndexOrThrow("comentario")),
+            estado = c.getString(c.getColumnIndexOrThrow("estado")),
+            idAgente = if (c.isNull(indiceAgente)) null else c.getLong(indiceAgente),
+            respuesta = c.getString(c.getColumnIndexOrThrow("respuesta")),
+            fechaCreacion = LocalDateTime.parse(
+                c.getString(c.getColumnIndexOrThrow("fecha_creacion"))
+            )
+        )
+    }
 
     // ------------------------------------------------------------------
     // Datos de ejemplo (todos ficticios)

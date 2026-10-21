@@ -61,6 +61,12 @@ class CompromisosViewModel(application: Application) : AndroidViewModel(applicat
         _compromisos.value = bd.compromisosDeUsuario(idUsuario)
     }
 
+    fun actualizar() {
+        if (idUsuario > 0L) {
+            recargar()
+        }
+    }
+
     fun nombreEmpresa(codigo: String): String = bd.nombreEmpresa(codigo)
 
     // ------------------------------------------------------------------
