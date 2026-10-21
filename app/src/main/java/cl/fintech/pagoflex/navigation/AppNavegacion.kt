@@ -23,6 +23,7 @@ import cl.fintech.pagoflex.viewmodel.CompromisosViewModel
 import cl.fintech.pagoflex.viewmodel.SesionViewModel
 import cl.fintech.pagoflex.viewmodel.ReportesViewModel
 import cl.fintech.pagoflex.viewmodel.FotoPerfilViewModel
+import cl.fintech.pagoflex.viewmodel.UfViewModel
 
 /**
  * Mapa de navegacion de la app: define que pantalla se muestra en cada ruta y como se pasa
@@ -40,12 +41,14 @@ fun AppNavegacion() {
     val sesionViewModel: SesionViewModel = viewModel()
     val compromisosViewModel: CompromisosViewModel = viewModel()
     val reportesViewModel: ReportesViewModel = viewModel()
+    val ufViewModel: UfViewModel = viewModel()
     val fotoPerfilViewModel: FotoPerfilViewModel = viewModel()
 
     // Estados observados: la pantalla se redibuja cuando cambian
     val usuarioActual by sesionViewModel.usuarioActual.collectAsStateWithLifecycle()
     val compromisos by compromisosViewModel.compromisos.collectAsStateWithLifecycle()
     val reportes by reportesViewModel.reportes.collectAsStateWithLifecycle()
+    val estadoUf by ufViewModel.estado.collectAsStateWithLifecycle()
     val fotoPerfil by fotoPerfilViewModel.fotoPerfil.collectAsStateWithLifecycle()
 
     // Cierra la sesion, borra los datos en memoria y vuelve al inicio de sesion sin dejar historial
@@ -69,6 +72,9 @@ fun AppNavegacion() {
                     sesionViewModel.iniciarSesion(usuario)
                     compromisosViewModel.cargar(usuario.id)
                     reportesViewModel.cargar(usuario)
+                    if (usuario.rol == Rol.USUARIO_FINAL) {
+                        ufViewModel.consultar()
+                    }
                     val destino = when (usuario.rol) {
                         Rol.USUARIO_FINAL -> Ruta.Compromisos.ruta
                         Rol.AGENTE -> Ruta.InicioAgente.ruta
@@ -96,6 +102,7 @@ fun AppNavegacion() {
                 CompromisosScreen(
                     usuario = usuario,
                     compromisos = compromisos,
+                    estadoUf = estadoUf,
                     nombreEmpresa = compromisosViewModel::nombreEmpresa,
                     importeDe = compromisosViewModel::importeDe,
                     onVerDetalle = { folio -> navController.navigate(Ruta.Detalle.crear(folio)) },

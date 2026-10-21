@@ -38,6 +38,11 @@ import cl.fintech.pagoflex.model.Compromiso
 import cl.fintech.pagoflex.model.Usuario
 import cl.fintech.pagoflex.ui.components.TarjetaCompromiso
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.Card
+import cl.fintech.pagoflex.viewmodel.EstadoUf
+import java.util.Locale
 
 /**
  * Pantalla principal del usuario final: lista de sus compromisos y menu lateral con
@@ -52,6 +57,7 @@ import kotlinx.coroutines.launch
 fun CompromisosScreen(
     usuario: Usuario,
     compromisos: List<Compromiso>,
+    estadoUf: EstadoUf,
     nombreEmpresa: (String) -> String,
     importeDe: (Compromiso) -> Int,
     onVerDetalle: (String) -> Unit,
@@ -153,6 +159,65 @@ fun CompromisosScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    "Indicador económico: UF",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+
+                                when {
+                                    estadoUf.cargando -> {
+                                        Text("Consultando valor de la UF...")
+                                    }
+
+                                    estadoUf.valor != null -> {
+                                        val valorFormateado = String.format(
+                                            Locale.forLanguageTag("es-CL"),
+                                            "%,.2f",
+                                            estadoUf.valor
+                                        )
+
+                                        val fechaFormateada = estadoUf.fecha
+                                            ?.split("-")
+                                            ?.reversed()
+                                            ?.joinToString("-") ?: "No disponible"
+
+                                        Text(
+                                            "1 UF = $ $valorFormateado",
+                                            style = MaterialTheme.typography.titleLarge
+                                        )
+
+                                        Text("Fecha: $fechaFormateada")
+                                    }
+
+                                    estadoUf.error != null -> {
+                                        Text(
+                                            estadoUf.error,
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+
+                                    else -> {
+                                        Text("Valor de la UF no disponible.")
+                                    }
+                                }
+
+                                Text(
+                                    "Fuente: mindicador.cl",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                    }
+
                     items(compromisos) { compromiso ->
                         TarjetaCompromiso(
                             compromiso = compromiso,

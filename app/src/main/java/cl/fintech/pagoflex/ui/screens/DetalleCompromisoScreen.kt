@@ -43,6 +43,13 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.ui.unit.dp
 import cl.fintech.pagoflex.model.Reporte
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.provider.CalendarContract
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import java.time.LocalDate
+import java.time.ZoneOffset
 
 /**
  * Detalle de un compromiso y pago. Si esta vencido muestra los dias de atraso y el recargo;
@@ -81,6 +88,8 @@ fun DetalleCompromisoScreen(
     var errorReporte by remember { mutableStateOf(false) }
 
     val estaPagado = compromiso.estado == EstadoCompromiso.PAGADO
+
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -184,6 +193,66 @@ fun DetalleCompromisoScreen(
                         comentarioReporte = ""
                         errorReporte = false
                         mostrarFormulario = true
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            if (
+                (compromiso.estado == EstadoCompromiso.PENDIENTE ||
+                        compromiso.estado == EstadoCompromiso.VENCIDO) &&
+                !compromiso.fechaVencimiento.isBefore(LocalDate.now())
+            ) {
+                BotonSecundario(
+                    texto = "Agregar al calendario",
+                    onClick = {
+                        val inicio = compromiso.fechaVencimiento
+                            .atStartOfDay(ZoneOffset.UTC)
+                            .toInstant()
+                            .toEpochMilli()
+
+                        val fin = compromiso.fechaVencimiento
+                            .plusDays(1)
+                            .atStartOfDay(ZoneOffset.UTC)
+                            .toInstant()
+                            .toEpochMilli()
+
+                        val intent = Intent(Intent.ACTION_INSERT).apply {
+                            data = CalendarContract.Events.CONTENT_URI
+
+                            putExtra(
+                                CalendarContract.EXTRA_EVENT_BEGIN_TIME,
+                                inicio
+                            )
+                            putExtra(
+                                CalendarContract.EXTRA_EVENT_END_TIME,
+                                fin
+                            )
+                            putExtra(
+                                CalendarContract.EXTRA_EVENT_ALL_DAY,
+                                true
+                            )
+                            putExtra(
+                                CalendarContract.Events.TITLE,
+                                "PagoFlex - ${textoConcepto(compromiso)}"
+                            )
+                            putExtra(
+                                CalendarContract.Events.DESCRIPTION,
+                                "Vencimiento con $nombreEmpresa. " +
+                                        "Folio: ${compromiso.folio}. " +
+                                        "Consulta PagoFlex para revisar tu compromiso."
+                            )
+                        }
+
+                        try {
+                            context.startActivity(intent)
+                        } catch (e: ActivityNotFoundException) {
+                            Toast.makeText(
+                                context,
+                                "No hay una aplicación de calendario disponible.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
