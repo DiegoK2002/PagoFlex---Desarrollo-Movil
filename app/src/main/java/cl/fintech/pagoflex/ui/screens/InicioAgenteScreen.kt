@@ -28,11 +28,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 
-
-/**
- * Pantalla de inicio del agente. Por ahora muestra sus datos y un boton para salir;
- * aqui se incorporara la lista de reportes de los usuarios finales para tomarlos y responderlos.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InicioAgenteScreen(
@@ -46,7 +41,6 @@ fun InicioAgenteScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Reportes") },
-                // El boton Salir es un TextButton: su color se define en el boton y no en la barra
                 actions = {
                     TextButton(
                         onClick = onSalir,

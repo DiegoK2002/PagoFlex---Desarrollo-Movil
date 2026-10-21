@@ -53,11 +53,9 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
-    //Librerias nuevas
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.1")
 
-    // NUEVO (Bloque 1): navegación entre pantallas (NavHost, NavController)
     implementation("androidx.navigation:navigation-compose:2.10.2")
 
     implementation("androidx.compose.material:material-icons-extended")

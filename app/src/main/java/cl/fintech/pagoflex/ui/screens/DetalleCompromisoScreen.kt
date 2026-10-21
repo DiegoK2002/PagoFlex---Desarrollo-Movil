@@ -51,18 +51,6 @@ import androidx.compose.ui.platform.LocalContext
 import java.time.LocalDate
 import java.time.ZoneOffset
 
-/**
- * Detalle de un compromiso y pago. Si esta vencido muestra los dias de atraso y el recargo;
- * si ya esta pagado muestra lo que se pago y permite ver el comprobante.
- * El boton Pagar pide confirmacion y se desactiva, explicando el motivo, cuando no se puede pagar.
- * La decision de si se puede pagar la toma el ViewModel; esta pantalla solo muestra el resultado.
- *
- * @param diasAtraso dias de atraso (0 si no esta vencido).
- * @param recargo recargo por atraso en pesos (0 si no corresponde).
- * @param total importe del compromiso: monto mas recargo, o lo pagado si ya esta pagado.
- * @param motivoNoPago razon por la que no se puede pagar, o null si se puede.
- * @param anterior compromiso anterior sin pagar, cuando es el motivo del bloqueo.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetalleCompromisoScreen(
@@ -79,7 +67,7 @@ fun DetalleCompromisoScreen(
     onCrearReporte: (String, String) -> Boolean,
     reporteActual: Reporte?
 ) {
-    // Indica si se muestra la ventana de confirmacion del pago
+
     var mostrarConfirmacion by remember { mutableStateOf(false) }
 
     var mostrarFormulario by remember { mutableStateOf(false) }
@@ -120,7 +108,6 @@ fun DetalleCompromisoScreen(
                 .padding(Dimens.espacioPantalla),
             verticalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)
         ) {
-            // Datos del compromiso
             Card(
                 shape = EstilosTarjeta.forma,
                 colors = EstilosTarjeta.colores(),
@@ -136,11 +123,11 @@ fun DetalleCompromisoScreen(
                     FilaDato("Folio", compromiso.folio)
                     FilaDato("Vencimiento", formatearFecha(compromiso.fechaVencimiento))
                     FilaDato("Monto", formatearPesos(compromiso.monto))
-                    // Los dias de atraso solo se muestran mientras el compromiso esta vencido
+
                     if (diasAtraso > 0) {
                         FilaDato("Días de atraso", if (diasAtraso == 1) "1 día" else "$diasAtraso días")
                     }
-                    // El recargo se muestra si esta vencido o si ya se pago con recargo
+
                     if (recargo > 0) {
                         FilaDato("Recargo por atraso", formatearPesos(recargo))
                     }
@@ -157,7 +144,6 @@ fun DetalleCompromisoScreen(
                 }
             }
 
-            // Explicacion de por que no se puede pagar
             if (motivoNoPago != null) {
                 Text(
                     text = textoMotivo(motivoNoPago, anterior),
@@ -165,7 +151,6 @@ fun DetalleCompromisoScreen(
                 )
             }
 
-            // Un compromiso pagado ofrece ver su comprobante; los demas ofrecen pagar
             if (estaPagado) {
                 BotonSecundario(
                     texto = "Ver comprobante",
@@ -286,7 +271,6 @@ fun DetalleCompromisoScreen(
         }
     }
 
-    // Ventana de confirmacion: permite cancelar antes de pagar
     if (mostrarConfirmacion) {
         AlertDialog(
             onDismissRequest = { mostrarConfirmacion = false },
@@ -391,7 +375,6 @@ fun DetalleCompromisoScreen(
 
 }
 
-/** Mensaje para la persona segun el motivo por el que no se puede pagar. */
 private fun textoMotivo(motivo: MotivoNoPago, anterior: Compromiso?): String {
     val nombreAnterior = if (anterior != null) textoConcepto(anterior) else "el compromiso anterior"
     return when (motivo) {

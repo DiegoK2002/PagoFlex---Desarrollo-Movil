@@ -29,13 +29,6 @@ import cl.fintech.pagoflex.ui.theme.Dimens
 import cl.fintech.pagoflex.util.formatearFechaHora
 import cl.fintech.pagoflex.util.formatearPesos
 
-/**
- * Comprobante de un pago realizado. Solo muestra los datos: no se puede modificar ni eliminar.
- * El RUT llega ya parcialmente oculto y el medio de pago es solo un nombre simulado.
- *
- * @param nombrePagador nombre de la persona que pago.
- * @param rutParcial RUT con la parte central oculta, por ejemplo "15.***.***-3".
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ComprobanteScreen(
@@ -74,14 +67,14 @@ fun ComprobanteScreen(
                 .padding(Dimens.espacioPantalla),
             verticalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)
         ) {
-            // Mensaje de confirmacion en verde
+
             Text(
                 "¡Pago realizado!",
                 style = MaterialTheme.typography.titleLarge,
                 color = ColoresEstado.Pagado
             )
 
-            // Datos del comprobante
+
             Card(
                 shape = EstilosTarjeta.forma,
                 colors = EstilosTarjeta.colores(),

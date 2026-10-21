@@ -50,14 +50,6 @@ import cl.fintech.pagoflex.util.ResumenCompromisos
 import cl.fintech.pagoflex.util.formatearFecha
 import cl.fintech.pagoflex.util.formatearPesos
 
-/**
- * Pantalla principal del usuario final: lista de sus compromisos y menu lateral con
- * las opciones "Mi perfil" y "Cerrar sesion".
- *
- * @param nombreEmpresa entrega el nombre comercial a partir del codigo de empresa.
- * @param importeDe entrega el importe de cada compromiso (monto mas recargo, o lo pagado si ya se pago).
- * @param onVerDetalle se llama con el folio del compromiso que se toca.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CompromisosScreen(
@@ -73,11 +65,9 @@ fun CompromisosScreen(
     onSalir: () -> Unit,
     resumenCompromisos: ResumenCompromisos? = null
 ) {
-    // Estado del menu lateral (abierto o cerrado) y ambito para abrirlo y cerrarlo
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    // Indica si se muestra la confirmacion para cerrar sesion
     var mostrarDialogo by remember { mutableStateOf(false) }
 
     var monedaSeleccionada by rememberSaveable { mutableStateOf("CLP") }
@@ -101,7 +91,7 @@ fun CompromisosScreen(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        // Contenido del menu lateral
+
         drawerContent = {
             ModalDrawerSheet {
                 Text(
@@ -153,7 +143,6 @@ fun CompromisosScreen(
                 TopAppBar(
                     title = { Text("Mis compromisos") },
                     navigationIcon = {
-                        // Boton que abre el menu lateral
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
                             Icon(
                                 imageVector = Icons.Default.Menu,
@@ -170,7 +159,6 @@ fun CompromisosScreen(
             },
             containerColor = MaterialTheme.colorScheme.background
         ) { innerPadding ->
-                // Lista que dibuja solo las tarjetas visibles en pantalla
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()

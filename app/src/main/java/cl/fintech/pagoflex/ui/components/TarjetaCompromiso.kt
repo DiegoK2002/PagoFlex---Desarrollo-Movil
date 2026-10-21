@@ -20,7 +20,6 @@ import cl.fintech.pagoflex.ui.theme.Dimens
 import cl.fintech.pagoflex.util.formatearFecha
 import cl.fintech.pagoflex.util.formatearPesos
 
-/** Color con que se muestra cada estado de un compromiso. */
 fun colorDeEstado(estado: EstadoCompromiso): Color = when (estado) {
     EstadoCompromiso.PENDIENTE -> ColoresEstado.Pendiente
     EstadoCompromiso.VENCIDO -> ColoresEstado.Vencido
@@ -29,7 +28,6 @@ fun colorDeEstado(estado: EstadoCompromiso): Color = when (estado) {
     EstadoCompromiso.ANULADO -> ColoresEstado.Anulado
 }
 
-/** Concepto con su numero de cuota: "Credito de consumo · cuota 8/24". Si no es en cuotas, solo el concepto. */
 fun textoConcepto(compromiso: Compromiso): String {
     val cuota = compromiso.numeroCuota
     val total = compromiso.totalCuotas
@@ -40,12 +38,6 @@ fun textoConcepto(compromiso: Compromiso): String {
     }
 }
 
-/**
- * Tarjeta con el resumen de un compromiso: empresa, concepto, importe, vencimiento y estado.
- * No consulta datos ni navega: dibuja lo que recibe y avisa con [onClick] cuando la tocan.
- *
- * @param importe lo que hay que pagar (monto mas recargo) o, si ya se pago, lo que se pago.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TarjetaCompromiso(
@@ -56,7 +48,7 @@ fun TarjetaCompromiso(
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
-    // Si el importe es mayor que el monto original, se aclara que incluye un recargo
+
     val avisoRecargo = when {
         importe == compromiso.monto -> null
         compromiso.estado == EstadoCompromiso.PAGADO -> "Se pagó con recargo por atraso"
@@ -96,7 +88,6 @@ fun TarjetaCompromiso(
                 "Vence el ${formatearFecha(compromiso.fechaVencimiento)}",
                 style = MaterialTheme.typography.bodyMedium
             )
-            // Estado con el color que le corresponde
             Text(
                 compromiso.estado.etiqueta,
                 style = MaterialTheme.typography.bodyMedium,

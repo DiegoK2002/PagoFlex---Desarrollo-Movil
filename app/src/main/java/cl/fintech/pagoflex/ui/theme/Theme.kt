@@ -39,7 +39,6 @@ private val EsquemaClaro = lightColorScheme(
     onSurface = TextoOscuro
 )
 
-// border radius
 private val Formas = Shapes(
     small = RoundedCornerShape(8.dp),
     medium = RoundedCornerShape(12.dp),
@@ -51,7 +50,6 @@ fun PagoflexTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    // Sin color dinámico: la paleta es siempre la de PagoFlex
     val colorScheme = if (darkTheme) EsquemaOscuro else EsquemaClaro
 
     MaterialTheme(

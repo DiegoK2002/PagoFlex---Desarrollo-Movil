@@ -12,12 +12,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import cl.fintech.pagoflex.ui.styles.EstilosBoton
 import cl.fintech.pagoflex.ui.styles.estiloAltoBoton
 
-/**
- * Boton de la accion principal de una pantalla: fondo del color primario y sombra.
- *
- * @param habilitado si es false, el boton se ve atenuado y no responde al toque.
- * @param icono icono opcional (por ejemplo Icons.Default.Check) que se muestra antes del texto.
- */
 @Composable
 fun BotonPrincipal(
     texto: String,
@@ -35,7 +29,6 @@ fun BotonPrincipal(
         elevation = EstilosBoton.elevacion(),
         contentPadding = EstilosBoton.relleno
     ) {
-        // El icono y su separacion solo se dibujan si se entrego un icono
         if (icono != null) {
             Icon(
                 imageVector = icono,

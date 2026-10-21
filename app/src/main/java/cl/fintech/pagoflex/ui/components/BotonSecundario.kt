@@ -7,7 +7,6 @@ import androidx.compose.ui.Modifier
 import cl.fintech.pagoflex.ui.styles.EstilosBoton
 import cl.fintech.pagoflex.ui.styles.estiloAltoBoton
 
-/** Boton de una accion secundaria: sin relleno, con borde y texto del color primario. */
 @Composable
 fun BotonSecundario(
     texto: String,

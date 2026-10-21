@@ -16,13 +16,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import cl.fintech.pagoflex.ui.styles.EstilosCampo
 
-/**
- * Lista desplegable para elegir una opcion de varias. Funciona con cualquier tipo [T].
- *
- * @param seleccionada opcion elegida; si es null el campo se muestra vacio.
- * @param textoDe convierte una opcion al texto que se muestra.
- * @param error mensaje que se muestra bajo el campo; null significa que no hay error.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun <T> ListaDesplegable(
@@ -34,7 +27,6 @@ fun <T> ListaDesplegable(
     modifier: Modifier = Modifier,
     error: String? = null
 ) {
-    // Indica si el menu de opciones esta abierto
     var expandido by remember { mutableStateOf(false) }
 
     ExposedDropdownMenuBox(
@@ -42,7 +34,7 @@ fun <T> ListaDesplegable(
         onExpandedChange = { expandido = it },
         modifier = modifier.fillMaxWidth()
     ) {
-        // Campo de solo lectura que muestra la opcion elegida y abre el menu al tocarlo
+
         OutlinedTextField(
             value = if (seleccionada != null) textoDe(seleccionada) else "",
             onValueChange = {},
@@ -59,7 +51,6 @@ fun <T> ListaDesplegable(
             colors = EstilosCampo.colores()
         )
 
-        // Menu con una fila por cada opcion; al elegir una se avisa y se cierra
         ExposedDropdownMenu(
             expanded = expandido,
             onDismissRequest = { expandido = false }

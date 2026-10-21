@@ -18,10 +18,6 @@ import androidx.compose.ui.unit.dp
 import cl.fintech.pagoflex.ui.theme.ColoresEstado
 import cl.fintech.pagoflex.util.Requisito
 
-/**
- * Lista de condiciones de la contrasena. Cada una se marca con un visto verde cuando se cumple
- * y con una cruz gris mientras no se cumple, para que la persona vea que le falta.
- */
 @Composable
 fun RequisitosContrasena(
     requisitos: List<Requisito>,
@@ -31,7 +27,6 @@ fun RequisitosContrasena(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        // Una fila por requisito: icono de estado y texto
         requisitos.forEach { requisito ->
             val color = if (requisito.cumplido) ColoresEstado.Pagado else MaterialTheme.colorScheme.onSurfaceVariant
             Row(

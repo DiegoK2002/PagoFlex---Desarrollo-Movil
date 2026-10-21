@@ -43,12 +43,6 @@ import cl.fintech.pagoflex.ui.components.RequisitosContrasena
 import cl.fintech.pagoflex.util.Validaciones
 import cl.fintech.pagoflex.viewmodel.RegistroViewModel
 
-/**
- * Pantalla para crear una cuenta. Conecta el [RegistroViewModel] con la interfaz.
- *
- * @param onVolver se llama al tocar la flecha de volver.
- * @param onRegistroExitoso se llama cuando la persona acepta el aviso de cuenta creada.
- */
 @Composable
 fun RegistroScreen(
     onVolver: () -> Unit,
@@ -76,7 +70,6 @@ fun RegistroScreen(
     )
 }
 
-/** Dibuja el formulario de registro a partir del estado recibido, sin logica propia. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegistroContent(
@@ -96,7 +89,6 @@ fun RegistroContent(
     onVolver: () -> Unit,
     onRegistroExitoso: () -> Unit
 ) {
-    // Aviso de registro exitoso: al aceptarlo se vuelve al inicio de sesion
     if (uiState.registroExitoso) {
         AlertDialog(
             onDismissRequest = onRegistroExitoso,
@@ -137,7 +129,7 @@ fun RegistroContent(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // ----- Datos personales -----
+
             Text(
                 text = "Datos personales",
                 style = MaterialTheme.typography.titleMedium,
@@ -159,8 +151,6 @@ fun RegistroContent(
                 error = uiState.errorApellidos
             )
 
-            // RUT en dos campos: el numero usa teclado numerico (solo digitos) y el digito verificador
-            // admite un digito o la letra K
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.Top
@@ -180,7 +170,7 @@ fun RegistroContent(
                     etiqueta = "DV",
                     icono = Icons.Default.Check,
                     error = uiState.errorRut,
-                    mostrarMensajeError = false,   // el mensaje ya se muestra bajo el campo del RUT
+                    mostrarMensajeError = false,
                     capitalizacion = KeyboardCapitalization.Characters,
                     modifier = Modifier.weight(1f)
                 )
@@ -203,7 +193,6 @@ fun RegistroContent(
                 error = uiState.errorComuna
             )
 
-            // ----- Seguridad -----
             Text(
                 text = "Seguridad",
                 style = MaterialTheme.typography.titleMedium,
@@ -219,7 +208,6 @@ fun RegistroContent(
                 error = uiState.errorContrasena
             )
 
-            // Lista de condiciones que se va marcando a medida que se escribe la contrasena
             RequisitosContrasena(
                 requisitos = Validaciones.requisitosContrasena(
                     contrasena = uiState.contrasena,
@@ -237,7 +225,6 @@ fun RegistroContent(
                 error = uiState.errorRepetir
             )
 
-            // ----- Acciones -----
             BotonPrincipal(
                 texto = "Registrarme",
                 onClick = onRegistrar,

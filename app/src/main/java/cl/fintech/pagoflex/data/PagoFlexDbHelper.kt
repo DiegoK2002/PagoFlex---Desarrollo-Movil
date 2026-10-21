@@ -15,20 +15,6 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import cl.fintech.pagoflex.model.Reporte
 
-/**
- * Base de datos SQLite de la app (archivo pagoflex.db). Crea las tablas la primera vez que se abre,
- * las llena con datos de ejemplo ficticios y ofrece las operaciones de lectura y escritura.
- *
- * Tablas y relaciones:
- *   roles <- usuarios <- compromisos -> empresas
- *                 ^            ^
- *                 |            +-- pagos
- *                 +-- reportes -+
- *
- * Las claves foraneas (REFERENCES) se activan en [onConfigure], porque SQLite las trae desactivadas.
- * Las fechas se guardan como texto ISO ("2026-10-10") y se convierten al leerlas.
- */
-
 class PagoFlexDbHelper private constructor(
     context: Context,
     nombreBase: String
@@ -37,10 +23,8 @@ class PagoFlexDbHelper private constructor(
     companion object {
         private const val NOMBRE_BD = "pagoflex.db"
 
-        // Al subir este numero, SQLite llama a onUpgrade y la base se vuelve a crear
         private const val VERSION_BD = 4
 
-        // Contrasena de las cuentas de ejemplo precargadas
         private const val CLAVE_DEMO = "Demo1234"
 
         private const val TABLA_ROLES = "roles"
@@ -128,7 +112,6 @@ class PagoFlexDbHelper private constructor(
         @Volatile
         private var instancia: PagoFlexDbHelper? = null
 
-        /** Devuelve la unica instancia del helper, para que toda la app use una sola conexion. */
         fun obtener(context: Context): PagoFlexDbHelper =
             instancia ?: synchronized(this) {
                 instancia ?: PagoFlexDbHelper(context.applicationContext, NOMBRE_BD).also { instancia = it }
@@ -181,14 +164,11 @@ class PagoFlexDbHelper private constructor(
         }
     }
 
-
-    /** Se ejecuta antes de abrir la base: activa la verificacion de claves foraneas. */
     override fun onConfigure(db: SQLiteDatabase) {
         super.onConfigure(db)
         db.setForeignKeyConstraintsEnabled(true)
     }
 
-    /** Se ejecuta una sola vez, cuando el archivo de la base no existe. Primero las tablas "padre". */
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(SQL_CREAR_ROLES)
         db.execSQL(SQL_CREAR_USUARIOS)
@@ -200,7 +180,6 @@ class PagoFlexDbHelper private constructor(
         precargarDatos(db)
     }
 
-    /** Al cambiar la version se borran las tablas (en orden inverso a su creacion) y se vuelven a crear. */
     override fun onUpgrade(
         db: SQLiteDatabase,
         oldVersion: Int,
@@ -216,12 +195,6 @@ class PagoFlexDbHelper private constructor(
         }
     }
 
-
-    // ------------------------------------------------------------------
-    // Usuarios
-    // ------------------------------------------------------------------
-
-    /** Inserta una cuenta nueva. Devuelve el id generado, o -1 si no se pudo guardar (por ejemplo, correo repetido). */
     fun registrarUsuario(
         rut: String, nombres: String, apellidos: String, correo: String,
         contrasenaHash: String, comuna: String, rol: Rol
@@ -230,7 +203,7 @@ class PagoFlexDbHelper private constructor(
             put("rut", rut)
             put("nombres", nombres)
             put("apellidos", apellidos)
-            put("correo", correo.trim().lowercase())   // el correo siempre se guarda en minusculas
+            put("correo", correo.trim().lowercase())
             put("contrasena_hash", contrasenaHash)
             put("comuna", comuna)
             put("id_rol", rol.id)
@@ -275,34 +248,22 @@ class PagoFlexDbHelper private constructor(
         }
     }
 
-
-    /** Indica si ya existe una cuenta con ese correo. */
     fun existeCorreo(correo: String): Boolean =
         readableDatabase.rawQuery(
             "SELECT 1 FROM $TABLA_USUARIOS WHERE correo = ?", arrayOf(correo.trim().lowercase())
         ).use { it.moveToFirst() }
 
-    /** Indica si ya existe una cuenta con ese RUT (con formato "12.345.678-5"). */
     fun existeRut(rut: String): Boolean =
         readableDatabase.rawQuery(
             "SELECT 1 FROM $TABLA_USUARIOS WHERE rut = ?", arrayOf(rut)
         ).use { it.moveToFirst() }
 
-    /**
-     * Busca la cuenta cuyo correo y hash de contrasena coinciden. Devuelve null si no hay coincidencia.
-     * Los valores viajan en los signos "?" y no concatenados al texto SQL, para evitar inyeccion SQL.
-     */
     fun buscarPorCredenciales(correo: String, contrasenaHash: String): Usuario? =
         readableDatabase.rawQuery(
             "SELECT * FROM $TABLA_USUARIOS WHERE correo = ? AND contrasena_hash = ?",
             arrayOf(correo.trim().lowercase(), contrasenaHash)
         ).use { cursor -> if (cursor.moveToFirst()) leerUsuario(cursor) else null }
 
-    // ------------------------------------------------------------------
-    // Compromisos y empresas
-    // ------------------------------------------------------------------
-
-    /** Compromisos de una persona, ordenados por fecha de vencimiento. */
     fun compromisosDeUsuario(idUsuario: Long): List<Compromiso> {
 
         val valores = ContentValues().apply {
@@ -325,7 +286,6 @@ class PagoFlexDbHelper private constructor(
             "SELECT * FROM $TABLA_COMPROMISOS WHERE id_usuario = ? ORDER BY fecha_vencimiento",
             arrayOf(idUsuario.toString())
         ).use { cursor ->
-            // Cada vuelta del ciclo convierte una fila en un objeto Compromiso
             while (cursor.moveToNext()) {
                 lista.add(leerCompromiso(cursor))
             }
@@ -333,24 +293,15 @@ class PagoFlexDbHelper private constructor(
         return lista
     }
 
-    /** Nombre comercial de la empresa; si no se encuentra, devuelve el codigo recibido. */
     fun nombreEmpresa(codigo: String): String =
         readableDatabase.rawQuery(
             "SELECT nombre_fantasia FROM $TABLA_EMPRESAS WHERE codigo_empresa = ?", arrayOf(codigo)
         ).use { if (it.moveToFirst()) it.getString(0) else codigo }
 
-    /** Recargo por atraso que cobra la empresa, en pesos. */
     fun recargoDe(codigoEmpresa: String): Int =
         readableDatabase.rawQuery(
             "SELECT recargo_atraso FROM $TABLA_EMPRESAS WHERE codigo_empresa = ?", arrayOf(codigoEmpresa)
         ).use { if (it.moveToFirst()) it.getInt(0) else 0 }
-
-    // ------------------------------------------------------------------
-    // Pagos
-    // ------------------------------------------------------------------
-
-    /** Ultimo pago registrado para un compromiso, o null si no tiene. */
-
 
     fun pagoPorFolioDeUsuario(
         folio: String,
@@ -394,7 +345,6 @@ class PagoFlexDbHelper private constructor(
         return pagos
     }
 
-    /** Monto efectivamente pagado por cada compromiso de una persona, indexado por folio. */
     fun montosPagadosDeUsuario(idUsuario: Long): Map<String, Int> {
         val montos = mutableMapOf<String, Int>()
         readableDatabase.rawQuery(
@@ -408,18 +358,11 @@ class PagoFlexDbHelper private constructor(
         return montos
     }
 
-    /** Numero del proximo comprobante: el mayor existente mas uno (por ejemplo, de CPR-000453 pasa a 454). */
     fun siguienteNumeroComprobante(): Int =
         readableDatabase.rawQuery(
-            // SUBSTR(..., 5) quita el prefijo "CPR-" y CAST convierte el resto a numero
             "SELECT MAX(CAST(SUBSTR(numero_comprobante, 5) AS INTEGER)) FROM $TABLA_PAGOS", null
         ).use { if (it.moveToFirst()) it.getInt(0) + 1 else 1 }
 
-    /**
-     * Guarda el pago y marca el compromiso como Pagado dentro de una transaccion: se guardan
-     * las dos cosas o ninguna. Devuelve false si el compromiso ya no estaba pendiente o vencido
-     * (por ejemplo, por un doble toque en el boton), en cuyo caso no queda nada guardado.
-     */
     fun registrarPago(pago: Pago): Boolean {
         val db = writableDatabase
         db.beginTransaction()
@@ -441,7 +384,6 @@ class PagoFlexDbHelper private constructor(
             val valoresEstado = ContentValues().apply {
                 put("estado", EstadoCompromiso.PAGADO.name)
             }
-            // Solo se actualiza si el compromiso sigue sin pagar; asi no se puede pagar dos veces
 
             val filas = db.update(
                 TABLA_COMPROMISOS,
@@ -459,10 +401,10 @@ class PagoFlexDbHelper private constructor(
 
 
             if (idPago != -1L && filas == 1) {
-                db.setTransactionSuccessful()   // confirma los dos cambios
+                db.setTransactionSuccessful()
                 true
             } else {
-                false                           // sin confirmar: se deshace todo al terminar
+                false
             }
         } finally {
             db.endTransaction()
@@ -737,11 +679,6 @@ class PagoFlexDbHelper private constructor(
         }
     }
 
-
-    // ------------------------------------------------------------------
-    // Conversion de filas a objetos
-    // ------------------------------------------------------------------
-
     private fun leerUsuario(c: Cursor) = Usuario(
         id = c.getLong(c.getColumnIndexOrThrow("id_usuario")),
         rut = c.getString(c.getColumnIndexOrThrow("rut")),
@@ -752,7 +689,6 @@ class PagoFlexDbHelper private constructor(
         rol = Rol.desdeId(c.getLong(c.getColumnIndexOrThrow("id_rol")))
     )
 
-    /** Lee una columna entera que puede ser nula (por ejemplo, el numero de cuota). */
     private fun enteroONulo(c: Cursor, columna: String): Int? {
         val indice = c.getColumnIndexOrThrow(columna)
         return if (c.isNull(indice)) null else c.getInt(indice)
@@ -801,11 +737,6 @@ class PagoFlexDbHelper private constructor(
         )
     }
 
-    // ------------------------------------------------------------------
-    // Datos de ejemplo (todos ficticios)
-    // ------------------------------------------------------------------
-
-    /** Inserta una fila en [tabla] a partir de pares columna-valor. Acepta Int, Long, String y null. */
     private fun insertar(db: SQLiteDatabase, tabla: String, vararg datos: Pair<String, Any?>) {
         val valores = ContentValues()
         for ((columna, valor) in datos) {
@@ -821,12 +752,10 @@ class PagoFlexDbHelper private constructor(
     }
 
     private fun precargarDatos(db: SQLiteDatabase) {
-        // Roles: uno por cada valor del enum Rol, con el mismo id
         for (rol in Rol.entries) {
             insertar(db, TABLA_ROLES, "id_rol" to rol.id, "nombre_rol" to rol.etiqueta)
         }
 
-        // Empresas que cobran los compromisos
         fun empresa(codigo: String, razon: String, fantasia: String, rubro: String, recargo: Int) =
             insertar(
                 db, TABLA_EMPRESAS,
@@ -842,7 +771,6 @@ class PagoFlexDbHelper private constructor(
         empresa("EC-07", "Instituto Técnico Cordillera SpA", "Instituto Cordillera", "Educación superior", 6000)
         empresa("EC-08", "Arriendos Plaza Oriente Ltda.", "Plaza Oriente", "Administración de arriendos", 7500)
 
-        // Cuentas de ejemplo: todas usan la contrasena CLAVE_DEMO (se guarda su hash)
         fun usuario(id: Long, rut: String, nombres: String, apellidos: String, correo: String, comuna: String, rol: Rol) =
             insertar(
                 db, TABLA_USUARIOS,
@@ -864,7 +792,6 @@ class PagoFlexDbHelper private constructor(
         usuario(10, "18.352.091-1", "Daniela Sofía", "Ortiz Bravo", "dortiz@pagoflex.ejemplo", "Santiago", ag)
         usuario(11, "17.781.435-0", "Valentina Ignacia", "Paredes Silva", "vparedes@pagoflex.ejemplo", "Santiago", ag)
 
-        // Compromisos: folio, persona, empresa, concepto, cuota, total de cuotas, monto, vencimiento, estado
         fun compromiso(
             folio: String, idUsuario: Long, empresa: String, concepto: String,
             cuota: Int?, total: Int?, monto: Int, vence: String, estado: EstadoCompromiso
@@ -895,7 +822,6 @@ class PagoFlexDbHelper private constructor(
         compromiso("CP-2026-0111", 6, "EC-03", "Crédito de consumo", 19, 36, 54200, "2026-09-20", EstadoCompromiso.ANULADO)
         compromiso("CP-2026-0112", 7, "EC-06", "Cuota social octubre", 10, 12, 15000, "2026-10-05", pag)
 
-        // Pagos anteriores: comprobante, folio, persona, empresa, concepto, fecha y hora, monto, canal, a tiempo
         fun pago(
             numero: String, folio: String, idUsuario: Long, empresa: String, concepto: String,
             fechaHora: String, monto: Int, canal: String, aTiempo: Boolean
@@ -915,7 +841,6 @@ class PagoFlexDbHelper private constructor(
         pago("CPR-000452", "CP-2026-0108", 3, "EC-04", "Seguro de hogar octubre", "2026-09-30T19:05", 18900, "Agente conversacional", true)
         pago("CPR-000453", "CP-2026-0112", 7, "EC-06", "Cuota social octubre", "2026-10-04T08:15", 15000, "App", true)
 
-        // Reportes de ejemplo: una persona informa un problema y un agente lo responde
         insertar(
             db, TABLA_REPORTES,
             "folio" to "CP-2026-0109", "id_usuario" to 4L, "motivo" to "No reconozco este cobro",

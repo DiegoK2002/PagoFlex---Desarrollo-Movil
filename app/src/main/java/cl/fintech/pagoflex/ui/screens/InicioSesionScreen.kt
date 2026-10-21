@@ -33,20 +33,12 @@ import cl.fintech.pagoflex.ui.components.CampoContrasena
 import cl.fintech.pagoflex.ui.components.CampoTexto
 import cl.fintech.pagoflex.viewmodel.InicioSesionViewModel
 
-/**
- * Pantalla de inicio de sesion. Conecta el [InicioSesionViewModel] con la interfaz:
- * observa su estado y le informa lo que hace la persona.
- *
- * @param onInicioExitoso se llama con la cuenta cuando las credenciales son correctas.
- * @param onCrearCuenta se llama al tocar el enlace para registrarse.
- */
 @Composable
 fun InicioSesionScreen(
     onInicioExitoso: (Usuario) -> Unit,
     onCrearCuenta: () -> Unit,
     viewModel: InicioSesionViewModel = viewModel()
 ) {
-    // El estado del formulario; la pantalla se redibuja cada vez que cambia
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     InicioSesionContent(
@@ -54,14 +46,12 @@ fun InicioSesionScreen(
         onCorreoCambia = viewModel::onCorreoCambia,
         onContrasenaCambia = viewModel::onContrasenaCambia,
         onAlternarVisibilidad = viewModel::onAlternarVisibilidad,
-        // Si el ViewModel devuelve una cuenta, el inicio de sesion fue correcto
         onIniciar = { viewModel.onIniciar()?.let { usuario -> onInicioExitoso(usuario) } },
         onLimpiar = viewModel::onLimpiar,
         onCrearCuenta = onCrearCuenta
     )
 }
 
-/** Dibuja el formulario de inicio de sesion a partir del estado recibido, sin logica propia. */
 @Composable
 fun InicioSesionContent(
     uiState: SesionUiState,
@@ -84,7 +74,6 @@ fun InicioSesionContent(
         ) {
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Encabezado
             Text(
                 text = "PagoFlex",
                 style = MaterialTheme.typography.headlineLarge,
@@ -99,7 +88,6 @@ fun InicioSesionContent(
             )
             Spacer(modifier = Modifier.height(28.dp))
 
-            // Formulario dentro de una tarjeta
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -126,7 +114,6 @@ fun InicioSesionContent(
                         error = uiState.errorContrasena
                     )
 
-                    // Mensaje general cuando las credenciales no coinciden
                     if (uiState.errorGeneral != null) {
                         Text(
                             text = uiState.errorGeneral,
@@ -156,7 +143,6 @@ fun InicioSesionContent(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Cuentas de ejemplo para probar la app (datos ficticios)
             Text(
                 text = "Cuentas de prueba (contrase\u00f1a Demo1234):\n" +
                     "crojas@correo.ejemplo - usuario final\n" +

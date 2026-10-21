@@ -57,10 +57,6 @@ import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import androidx.compose.material3.ButtonDefaults
 
-/**
- * Perfil de la persona con sesion iniciada: su nombre y tipo de usuario en el encabezado, y
- * debajo su RUT (parcialmente oculto), correo y comuna. La contrasena nunca se muestra.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MiPerfilScreen(
@@ -148,7 +144,6 @@ fun MiPerfilScreen(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            // Encabezado con icono, nombre y tipo de usuario
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
@@ -250,7 +245,6 @@ fun MiPerfilScreen(
                 color = MaterialTheme.colorScheme.onBackground
             )
 
-            // Una tarjeta por dato
             TarjetaPerfil(Icons.Default.Badge, "RUT", ocultarRut(usuario.rut))
             TarjetaPerfil(Icons.Default.Email, "Correo electrónico", usuario.correo)
             TarjetaPerfil(Icons.Default.LocationOn, "Comuna", usuario.comuna)
@@ -258,7 +252,6 @@ fun MiPerfilScreen(
     }
 }
 
-/** Tarjeta con un icono a la izquierda y, a su lado, el nombre del dato y su valor. */
 @Composable
 private fun TarjetaPerfil(
     icono: ImageVector,

@@ -27,18 +27,8 @@ import cl.fintech.pagoflex.viewmodel.CotizacionesViewModel
 import cl.fintech.pagoflex.ui.screens.HistorialPagosScreen
 import cl.fintech.pagoflex.ui.screens.ReconocimientosScreen
 
-/**
- * Mapa de navegacion de la app: define que pantalla se muestra en cada ruta y como se pasa
- * de una a otra. Las pantallas no reciben el controlador de navegacion, solo funciones
- * que avisan lo que ocurrio.
- *
- * Dos ViewModels se crean aqui, fuera del NavHost, para que todas las pantallas compartan sus datos:
- *  - [SesionViewModel]: quien inicio sesion.
- *  - [CompromisosViewModel]: compromisos y pagos, leidos desde SQLite.
- */
 @Composable
 fun AppNavegacion() {
-    // Controlador que lleva el historial de pantallas y navega entre ellas
     val navController = rememberNavController()
     val sesionViewModel: SesionViewModel = viewModel()
     val compromisosViewModel: CompromisosViewModel = viewModel()
@@ -46,7 +36,6 @@ fun AppNavegacion() {
     val cotizacionesViewModel: CotizacionesViewModel = viewModel()
     val fotoPerfilViewModel: FotoPerfilViewModel = viewModel()
 
-    // Estados observados: la pantalla se redibuja cuando cambian
     val usuarioActual by sesionViewModel.usuarioActual.collectAsStateWithLifecycle()
     val compromisos by compromisosViewModel.compromisos.collectAsStateWithLifecycle()
     val resumenCompromisos by compromisosViewModel.resumenCompromisos.collectAsStateWithLifecycle()
@@ -57,7 +46,6 @@ fun AppNavegacion() {
     val estadoCotizaciones by cotizacionesViewModel.estado.collectAsStateWithLifecycle()
     val fotoPerfil by fotoPerfilViewModel.fotoPerfil.collectAsStateWithLifecycle()
 
-    // Cierra la sesion, borra los datos en memoria y vuelve al inicio de sesion sin dejar historial
     val cerrarSesion = {
         fotoPerfilViewModel.limpiar()
         sesionViewModel.cerrarSesion()
@@ -70,7 +58,6 @@ fun AppNavegacion() {
 
     NavHost(navController = navController, startDestination = Ruta.InicioSesion.ruta) {
 
-        // Inicio de sesion: segun el rol de la cuenta se abre la pantalla que le corresponde
         composable(Ruta.InicioSesion.ruta) {
             InicioSesionScreen(
                 onInicioExitoso = { usuario ->
@@ -93,7 +80,6 @@ fun AppNavegacion() {
             )
         }
 
-        // Registro: al terminar vuelve al inicio de sesion
         composable(Ruta.Registro.ruta) {
             RegistroScreen(
                 onVolver = { navController.navigateUp() },
@@ -101,7 +87,6 @@ fun AppNavegacion() {
             )
         }
 
-        // Lista de compromisos del usuario final
         composable(Ruta.Compromisos.ruta) {
             val usuario = usuarioActual
             if (usuario != null) {
@@ -190,7 +175,6 @@ fun AppNavegacion() {
             }
         }
 
-        // Detalle: el folio viaja en la ruta y con el se busca el compromiso en la lista cargada
         composable(
             route = Ruta.Detalle.ruta,
             arguments = listOf(navArgument("folio") { type = NavType.StringType })
@@ -208,11 +192,11 @@ fun AppNavegacion() {
                     anterior = compromisosViewModel.anteriorPendiente(compromiso),
                     onVolver = { navController.navigateUp() },
                     onConfirmarPago = {
-                        // El ViewModel valida y guarda el pago en SQLite; si resulta bien, se abre el comprobante
+
                         val pago = compromisosViewModel.pagar(compromiso)
                         if (pago != null) {
                             navController.navigate(Ruta.Comprobante.crear(compromiso.folio)) {
-                                // Se quita el detalle del historial: "atras" desde el comprobante vuelve a la lista
+
                                 popUpTo(Ruta.Detalle.ruta) { inclusive = true }
                             }
                         }
@@ -244,13 +228,13 @@ fun AppNavegacion() {
             }
         }
 
-        // Comprobante de un compromiso pagado
+
         composable(
             route = Ruta.Comprobante.ruta,
             arguments = listOf(navArgument("folio") { type = NavType.StringType })
         ) { entrada ->
             val folio = entrada.arguments?.getString("folio") ?: ""
-            // remember evita repetir la consulta a la base de datos en cada redibujado
+
             val pago = remember(folio) { compromisosViewModel.pagoDe(folio) }
             val usuario = usuarioActual
             if (pago != null && usuario != null) {

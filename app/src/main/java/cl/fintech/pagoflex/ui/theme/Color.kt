@@ -10,12 +10,10 @@ val Secundario = Color(0xFF2E7D6B)
 val Acento = Color(0xFF9A6700)
 val Blanco = Color(0xFFFFFFFF)
 
-// Modo claro
 val FondoClaro = Color(0xFFF6F8FA)
 val SuperficieClaro = Color(0xFFFFFFFF)
 val TextoOscuro = Color(0xFF1B2733)
 
-// Modo oscuro
 val FondoOscuro = Color(0xFF0F1A22)
 val SuperficieOscuro = Color(0xFF16252F)
 val TextoClaro = Color(0xFFE6EDF2)

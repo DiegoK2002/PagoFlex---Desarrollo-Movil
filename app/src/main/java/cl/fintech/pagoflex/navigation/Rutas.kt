@@ -1,12 +1,5 @@
 package cl.fintech.pagoflex.navigation
 
-/**
- * Rutas de las pantallas de la app. Usar una clase sellada en lugar de textos sueltos permite
- * que el compilador avise si una ruta esta mal escrita.
- *
- * Las rutas con "{folio}" reciben un dato al navegar, por ejemplo:
- * Ruta.Detalle.crear("CP-2026-0101") produce "detalle/CP-2026-0101".
- */
 sealed class Ruta(val ruta: String) {
     data object InicioSesion : Ruta("inicio_sesion")
     data object Registro : Ruta("registro")

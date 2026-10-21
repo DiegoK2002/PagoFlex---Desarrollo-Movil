@@ -9,27 +9,17 @@ import androidx.compose.ui.graphics.Shape
 import cl.fintech.pagoflex.ui.theme.Dimens
 import cl.fintech.pagoflex.ui.theme.GrisDeshabilitado
 
-// =====================================================================
-//  EstilosCampo.kt  —  "HOJA DE ESTILOS" DE LOS CAMPOS DEL FORMULARIO
-//  ---------------------------------------------------------------------
-//  Equivale en CSS a:
-//     input            { border-radius: 12px; border-color: gris; }
-//     input:focus      { border-color: morado; }
-//     input.error      { border-color: rojo; }
-//  En Compose cada "estado" (enfocado, sin foco, con error) tiene su color.
-// =====================================================================
-
 object EstilosCampo {
 
     val forma: Shape = RoundedCornerShape(Dimens.radioCampo)
 
     @Composable
     fun colores(): TextFieldColors = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = MaterialTheme.colorScheme.primary,      // input:focus
-        unfocusedBorderColor = GrisDeshabilitado,                    // input normal
+        focusedBorderColor = MaterialTheme.colorScheme.primary,
+        unfocusedBorderColor = GrisDeshabilitado,
         focusedLabelColor = MaterialTheme.colorScheme.primary,
         focusedLeadingIconColor = MaterialTheme.colorScheme.primary,
-        errorBorderColor = MaterialTheme.colorScheme.error,          // input.error
+        errorBorderColor = MaterialTheme.colorScheme.error,
         cursorColor = MaterialTheme.colorScheme.primary
     )
 }

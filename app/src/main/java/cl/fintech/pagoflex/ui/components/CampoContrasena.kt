@@ -19,14 +19,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import cl.fintech.pagoflex.ui.styles.EstilosCampo
 import cl.fintech.pagoflex.ui.theme.Dimens
 
-/**
- * Campo para escribir una contrasena. Muestra puntos en lugar del texto y tiene un boton
- * con forma de ojo para mostrarla u ocultarla.
- *
- * @param visible si es true, el texto se ve; si es false, se oculta.
- * @param onAlternarVisible se llama al tocar el ojo; quien usa el campo decide el nuevo valor de [visible].
- * @param error mensaje que se muestra bajo el campo; null significa que no hay error.
- */
 @Composable
 fun CampoContrasena(
     valor: String,
@@ -42,7 +34,6 @@ fun CampoContrasena(
         onValueChange = onValorCambia,
         modifier = modifier.fillMaxWidth(),
         label = { Text(etiqueta) },
-        // Candado a la izquierda
         leadingIcon = {
             Icon(
                 imageVector = Icons.Default.Lock,
@@ -50,7 +41,6 @@ fun CampoContrasena(
                 modifier = Modifier.size(Dimens.tamanoIcono)
             )
         },
-        // Ojo a la derecha: cambia segun la contrasena este visible u oculta
         trailingIcon = {
             IconButton(onClick = onAlternarVisible) {
                 Icon(
