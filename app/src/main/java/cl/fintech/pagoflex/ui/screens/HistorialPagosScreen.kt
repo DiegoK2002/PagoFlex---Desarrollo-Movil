@@ -29,6 +29,11 @@ import androidx.compose.ui.unit.dp
 import cl.fintech.pagoflex.model.Pago
 import cl.fintech.pagoflex.util.formatearFechaHora
 import cl.fintech.pagoflex.util.formatearPesos
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import cl.fintech.pagoflex.ui.components.ListaDesplegable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,6 +43,22 @@ fun HistorialPagosScreen(
     onVerComprobante: (String) -> Unit,
     onVolver: () -> Unit
 ) {
+
+    var empresaSeleccionada by rememberSaveable {
+        mutableStateOf("")
+    }
+
+    val opcionesEmpresas = listOf("") +
+            pagos.map { it.codigoEmpresa }
+                .distinct()
+                .sortedBy { nombreEmpresa(it) }
+
+    val pagosFiltrados = if (empresaSeleccionada.isEmpty()) {
+        pagos
+    } else {
+        pagos.filter { it.codigoEmpresa == empresaSeleccionada }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -75,7 +96,27 @@ fun HistorialPagosScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(pagos, key = { it.numeroComprobante }) { pago ->
+
+                item {
+                    ListaDesplegable(
+                        etiqueta = "Filtrar por empresa",
+                        opciones = opcionesEmpresas,
+                        seleccionada = empresaSeleccionada,
+                        textoDe = { codigo ->
+                            if (codigo.isEmpty()) {
+                                "Todas las empresas"
+                            } else {
+                                nombreEmpresa(codigo)
+                            }
+                        },
+                        onSeleccionar = { codigo ->
+                            empresaSeleccionada = codigo
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                items(pagosFiltrados, key = { it.numeroComprobante }) { pago ->
                     Card(
                         modifier = Modifier.fillMaxWidth()
                     ) {
