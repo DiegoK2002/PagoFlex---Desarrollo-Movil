@@ -36,6 +36,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cl.fintech.pagoflex.model.Usuario
 import cl.fintech.pagoflex.util.ocultarRut
+import android.graphics.Bitmap
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import cl.fintech.pagoflex.util.ConvertidorImagen
+import android.content.ActivityNotFoundException
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
+import androidx.compose.material3.ButtonDefaults
 
 /**
  * Perfil de la persona con sesion iniciada: su nombre y tipo de usuario en el encabezado, y
@@ -45,8 +65,60 @@ import cl.fintech.pagoflex.util.ocultarRut
 @Composable
 fun MiPerfilScreen(
     usuario: Usuario,
+    fotoPerfil: ByteArray?,
+    onGuardarFoto: (Bitmap) -> Boolean,
     onVolver: () -> Unit
 ) {
+
+    val context = LocalContext.current
+
+    var mensajeFoto by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    val imagenPerfil = remember(fotoPerfil) {
+        fotoPerfil?.let {
+            ConvertidorImagen.aBitmap(it)?.asImageBitmap()
+        }
+    }
+
+    val lanzadorGaleria = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            val bitmap = ConvertidorImagen.desdeUri(context, uri)
+
+            mensajeFoto = when {
+                bitmap == null -> "No se pudo leer la imagen."
+                onGuardarFoto(bitmap) -> "Fotografía guardada correctamente."
+                else -> "No se pudo guardar la fotografía."
+            }
+        }
+    }
+
+    val lanzadorCamara = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        if (bitmap != null) {
+            mensajeFoto = if (onGuardarFoto(bitmap)) {
+                "Fotografía tomada y guardada correctamente."
+            } else {
+                "No se pudo guardar la fotografía."
+            }
+        }
+    }
+
+    val lanzadorPermisoCamara = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { autorizado ->
+        if (autorizado) {
+            lanzadorCamara.launch(null)
+        } else {
+            mensajeFoto = "Permiso de cámara denegado. Puedes seguir usando la galería."
+        }
+    }
+
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -89,12 +161,25 @@ fun MiPerfilScreen(
                         .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.onPrimary
-                    )
+
+                    if (imagenPerfil != null) {
+                        Image(
+                            bitmap = imagenPerfil,
+                            contentDescription = "Fotografía de perfil",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(96.dp)
+                                .clip(CircleShape)
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = usuario.nombreCompleto,
@@ -108,6 +193,53 @@ fun MiPerfilScreen(
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onPrimary
                     )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            lanzadorGaleria.launch("image/*")
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        )
+                    ) {
+                        Text("Elegir foto de galería")
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            val tienePermiso = ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.CAMERA
+                            ) == PackageManager.PERMISSION_GRANTED
+
+                            if (tienePermiso) {
+                                lanzadorCamara.launch(null)
+                            } else {
+                                lanzadorPermisoCamara.launch(Manifest.permission.CAMERA)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        )
+
+                    ) {
+                        Text("Tomar foto con cámara")
+                    }
+
+                    if (mensajeFoto != null) {
+                        Text(
+                            text = mensajeFoto!!,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+
                 }
             }
 

@@ -22,6 +22,7 @@ import cl.fintech.pagoflex.util.ocultarRut
 import cl.fintech.pagoflex.viewmodel.CompromisosViewModel
 import cl.fintech.pagoflex.viewmodel.SesionViewModel
 import cl.fintech.pagoflex.viewmodel.ReportesViewModel
+import cl.fintech.pagoflex.viewmodel.FotoPerfilViewModel
 
 /**
  * Mapa de navegacion de la app: define que pantalla se muestra en cada ruta y como se pasa
@@ -39,14 +40,17 @@ fun AppNavegacion() {
     val sesionViewModel: SesionViewModel = viewModel()
     val compromisosViewModel: CompromisosViewModel = viewModel()
     val reportesViewModel: ReportesViewModel = viewModel()
+    val fotoPerfilViewModel: FotoPerfilViewModel = viewModel()
 
     // Estados observados: la pantalla se redibuja cuando cambian
     val usuarioActual by sesionViewModel.usuarioActual.collectAsStateWithLifecycle()
     val compromisos by compromisosViewModel.compromisos.collectAsStateWithLifecycle()
     val reportes by reportesViewModel.reportes.collectAsStateWithLifecycle()
+    val fotoPerfil by fotoPerfilViewModel.fotoPerfil.collectAsStateWithLifecycle()
 
     // Cierra la sesion, borra los datos en memoria y vuelve al inicio de sesion sin dejar historial
     val cerrarSesion = {
+        fotoPerfilViewModel.limpiar()
         sesionViewModel.cerrarSesion()
         compromisosViewModel.limpiar()
         navController.navigate(Ruta.InicioSesion.ruta) {
@@ -61,6 +65,7 @@ fun AppNavegacion() {
         composable(Ruta.InicioSesion.ruta) {
             InicioSesionScreen(
                 onInicioExitoso = { usuario ->
+                    fotoPerfilViewModel.cargar(usuario.id)
                     sesionViewModel.iniciarSesion(usuario)
                     compromisosViewModel.cargar(usuario.id)
                     reportesViewModel.cargar(usuario)
@@ -105,6 +110,10 @@ fun AppNavegacion() {
             if (usuario != null) {
                 MiPerfilScreen(
                     usuario = usuario,
+                    fotoPerfil = fotoPerfil,
+                    onGuardarFoto = { bitmap ->
+                        fotoPerfilViewModel.guardarFoto(bitmap)
+                    },
                     onVolver = { navController.navigateUp() }
                 )
             }
