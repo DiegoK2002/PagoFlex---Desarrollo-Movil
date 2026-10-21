@@ -44,10 +44,11 @@ fun TarjetaCompromiso(
     compromiso: Compromiso,
     nombreEmpresa: String,
     importe: Int,
-    importeConvertido: String? = null,
     modifier: Modifier = Modifier,
+    importeConvertido: String? = null,
     onClick: () -> Unit = {}
-) {
+)
+ {
 
     val avisoRecargo = when {
         importe == compromiso.monto -> null
