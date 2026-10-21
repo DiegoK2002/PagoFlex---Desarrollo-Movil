@@ -137,4 +137,21 @@ class IndicadorCumplimientoTest {
         assertEquals(33.333, resultado.porcentaje!!, 0.01)
         assertEquals("En camino", resultado.categoria)
     }
+
+    @Test
+    fun categoriasRespetanLosLimites() {
+        val bajoOchenta = IndicadorCumplimiento(4, 3)
+        val ochentaExacto = IndicadorCumplimiento(5, 4)
+        val bajoNoventaYCinco = IndicadorCumplimiento(19, 18)
+        val noventaYCincoExacto = IndicadorCumplimiento(20, 19)
+
+        assertEquals("En camino", bajoOchenta.categoria)
+        assertEquals("Al día", ochentaExacto.categoria)
+        assertEquals("Al día", bajoNoventaYCinco.categoria)
+        assertEquals("Ejemplar", noventaYCincoExacto.categoria)
+
+        assertEquals(80.0, ochentaExacto.porcentaje!!, 0.001)
+        assertEquals(95.0, noventaYCincoExacto.porcentaje!!, 0.001)
+    }
+
 }
