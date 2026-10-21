@@ -16,8 +16,13 @@ data class EstadoUf(
     val cargando: Boolean = false,
     val valor: Double? = null,
     val fecha: String? = null,
+    val valorEuro: Double? = null,
+    val fechaEuro: String? = null,
+    val valorDolar: Double? = null,
+    val fechaDolar: String? = null,
     val error: String? = null
 )
+
 
 class UfViewModel : ViewModel() {
 
@@ -49,22 +54,27 @@ class UfViewModel : ViewModel() {
                             .bufferedReader()
                             .use { it.readText() }
 
-                        val uf = JSONObject(respuesta)
-                            .getJSONObject("uf")
+                        val indicadores = JSONObject(respuesta)
 
-                        Pair(
-                            uf.getDouble("valor"),
-                            uf.getString("fecha").take(10)
+                        val uf = indicadores.getJSONObject("uf")
+                        val euro = indicadores.getJSONObject("euro")
+                        val dolar = indicadores.getJSONObject("dolar")
+
+                        EstadoUf(
+                            valor = uf.getDouble("valor"),
+                            fecha = uf.getString("fecha").take(10),
+                            valorEuro = euro.getDouble("valor"),
+                            fechaEuro = euro.getString("fecha").take(10),
+                            valorDolar = dolar.getDouble("valor"),
+                            fechaDolar = dolar.getString("fecha").take(10)
                         )
+
                     } finally {
                         conexion.disconnect()
                     }
                 }
 
-                _estado.value = EstadoUf(
-                    valor = resultado.first,
-                    fecha = resultado.second
-                )
+                _estado.value = resultado
             } catch (e: Exception) {
                 _estado.value = EstadoUf(
                     error = "No se pudo consultar la UF. Comprueba tu conexión."

@@ -237,6 +237,22 @@ class PagoFlexDbHelper private constructor(context: Context) :
 
     /** Compromisos de una persona, ordenados por fecha de vencimiento. */
     fun compromisosDeUsuario(idUsuario: Long): List<Compromiso> {
+
+        val valores = ContentValues().apply {
+            put("estado", EstadoCompromiso.VENCIDO.name)
+        }
+
+        writableDatabase.update(
+            TABLA_COMPROMISOS,
+            valores,
+            "id_usuario = ? AND estado = ? AND fecha_vencimiento < ?",
+            arrayOf(
+                idUsuario.toString(),
+                EstadoCompromiso.PENDIENTE.name,
+                LocalDate.now().toString()
+            )
+        )
+
         val lista = mutableListOf<Compromiso>()
         readableDatabase.rawQuery(
             "SELECT * FROM $TABLA_COMPROMISOS WHERE id_usuario = ? ORDER BY fecha_vencimiento",

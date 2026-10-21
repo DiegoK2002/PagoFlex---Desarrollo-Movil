@@ -52,6 +52,7 @@ fun TarjetaCompromiso(
     compromiso: Compromiso,
     nombreEmpresa: String,
     importe: Int,
+    importeConvertido: String? = null,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {

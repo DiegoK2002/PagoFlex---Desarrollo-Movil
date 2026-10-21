@@ -7,7 +7,7 @@ import cl.fintech.pagoflex.model.Compromiso
 import cl.fintech.pagoflex.model.EstadoCompromiso
 import cl.fintech.pagoflex.model.MotivoNoPago
 import cl.fintech.pagoflex.model.Pago
-import cl.fintech.pagoflex.util.FECHA_REFERENCIA
+import java.time.LocalDate
 import cl.fintech.pagoflex.util.calcularDiasDeAtraso
 import cl.fintech.pagoflex.util.compromisoAnterior
 import cl.fintech.pagoflex.util.motivoNoPagable
@@ -31,7 +31,10 @@ class CompromisosViewModel(application: Application) : AndroidViewModel(applicat
     private val bd = PagoFlexDbHelper.obtener(application)
 
     // Fecha que se usa como "hoy" para calcular los dias de atraso
-    private val hoy = FECHA_REFERENCIA
+
+    private val hoy: LocalDate
+        get() = LocalDate.now()
+
 
     private val _compromisos = MutableStateFlow<List<Compromiso>>(emptyList())
     val compromisos: StateFlow<List<Compromiso>> = _compromisos.asStateFlow()
