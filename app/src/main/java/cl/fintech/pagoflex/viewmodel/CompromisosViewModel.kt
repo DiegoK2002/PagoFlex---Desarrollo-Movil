@@ -16,6 +16,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.time.LocalDateTime
 import java.time.LocalTime
+import cl.fintech.pagoflex.util.IndicadorCumplimiento
+import cl.fintech.pagoflex.util.calcularIndicadorCumplimiento
+
 
 /**
  * Compromisos y pagos de la persona con sesion iniciada, leidos desde SQLite. Lo comparten la
@@ -43,6 +46,13 @@ class CompromisosViewModel(application: Application) : AndroidViewModel(applicat
     private val _pagos = MutableStateFlow<List<Pago>>(emptyList())
     val pagos: StateFlow<List<Pago>> = _pagos.asStateFlow()
 
+    private val _indicadorCumplimiento = MutableStateFlow(
+        IndicadorCumplimiento(0, 0)
+    )
+
+    val indicadorCumplimiento: StateFlow<IndicadorCumplimiento> =
+        _indicadorCumplimiento.asStateFlow()
+
     // Monto realmente pagado por cada compromiso ya pagado, indexado por folio
     private var montosPagados: Map<String, Int> = emptyMap()
 
@@ -61,16 +71,22 @@ class CompromisosViewModel(application: Application) : AndroidViewModel(applicat
         montosPagados = emptyMap()
         _compromisos.value = emptyList()
         _pagos.value = emptyList()
+        _indicadorCumplimiento.value = IndicadorCumplimiento(0, 0)
     }
 
     /** Vuelve a leer desde la base de datos. Los montos pagados se actualizan antes que la lista. */
+
 
     private fun recargar() {
         montosPagados = bd.montosPagadosDeUsuario(idUsuario)
         _compromisos.value = bd.compromisosDeUsuario(idUsuario)
         _pagos.value = bd.pagosDeUsuario(idUsuario)
-    }
 
+        _indicadorCumplimiento.value = calcularIndicadorCumplimiento(
+            compromisos = _compromisos.value,
+            pagos = _pagos.value
+        )
+    }
 
     fun actualizar() {
         if (idUsuario > 0L) {

@@ -49,6 +49,7 @@ fun AppNavegacion() {
     val usuarioActual by sesionViewModel.usuarioActual.collectAsStateWithLifecycle()
     val compromisos by compromisosViewModel.compromisos.collectAsStateWithLifecycle()
     val pagos by compromisosViewModel.pagos.collectAsStateWithLifecycle()
+    val indicadorCumplimiento by compromisosViewModel.indicadorCumplimiento.collectAsStateWithLifecycle()
     val reportes by reportesViewModel.reportes.collectAsStateWithLifecycle()
     val estadoUf by ufViewModel.estado.collectAsStateWithLifecycle()
     val fotoPerfil by fotoPerfilViewModel.fotoPerfil.collectAsStateWithLifecycle()
@@ -124,6 +125,7 @@ fun AppNavegacion() {
                 HistorialPagosScreen(
                     pagos = pagos,
                     nombreEmpresa = compromisosViewModel::nombreEmpresa,
+                    indicador = indicadorCumplimiento,
                     onVerComprobante = { folio ->
                         navController.navigate(
                             Ruta.Comprobante.crear(folio)
