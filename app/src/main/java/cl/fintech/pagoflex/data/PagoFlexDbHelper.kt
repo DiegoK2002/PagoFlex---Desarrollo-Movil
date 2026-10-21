@@ -350,12 +350,28 @@ class PagoFlexDbHelper private constructor(
     // ------------------------------------------------------------------
 
     /** Ultimo pago registrado para un compromiso, o null si no tiene. */
-    fun pagoPorFolio(folio: String): Pago? =
-        readableDatabase.rawQuery(
-            "SELECT * FROM $TABLA_PAGOS WHERE folio = ? ORDER BY numero_comprobante DESC LIMIT 1",
-            arrayOf(folio)
-        ).use { cursor -> if (cursor.moveToFirst()) leerPago(cursor) else null }
 
+
+    fun pagoPorFolioDeUsuario(
+        folio: String,
+        idUsuario: Long
+    ): Pago? {
+        if (idUsuario <= 0L || folio.isBlank()) return null
+
+        return readableDatabase.rawQuery(
+            "SELECT * FROM $TABLA_PAGOS " +
+                    "WHERE folio = ? AND id_usuario = ? " +
+                    "ORDER BY fecha_hora DESC, numero_comprobante DESC " +
+                    "LIMIT 1",
+            arrayOf(folio, idUsuario.toString())
+        ).use { cursor ->
+            if (cursor.moveToFirst()) {
+                leerPago(cursor)
+            } else {
+                null
+            }
+        }
+    }
 
     fun pagosDeUsuario(idUsuario: Long): List<Pago> {
         if (idUsuario <= 0L) {

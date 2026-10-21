@@ -41,11 +41,14 @@ import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Card
-import cl.fintech.pagoflex.viewmodel.EstadoUf
+import cl.fintech.pagoflex.viewmodel.EstadoCotizaciones
 import java.util.Locale
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.FilterChip
 import androidx.compose.runtime.saveable.rememberSaveable
+import cl.fintech.pagoflex.util.ResumenCompromisos
+import cl.fintech.pagoflex.util.formatearFecha
+import cl.fintech.pagoflex.util.formatearPesos
 
 /**
  * Pantalla principal del usuario final: lista de sus compromisos y menu lateral con
@@ -60,15 +63,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 fun CompromisosScreen(
     usuario: Usuario,
     compromisos: List<Compromiso>,
-    estadoUf: EstadoUf,
+    estadoCotizaciones: EstadoCotizaciones,
     nombreEmpresa: (String) -> String,
     importeDe: (Compromiso) -> Int,
     onVerDetalle: (String) -> Unit,
     onVerHistorial: () -> Unit,
     onVerReconocimientos: () -> Unit,
     onVerPerfil: () -> Unit,
-    onSalir: () -> Unit
-
+    onSalir: () -> Unit,
+    resumenCompromisos: ResumenCompromisos? = null
 ) {
     // Estado del menu lateral (abierto o cerrado) y ambito para abrirlo y cerrarlo
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -167,17 +170,6 @@ fun CompromisosScreen(
             },
             containerColor = MaterialTheme.colorScheme.background
         ) { innerPadding ->
-            if (compromisos.isEmpty()) {
-                // Mensaje centrado cuando la persona no tiene compromisos
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("No tienes compromisos registrados")
-                }
-            } else {
                 // Lista que dibuja solo las tarjetas visibles en pantalla
                 LazyColumn(
                     modifier = Modifier
@@ -201,8 +193,8 @@ fun CompromisosScreen(
                             ) {
                                 listOf("CLP", "EUR", "USD").forEach { moneda ->
                                     val disponible = when (moneda) {
-                                        "EUR" -> (estadoUf.valorEuro ?: 0.0) > 0.0
-                                        "USD" -> (estadoUf.valorDolar ?: 0.0) > 0.0
+                                        "EUR" -> (estadoCotizaciones.valorEuro ?: 0.0) > 0.0
+                                        "USD" -> (estadoCotizaciones.valorDolar ?: 0.0) > 0.0
                                         else -> true
                                     }
 
@@ -217,10 +209,36 @@ fun CompromisosScreen(
                                 }
                             }
 
+
+                            when {
+                                estadoCotizaciones.cargando -> {
+                                    Text(
+                                        text = "Consultando cotizaciones de EUR y USD...",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+
+                                estadoCotizaciones.error != null -> {
+                                    Text(
+                                        text = estadoCotizaciones.error,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+
+                                estadoCotizaciones.valorEuro == null || estadoCotizaciones.valorDolar == null -> {
+                                    Text(
+                                        text = "Las cotizaciones aún no están disponibles.",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                            }
+
+
                             if (monedaSeleccionada != "CLP") {
                                 val fecha = when (monedaSeleccionada) {
-                                    "EUR" -> estadoUf.fechaEuro
-                                    "USD" -> estadoUf.fechaDolar
+                                    "EUR" -> estadoCotizaciones.fechaEuro
+                                    "USD" -> estadoCotizaciones.fechaDolar
                                     else -> null
                                 }
 
@@ -231,8 +249,8 @@ fun CompromisosScreen(
 
 
                                 val cotizacionActual = when (monedaSeleccionada) {
-                                    "EUR" -> estadoUf.valorEuro
-                                    "USD" -> estadoUf.valorDolar
+                                    "EUR" -> estadoCotizaciones.valorEuro
+                                    "USD" -> estadoCotizaciones.valorDolar
                                     else -> null
                                 }
 
@@ -251,9 +269,11 @@ fun CompromisosScreen(
 
 
                                 Text(
+
                                     "Conversión aproximada al $fechaFormateada. " +
                                             "Los pagos reales se realizan en CLP. " +
-                                            "Fuente: mindicador.cl",
+                                            "Fuente: Currency API (fawazahmed0)"
+                                    ,
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
@@ -261,13 +281,64 @@ fun CompromisosScreen(
                     }
 
 
+                    if (resumenCompromisos != null) {
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = "Resumen de mis compromisos",
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+
+                                    Text(
+
+                                        text = "Por pagar este mes (CLP): " +
+                                                formatearPesos(resumenCompromisos.totalPorPagarMes)
+
+                                    )
+
+                                    val proximoVencimiento =
+                                        resumenCompromisos.proximoVencimiento?.let {
+                                            formatearFecha(it)
+                                        } ?: "Sin próximos vencimientos"
+
+                                    Text(
+                                        text = "Próximo vencimiento: $proximoVencimiento"
+                                    )
+
+                                    Text(
+                                        text = "Compromisos vencidos: " +
+                                                resumenCompromisos.cantidadVencidos
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    if (compromisos.isEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 32.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("No tienes compromisos registrados")
+                            }
+                        }
+                    }
 
                     items(compromisos) { compromiso ->
                         val importe = importeDe(compromiso)
 
                         val cotizacion = when (monedaSeleccionada) {
-                            "EUR" -> estadoUf.valorEuro
-                            "USD" -> estadoUf.valorDolar
+                            "EUR" -> estadoCotizaciones.valorEuro
+                            "USD" -> estadoCotizaciones.valorDolar
                             else -> null
                         }
 
@@ -297,7 +368,7 @@ fun CompromisosScreen(
                     }
 
                 }
-            }
+
         }
     }
 }

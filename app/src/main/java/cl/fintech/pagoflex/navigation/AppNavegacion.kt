@@ -23,7 +23,7 @@ import cl.fintech.pagoflex.viewmodel.CompromisosViewModel
 import cl.fintech.pagoflex.viewmodel.SesionViewModel
 import cl.fintech.pagoflex.viewmodel.ReportesViewModel
 import cl.fintech.pagoflex.viewmodel.FotoPerfilViewModel
-import cl.fintech.pagoflex.viewmodel.UfViewModel
+import cl.fintech.pagoflex.viewmodel.CotizacionesViewModel
 import cl.fintech.pagoflex.ui.screens.HistorialPagosScreen
 import cl.fintech.pagoflex.ui.screens.ReconocimientosScreen
 
@@ -43,17 +43,18 @@ fun AppNavegacion() {
     val sesionViewModel: SesionViewModel = viewModel()
     val compromisosViewModel: CompromisosViewModel = viewModel()
     val reportesViewModel: ReportesViewModel = viewModel()
-    val ufViewModel: UfViewModel = viewModel()
+    val cotizacionesViewModel: CotizacionesViewModel = viewModel()
     val fotoPerfilViewModel: FotoPerfilViewModel = viewModel()
 
     // Estados observados: la pantalla se redibuja cuando cambian
     val usuarioActual by sesionViewModel.usuarioActual.collectAsStateWithLifecycle()
     val compromisos by compromisosViewModel.compromisos.collectAsStateWithLifecycle()
+    val resumenCompromisos by compromisosViewModel.resumenCompromisos.collectAsStateWithLifecycle()
     val pagos by compromisosViewModel.pagos.collectAsStateWithLifecycle()
     val indicadorCumplimiento by compromisosViewModel.indicadorCumplimiento.collectAsStateWithLifecycle()
     val reconocimientos by compromisosViewModel.reconocimientos.collectAsStateWithLifecycle()
     val reportes by reportesViewModel.reportes.collectAsStateWithLifecycle()
-    val estadoUf by ufViewModel.estado.collectAsStateWithLifecycle()
+    val estadoCotizaciones by cotizacionesViewModel.estado.collectAsStateWithLifecycle()
     val fotoPerfil by fotoPerfilViewModel.fotoPerfil.collectAsStateWithLifecycle()
 
     // Cierra la sesion, borra los datos en memoria y vuelve al inicio de sesion sin dejar historial
@@ -78,7 +79,7 @@ fun AppNavegacion() {
                     compromisosViewModel.cargar(usuario.id)
                     reportesViewModel.cargar(usuario)
                     if (usuario.rol == Rol.USUARIO_FINAL) {
-                        ufViewModel.consultar()
+                        cotizacionesViewModel.consultar()
                     }
                     val destino = when (usuario.rol) {
                         Rol.USUARIO_FINAL -> Ruta.Compromisos.ruta
@@ -107,7 +108,8 @@ fun AppNavegacion() {
                 CompromisosScreen(
                     usuario = usuario,
                     compromisos = compromisos,
-                    estadoUf = estadoUf,
+                    resumenCompromisos = resumenCompromisos,
+                    estadoCotizaciones = estadoCotizaciones,
                     nombreEmpresa = compromisosViewModel::nombreEmpresa,
                     importeDe = compromisosViewModel::importeDe,
                     onVerDetalle = { folio -> navController.navigate(Ruta.Detalle.crear(folio)) },
@@ -119,6 +121,7 @@ fun AppNavegacion() {
                     },
                     onVerPerfil = { navController.navigate(Ruta.MiPerfil.ruta) },
                     onSalir = cerrarSesion
+
                 )
             }
         }

@@ -21,6 +21,8 @@ import cl.fintech.pagoflex.util.calcularIndicadorCumplimiento
 import cl.fintech.pagoflex.util.Reconocimiento
 import cl.fintech.pagoflex.util.calcularReconocimientosPorPagos
 import cl.fintech.pagoflex.util.cumpleMetaEjemplar
+import cl.fintech.pagoflex.util.ResumenCompromisos
+import cl.fintech.pagoflex.util.calcularResumenCompromisos
 
 /**
  * Compromisos y pagos de la persona con sesion iniciada, leidos desde SQLite. Lo comparten la
@@ -44,6 +46,16 @@ class CompromisosViewModel(application: Application) : AndroidViewModel(applicat
     private val _compromisos = MutableStateFlow<List<Compromiso>>(emptyList())
     val compromisos: StateFlow<List<Compromiso>> = _compromisos.asStateFlow()
 
+    private val _resumenCompromisos = MutableStateFlow(
+        ResumenCompromisos(
+            totalPorPagarMes = 0,
+            proximoVencimiento = null,
+            cantidadVencidos = 0
+        )
+    )
+
+    val resumenCompromisos: StateFlow<ResumenCompromisos> =
+        _resumenCompromisos.asStateFlow()
 
     private val _pagos = MutableStateFlow<List<Pago>>(emptyList())
     val pagos: StateFlow<List<Pago>> = _pagos.asStateFlow()
@@ -84,6 +96,13 @@ class CompromisosViewModel(application: Application) : AndroidViewModel(applicat
         _pagos.value = emptyList()
         _indicadorCumplimiento.value = IndicadorCumplimiento(0, 0)
         _reconocimientos.value = emptyList()
+
+        _resumenCompromisos.value = ResumenCompromisos(
+            totalPorPagarMes = 0,
+            proximoVencimiento = null,
+            cantidadVencidos = 0
+        )
+
     }
 
     /** Vuelve a leer desde la base de datos. Los montos pagados se actualizan antes que la lista. */
@@ -93,6 +112,11 @@ class CompromisosViewModel(application: Application) : AndroidViewModel(applicat
         montosPagados = bd.montosPagadosDeUsuario(idUsuario)
         _compromisos.value = bd.compromisosDeUsuario(idUsuario)
         _pagos.value = bd.pagosDeUsuario(idUsuario)
+
+        _resumenCompromisos.value = calcularResumenCompromisos(
+            compromisos = _compromisos.value,
+            importeDe = ::importeDe
+        )
 
         _indicadorCumplimiento.value = calcularIndicadorCumplimiento(
             compromisos = _compromisos.value,
@@ -203,5 +227,16 @@ class CompromisosViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     /** Comprobante de un compromiso ya pagado, o null si no tiene. */
-    fun pagoDe(folio: String): Pago? = bd.pagoPorFolio(folio)
+
+
+    fun pagoDe(folio: String): Pago? {
+        if (idUsuario <= 0L || folio.isBlank()) return null
+
+        return bd.pagoPorFolioDeUsuario(
+            folio = folio,
+            idUsuario = idUsuario
+        )
+    }
+
+
 }
