@@ -289,6 +289,28 @@ class PagoFlexDbHelper private constructor(context: Context) :
             arrayOf(folio)
         ).use { cursor -> if (cursor.moveToFirst()) leerPago(cursor) else null }
 
+
+    fun pagosDeUsuario(idUsuario: Long): List<Pago> {
+        if (idUsuario <= 0L) {
+            return emptyList()
+        }
+
+        val pagos = mutableListOf<Pago>()
+
+        readableDatabase.rawQuery(
+            "SELECT * FROM $TABLA_PAGOS " +
+                    "WHERE id_usuario = ? " +
+                    "ORDER BY fecha_hora DESC, numero_comprobante DESC",
+            arrayOf(idUsuario.toString())
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                pagos.add(leerPago(cursor))
+            }
+        }
+
+        return pagos
+    }
+
     /** Monto efectivamente pagado por cada compromiso de una persona, indexado por folio. */
     fun montosPagadosDeUsuario(idUsuario: Long): Map<String, Int> {
         val montos = mutableMapOf<String, Int>()

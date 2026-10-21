@@ -39,6 +39,10 @@ class CompromisosViewModel(application: Application) : AndroidViewModel(applicat
     private val _compromisos = MutableStateFlow<List<Compromiso>>(emptyList())
     val compromisos: StateFlow<List<Compromiso>> = _compromisos.asStateFlow()
 
+
+    private val _pagos = MutableStateFlow<List<Pago>>(emptyList())
+    val pagos: StateFlow<List<Pago>> = _pagos.asStateFlow()
+
     // Monto realmente pagado por cada compromiso ya pagado, indexado por folio
     private var montosPagados: Map<String, Int> = emptyMap()
 
@@ -56,13 +60,17 @@ class CompromisosViewModel(application: Application) : AndroidViewModel(applicat
         idUsuario = 0
         montosPagados = emptyMap()
         _compromisos.value = emptyList()
+        _pagos.value = emptyList()
     }
 
     /** Vuelve a leer desde la base de datos. Los montos pagados se actualizan antes que la lista. */
+
     private fun recargar() {
         montosPagados = bd.montosPagadosDeUsuario(idUsuario)
         _compromisos.value = bd.compromisosDeUsuario(idUsuario)
+        _pagos.value = bd.pagosDeUsuario(idUsuario)
     }
+
 
     fun actualizar() {
         if (idUsuario > 0L) {

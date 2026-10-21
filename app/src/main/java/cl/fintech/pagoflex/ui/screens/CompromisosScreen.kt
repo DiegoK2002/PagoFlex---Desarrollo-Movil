@@ -64,8 +64,10 @@ fun CompromisosScreen(
     nombreEmpresa: (String) -> String,
     importeDe: (Compromiso) -> Int,
     onVerDetalle: (String) -> Unit,
+    onVerHistorial: () -> Unit,
     onVerPerfil: () -> Unit,
     onSalir: () -> Unit
+
 ) {
     // Estado del menu lateral (abierto o cerrado) y ambito para abrirlo y cerrarlo
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -104,6 +106,16 @@ fun CompromisosScreen(
                     modifier = Modifier.padding(16.dp)
                 )
                 HorizontalDivider()
+
+                NavigationDrawerItem(
+                    label = { Text("Historial de pagos") },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        onVerHistorial()
+                    }
+                )
+
                 NavigationDrawerItem(
                     label = { Text("Mi perfil") },
                     selected = false,

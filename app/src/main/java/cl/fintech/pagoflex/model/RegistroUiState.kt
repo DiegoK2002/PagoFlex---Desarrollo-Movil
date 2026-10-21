@@ -25,7 +25,7 @@ data class RegistroUiState(
     val errorComuna: String? = null,
     val errorContrasena: String? = null,
     val errorRepetir: String? = null,
-    
+
     val registroExitoso: Boolean = false,
     val nombreRegistrado: String = ""
 )

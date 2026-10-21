@@ -24,6 +24,7 @@ import cl.fintech.pagoflex.viewmodel.SesionViewModel
 import cl.fintech.pagoflex.viewmodel.ReportesViewModel
 import cl.fintech.pagoflex.viewmodel.FotoPerfilViewModel
 import cl.fintech.pagoflex.viewmodel.UfViewModel
+import cl.fintech.pagoflex.ui.screens.HistorialPagosScreen
 
 /**
  * Mapa de navegacion de la app: define que pantalla se muestra en cada ruta y como se pasa
@@ -47,6 +48,7 @@ fun AppNavegacion() {
     // Estados observados: la pantalla se redibuja cuando cambian
     val usuarioActual by sesionViewModel.usuarioActual.collectAsStateWithLifecycle()
     val compromisos by compromisosViewModel.compromisos.collectAsStateWithLifecycle()
+    val pagos by compromisosViewModel.pagos.collectAsStateWithLifecycle()
     val reportes by reportesViewModel.reportes.collectAsStateWithLifecycle()
     val estadoUf by ufViewModel.estado.collectAsStateWithLifecycle()
     val fotoPerfil by fotoPerfilViewModel.fotoPerfil.collectAsStateWithLifecycle()
@@ -106,8 +108,30 @@ fun AppNavegacion() {
                     nombreEmpresa = compromisosViewModel::nombreEmpresa,
                     importeDe = compromisosViewModel::importeDe,
                     onVerDetalle = { folio -> navController.navigate(Ruta.Detalle.crear(folio)) },
+                    onVerHistorial = {
+                        navController.navigate(Ruta.HistorialPagos.ruta)
+                    },
                     onVerPerfil = { navController.navigate(Ruta.MiPerfil.ruta) },
                     onSalir = cerrarSesion
+                )
+            }
+        }
+
+        composable(Ruta.HistorialPagos.ruta) {
+            val usuario = usuarioActual
+
+            if (usuario != null && usuario.rol == Rol.USUARIO_FINAL) {
+                HistorialPagosScreen(
+                    pagos = pagos,
+                    nombreEmpresa = compromisosViewModel::nombreEmpresa,
+                    onVerComprobante = { folio ->
+                        navController.navigate(
+                            Ruta.Comprobante.crear(folio)
+                        )
+                    },
+                    onVolver = {
+                        navController.navigateUp()
+                    }
                 )
             }
         }
