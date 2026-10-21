@@ -12,7 +12,6 @@ data class RegistroUiState(
     val rutDv: String = "",
     val correo: String = "",
     val comuna: String = "",
-    val rol: Rol = Rol.USUARIO_FINAL,
     val contrasena: String = "",
     val repetirContrasena: String = "",
 

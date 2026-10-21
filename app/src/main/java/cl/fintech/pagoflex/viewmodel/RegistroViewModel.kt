@@ -57,10 +57,6 @@ class RegistroViewModel(application: Application) : AndroidViewModel(application
         _uiState.update { it.copy(comuna = valor, errorComuna = null) }
     }
 
-    fun onRolSeleccionado(valor: Rol) {
-        _uiState.update { it.copy(rol = valor) }
-    }
-
     /** Al cambiar la contrasena se compara de inmediato con su repeticion, si ya se escribio. */
     fun onContrasenaCambia(valor: String) {
         val nueva = valor.take(30)

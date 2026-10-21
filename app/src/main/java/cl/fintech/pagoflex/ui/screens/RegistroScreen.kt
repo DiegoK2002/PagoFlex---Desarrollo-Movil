@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.fintech.pagoflex.model.RegistroUiState
-import cl.fintech.pagoflex.model.Rol
 import cl.fintech.pagoflex.ui.components.BotonPrincipal
 import cl.fintech.pagoflex.ui.components.BotonSecundario
 import cl.fintech.pagoflex.ui.components.CampoContrasena
@@ -66,7 +65,6 @@ fun RegistroScreen(
         onRutDvCambia = viewModel::onRutDvCambia,
         onCorreoCambia = viewModel::onCorreoCambia,
         onComunaSeleccionada = viewModel::onComunaSeleccionada,
-        onRolSeleccionado = viewModel::onRolSeleccionado,
         onContrasenaCambia = viewModel::onContrasenaCambia,
         onRepetirCambia = viewModel::onRepetirCambia,
         onAlternarContrasena = viewModel::onAlternarContrasena,
@@ -89,7 +87,6 @@ fun RegistroContent(
     onRutDvCambia: (String) -> Unit,
     onCorreoCambia: (String) -> Unit,
     onComunaSeleccionada: (String) -> Unit,
-    onRolSeleccionado: (Rol) -> Unit,
     onContrasenaCambia: (String) -> Unit,
     onRepetirCambia: (String) -> Unit,
     onAlternarContrasena: () -> Unit,
@@ -204,13 +201,6 @@ fun RegistroContent(
                 textoDe = { it },
                 onSeleccionar = onComunaSeleccionada,
                 error = uiState.errorComuna
-            )
-            ListaDesplegable(
-                etiqueta = "Tipo de usuario",
-                opciones = Rol.entries.toList(),
-                seleccionada = uiState.rol,
-                textoDe = { it.etiqueta },
-                onSeleccionar = onRolSeleccionado
             )
 
             // ----- Seguridad -----
