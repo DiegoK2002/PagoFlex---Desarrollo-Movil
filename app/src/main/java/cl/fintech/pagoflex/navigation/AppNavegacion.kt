@@ -27,6 +27,7 @@ import cl.fintech.pagoflex.viewmodel.CotizacionesViewModel
 import cl.fintech.pagoflex.ui.screens.HistorialPagosScreen
 import cl.fintech.pagoflex.ui.screens.ReconocimientosScreen
 
+
 @Composable
 fun AppNavegacion() {
     val navController = rememberNavController()
@@ -37,6 +38,12 @@ fun AppNavegacion() {
     val fotoPerfilViewModel: FotoPerfilViewModel = viewModel()
 
     val usuarioActual by sesionViewModel.usuarioActual.collectAsStateWithLifecycle()
+
+    val volverSiCorresponde: (String) -> Unit = { ruta ->
+        if (navController.currentDestination?.route == ruta) {
+            navController.navigateUp()
+        }
+    }
     val compromisos by compromisosViewModel.compromisos.collectAsStateWithLifecycle()
     val resumenCompromisos by compromisosViewModel.resumenCompromisos.collectAsStateWithLifecycle()
     val pagos by compromisosViewModel.pagos.collectAsStateWithLifecycle()
@@ -124,9 +131,7 @@ fun AppNavegacion() {
                             Ruta.Comprobante.crear(folio)
                         )
                     },
-                    onVolver = {
-                        navController.navigateUp()
-                    }
+                    onVolver = { volverSiCorresponde(Ruta.HistorialPagos.ruta) }
                 )
             }
         }
@@ -137,9 +142,7 @@ fun AppNavegacion() {
             if (usuario != null && usuario.rol == Rol.USUARIO_FINAL) {
                 ReconocimientosScreen(
                     reconocimientos = reconocimientos,
-                    onVolver = {
-                        navController.navigateUp()
-                    }
+                    onVolver = { volverSiCorresponde(Ruta.Reconocimientos.ruta) }
                 )
             }
         }
@@ -153,7 +156,7 @@ fun AppNavegacion() {
                     onGuardarFoto = { bitmap ->
                         fotoPerfilViewModel.guardarFoto(bitmap)
                     },
-                    onVolver = { navController.navigateUp() }
+                    onVolver = { volverSiCorresponde(Ruta.MiPerfil.ruta) }
                 )
             }
         }
@@ -190,7 +193,7 @@ fun AppNavegacion() {
                     total = compromisosViewModel.importeDe(compromiso),
                     motivoNoPago = compromisosViewModel.motivoDe(compromiso),
                     anterior = compromisosViewModel.anteriorPendiente(compromiso),
-                    onVolver = { navController.navigateUp() },
+                    onVolver = { volverSiCorresponde(Ruta.Detalle.ruta) },
                     onConfirmarPago = {
 
                         val pago = compromisosViewModel.pagar(compromiso)
@@ -243,7 +246,7 @@ fun AppNavegacion() {
                     nombreEmpresa = compromisosViewModel.nombreEmpresa(pago.codigoEmpresa),
                     nombrePagador = usuario.nombreCompleto,
                     rutParcial = ocultarRut(usuario.rut),
-                    onVolver = { navController.navigateUp() }
+                    onVolver = { volverSiCorresponde(Ruta.Comprobante.ruta) }
                 )
             }
         }

@@ -49,6 +49,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import cl.fintech.pagoflex.util.ResumenCompromisos
 import cl.fintech.pagoflex.util.formatearFecha
 import cl.fintech.pagoflex.util.formatearPesos
+import androidx.activity.compose.BackHandler
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,6 +70,10 @@ fun CompromisosScreen(
     val scope = rememberCoroutineScope()
 
     var mostrarDialogo by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = drawerState.isClosed && !mostrarDialogo) {
+        mostrarDialogo = true
+    }
 
     var monedaSeleccionada by rememberSaveable { mutableStateOf("CLP") }
 
