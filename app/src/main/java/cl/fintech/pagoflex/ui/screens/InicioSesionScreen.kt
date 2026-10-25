@@ -143,13 +143,6 @@ fun InicioSesionContent(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = "Cuentas de prueba (contrase\u00f1a Demo1234):\n" +
-                    "crojas@correo.ejemplo - usuario final\n" +
-                    "alagos@pagoflex.ejemplo - agente",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }
