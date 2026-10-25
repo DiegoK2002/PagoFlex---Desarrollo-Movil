@@ -99,7 +99,6 @@ fun HistorialPagosScreen(
 
     Scaffold(
         topBar = {
-            Column {
                 TopAppBar(
                     title = { Text("Historial de pagos") },
                     navigationIcon = {
@@ -116,52 +115,6 @@ fun HistorialPagosScreen(
                         navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 )
-
-                val porcentaje = indicador.porcentaje
-
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(
-                            "Cumplimiento de los últimos 12 meses",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-
-
-                        if (porcentaje == null) {
-                            Text(
-                                "Historial insuficiente",
-                                style = MaterialTheme.typography.titleLarge
-                            )
-
-                            Text(
-                                "Se necesitan al menos 3 compromisos evaluables."
-                            )
-                        } else {
-                            GraficoCumplimiento(
-                                porcentaje = porcentaje,
-                                modifier = Modifier.align(Alignment.CenterHorizontally)
-                            )
-
-                            Text(
-                                indicador.categoria ?: "",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-
-                            Text(
-                                "${indicador.pagadosATiempo} de ${indicador.evaluados} compromisos pagados a tiempo"
-                            )
-                        }
-
-                    }
-                }
-            }
             }
     ) { innerPadding ->
         if (pagos.isEmpty()) {
@@ -183,6 +136,51 @@ fun HistorialPagosScreen(
             ) {
 
                 item {
+                    val porcentaje = indicador.porcentaje
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                "Cumplimiento de los últimos 12 meses",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+
+
+                            if (porcentaje == null) {
+                                Text(
+                                    "Historial insuficiente",
+                                    style = MaterialTheme.typography.titleLarge
+                                )
+
+                                Text(
+                                    "Se necesitan al menos 3 compromisos evaluables."
+                                )
+                            } else {
+                                GraficoCumplimiento(
+                                    porcentaje = porcentaje,
+                                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                                )
+
+                                Text(
+                                    indicador.categoria ?: "",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+
+                                Text(
+                                    "${indicador.pagadosATiempo} de ${indicador.evaluados} compromisos pagados a tiempo"
+                                )
+                            }
+
+                        }
+                    }
+
                     ListaDesplegable(
                         etiqueta = "Filtrar por empresa",
                         opciones = opcionesEmpresas,
