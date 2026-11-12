@@ -39,6 +39,16 @@
       "projectName": "empresas-service",
       "args": "",
       "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "type": "java",
+      "name": "Spring Boot-CompromisosServiceApplication<compromisos-service>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "cl.pagoflex.compromisos.CompromisosServiceApplication",
+      "projectName": "compromisos-service",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
     }
   ]
 }
