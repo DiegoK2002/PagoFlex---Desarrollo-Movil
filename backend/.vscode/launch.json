@@ -49,6 +49,16 @@
       "projectName": "compromisos-service",
       "args": "",
       "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "type": "java",
+      "name": "Spring Boot-PagosServiceApplication<pagos-service>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "cl.pagoflex.pagos.PagosServiceApplication",
+      "projectName": "pagos-service",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
     }
   ]
 }
