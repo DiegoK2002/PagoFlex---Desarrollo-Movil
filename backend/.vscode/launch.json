@@ -1,0 +1,44 @@
+{
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Spring Boot-EurekaServerApplication<eureka-server>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "cl.pagoflex.eureka_server.EurekaServerApplication",
+      "projectName": "eureka-server",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "type": "java",
+      "name": "Spring Boot-UsuariosServiceApplication<usuarios-service>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "cl.pagoflex.usuarios.UsuariosServiceApplication",
+      "projectName": "usuarios-service",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "type": "java",
+      "name": "Spring Boot-ApiGatewayApplication<api-gateway>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "cl.pagoflex.gateway.ApiGatewayApplication",
+      "projectName": "api-gateway",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "type": "java",
+      "name": "Spring Boot-EmpresasServiceApplication<empresas-service>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "cl.pagoflex.empresas.EmpresasServiceApplication",
+      "projectName": "empresas-service",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
+    }
+  ]
+}
