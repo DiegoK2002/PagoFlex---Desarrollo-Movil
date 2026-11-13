@@ -1,7 +1,10 @@
 package cl.pagoflex.compromisos.service;
 
+import cl.pagoflex.compromisos.client.EmpresasClient;
 import cl.pagoflex.compromisos.model.Compromiso;
 import cl.pagoflex.compromisos.repository.CompromisoRepository;
+
+import feign.FeignException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -14,14 +17,20 @@ import org.springframework.web.server.ResponseStatusException;
 public class CompromisoService {
 
     private final CompromisoRepository compromisoRepository;
+    private final EmpresasClient empresasClient;
 
-    public CompromisoService(CompromisoRepository compromisoRepository) {
+    public CompromisoService(
+            CompromisoRepository compromisoRepository,
+            EmpresasClient empresasClient
+    ) {
         this.compromisoRepository = compromisoRepository;
+        this.empresasClient = empresasClient;
     }
 
     public Compromiso registrar(Compromiso datos) {
 
         validarDatos(datos);
+        validarEmpresa(datos.getIdEmpresa());
 
         Compromiso compromiso = new Compromiso();
 
@@ -37,7 +46,6 @@ public class CompromisoService {
     }
 
     public List<Compromiso> listarTodos() {
-
         return compromisoRepository.findAll();
     }
 
@@ -53,13 +61,13 @@ public class CompromisoService {
     }
 
     public List<Compromiso> listarPorUsuario(Long idUsuario) {
-
         return compromisoRepository.findByIdUsuario(idUsuario);
     }
 
     public Compromiso actualizar(Long id, Compromiso datos) {
 
         validarDatos(datos);
+        validarEmpresa(datos.getIdEmpresa());
 
         Compromiso compromiso = buscarPorId(id);
 
@@ -79,6 +87,55 @@ public class CompromisoService {
         compromiso.setActivo(false);
 
         compromisoRepository.save(compromiso);
+    }
+
+    private void validarEmpresa(Long idEmpresa) {
+
+        EmpresasClient.EmpresaResumen empresa;
+
+        try {
+
+            empresa = empresasClient.buscarPorId(idEmpresa);
+
+        } catch (FeignException.NotFound error) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "La empresa asociada no existe"
+            );
+
+        } catch (FeignException error) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "No se pudo consultar empresas-service",
+                    error
+            );
+        }
+
+        if (empresa == null || empresa.idEmpresa() == null) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Respuesta invalida de empresas-service"
+            );
+        }
+
+        if (!empresa.idEmpresa().equals(idEmpresa)) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "La empresa consultada no coincide"
+            );
+        }
+
+        if (!Boolean.TRUE.equals(empresa.activo())) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "No se pueden registrar compromisos con empresas inactivas"
+            );
+        }
     }
 
     private void validarDatos(Compromiso datos) {
