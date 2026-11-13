@@ -1,6 +1,7 @@
 package cl.pagoflex.reportes.service;
 
 import cl.pagoflex.reportes.client.PagosClient;
+import cl.pagoflex.reportes.client.UsuariosClient;
 import cl.pagoflex.reportes.model.Reporte;
 import cl.pagoflex.reportes.repository.ReporteRepository;
 
@@ -18,18 +19,22 @@ public class ReporteService {
 
     private final ReporteRepository reporteRepository;
     private final PagosClient pagosClient;
+    private final UsuariosClient usuariosClient;
 
     public ReporteService(
             ReporteRepository reporteRepository,
-            PagosClient pagosClient
+            PagosClient pagosClient,
+            UsuariosClient usuariosClient
     ) {
         this.reporteRepository = reporteRepository;
         this.pagosClient = pagosClient;
+        this.usuariosClient = usuariosClient;
     }
 
     public Reporte registrar(Reporte datos) {
 
         validarDatos(datos);
+        validarUsuario(datos.getIdUsuario(), true);
         validarPago(datos.getIdPago(), datos.getIdUsuario());
 
         Reporte reporte = new Reporte();
@@ -82,6 +87,7 @@ public class ReporteService {
     public Reporte actualizar(Long id, Reporte datos) {
 
         validarDatos(datos);
+        validarUsuario(datos.getIdUsuario(), false);
         validarPago(datos.getIdPago(), datos.getIdUsuario());
 
         Reporte reporte = buscarPorId(id);
@@ -153,6 +159,57 @@ public class ReporteService {
         reporte.setActivo(false);
 
         reporteRepository.save(reporte);
+    }
+
+    private void validarUsuario(Long idUsuario, boolean exigirActivo) {
+
+        UsuariosClient.UsuarioResumen usuario;
+
+        try {
+
+            usuario = usuariosClient.buscarPorId(idUsuario);
+
+        } catch (FeignException.NotFound error) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "El usuario asociado no existe"
+            );
+
+        } catch (FeignException error) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "No se pudo consultar usuarios-service",
+                    error
+            );
+        }
+
+        if (usuario == null
+                || usuario.idUsuario() == null
+                || usuario.activo() == null) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Respuesta invalida de usuarios-service"
+            );
+        }
+
+        if (!usuario.idUsuario().equals(idUsuario)) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "El usuario consultado no coincide"
+            );
+        }
+
+        if (exigirActivo && !Boolean.TRUE.equals(usuario.activo())) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "No se pueden registrar reportes con usuarios inactivos"
+            );
+        }
     }
 
     private void validarPago(Long idPago, Long idUsuario) {
