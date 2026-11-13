@@ -1,7 +1,10 @@
 package cl.pagoflex.archivos.service;
 
+import cl.pagoflex.archivos.client.PagosClient;
 import cl.pagoflex.archivos.model.Archivo;
 import cl.pagoflex.archivos.repository.ArchivoRepository;
+
+import feign.FeignException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -23,13 +26,16 @@ import org.springframework.web.server.ResponseStatusException;
 public class ArchivoService {
 
     private final ArchivoRepository archivoRepository;
+    private final PagosClient pagosClient;
     private final Path directorioBase;
 
     public ArchivoService(
             ArchivoRepository archivoRepository,
+            PagosClient pagosClient,
             @Value("${pagoflex.archivos.directorio}") String directorio
     ) {
         this.archivoRepository = archivoRepository;
+        this.pagosClient = pagosClient;
         this.directorioBase = Path.of(directorio)
                 .toAbsolutePath()
                 .normalize();
@@ -102,6 +108,7 @@ public class ArchivoService {
         String mime = archivo.getContentType();
 
         validarFormato(extension, mime, tipoNormalizado);
+        validarPago(idPago, idUsuario);
 
         String nombreAlmacenado = UUID.randomUUID() + extension;
         Path destino = resolverRuta(nombreAlmacenado);
@@ -210,6 +217,61 @@ public class ArchivoService {
         archivo.setActivo(false);
 
         archivoRepository.save(archivo);
+    }
+
+    private void validarPago(Long idPago, Long idUsuario) {
+
+        if (idPago == null) {
+            return;
+        }
+
+        PagosClient.PagoResumen pago;
+
+        try {
+
+            pago = pagosClient.buscarPorId(idPago);
+
+        } catch (FeignException.NotFound error) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "El pago asociado no existe"
+            );
+
+        } catch (FeignException error) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "No se pudo consultar pagos-service",
+                    error
+            );
+        }
+
+        if (pago == null
+                || pago.idPago() == null
+                || pago.idUsuario() == null) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Respuesta invalida de pagos-service"
+            );
+        }
+
+        if (!pago.idPago().equals(idPago)) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "El pago consultado no coincide"
+            );
+        }
+
+        if (!pago.idUsuario().equals(idUsuario)) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El pago no pertenece al usuario indicado"
+            );
+        }
     }
 
     private String normalizarTipo(String tipo) {
