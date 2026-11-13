@@ -59,6 +59,16 @@
       "projectName": "pagos-service",
       "args": "",
       "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "type": "java",
+      "name": "Spring Boot-ReportesServiceApplication<reportes-service>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "cl.pagoflex.reportes.ReportesServiceApplication",
+      "projectName": "reportes-service",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
     }
   ]
 }
