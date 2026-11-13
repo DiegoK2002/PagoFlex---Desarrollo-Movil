@@ -1,7 +1,10 @@
 package cl.pagoflex.reportes.service;
 
+import cl.pagoflex.reportes.client.PagosClient;
 import cl.pagoflex.reportes.model.Reporte;
 import cl.pagoflex.reportes.repository.ReporteRepository;
+
+import feign.FeignException;
 
 import java.util.List;
 import java.util.Locale;
@@ -14,14 +17,20 @@ import org.springframework.web.server.ResponseStatusException;
 public class ReporteService {
 
     private final ReporteRepository reporteRepository;
+    private final PagosClient pagosClient;
 
-    public ReporteService(ReporteRepository reporteRepository) {
+    public ReporteService(
+            ReporteRepository reporteRepository,
+            PagosClient pagosClient
+    ) {
         this.reporteRepository = reporteRepository;
+        this.pagosClient = pagosClient;
     }
 
     public Reporte registrar(Reporte datos) {
 
         validarDatos(datos);
+        validarPago(datos.getIdPago(), datos.getIdUsuario());
 
         Reporte reporte = new Reporte();
 
@@ -37,7 +46,6 @@ public class ReporteService {
     }
 
     public List<Reporte> listarTodos() {
-
         return reporteRepository.findAll();
     }
 
@@ -53,12 +61,10 @@ public class ReporteService {
     }
 
     public List<Reporte> listarPorUsuario(Long idUsuario) {
-
         return reporteRepository.findByIdUsuario(idUsuario);
     }
 
     public List<Reporte> listarPorAgente(Long idAgente) {
-
         return reporteRepository.findByIdAgente(idAgente);
     }
 
@@ -70,13 +76,13 @@ public class ReporteService {
     }
 
     public List<Reporte> listarPorPago(Long idPago) {
-
         return reporteRepository.findByIdPago(idPago);
     }
 
     public Reporte actualizar(Long id, Reporte datos) {
 
         validarDatos(datos);
+        validarPago(datos.getIdPago(), datos.getIdUsuario());
 
         Reporte reporte = buscarPorId(id);
 
@@ -147,6 +153,61 @@ public class ReporteService {
         reporte.setActivo(false);
 
         reporteRepository.save(reporte);
+    }
+
+    private void validarPago(Long idPago, Long idUsuario) {
+
+        if (idPago == null) {
+            return;
+        }
+
+        PagosClient.PagoResumen pago;
+
+        try {
+
+            pago = pagosClient.buscarPorId(idPago);
+
+        } catch (FeignException.NotFound error) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "El pago asociado no existe"
+            );
+
+        } catch (FeignException error) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "No se pudo consultar pagos-service",
+                    error
+            );
+        }
+
+        if (pago == null
+                || pago.idPago() == null
+                || pago.idUsuario() == null) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Respuesta invalida de pagos-service"
+            );
+        }
+
+        if (!pago.idPago().equals(idPago)) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "El pago consultado no coincide"
+            );
+        }
+
+        if (!pago.idUsuario().equals(idUsuario)) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El pago no pertenece al usuario indicado"
+            );
+        }
     }
 
     private String normalizarEstado(String estado) {
