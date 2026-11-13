@@ -1,6 +1,7 @@
 package cl.pagoflex.archivos.service;
 
 import cl.pagoflex.archivos.client.PagosClient;
+import cl.pagoflex.archivos.client.UsuariosClient;
 import cl.pagoflex.archivos.model.Archivo;
 import cl.pagoflex.archivos.repository.ArchivoRepository;
 
@@ -27,15 +28,18 @@ public class ArchivoService {
 
     private final ArchivoRepository archivoRepository;
     private final PagosClient pagosClient;
+    private final UsuariosClient usuariosClient;
     private final Path directorioBase;
 
     public ArchivoService(
             ArchivoRepository archivoRepository,
             PagosClient pagosClient,
+            UsuariosClient usuariosClient,
             @Value("${pagoflex.archivos.directorio}") String directorio
     ) {
         this.archivoRepository = archivoRepository;
         this.pagosClient = pagosClient;
+        this.usuariosClient = usuariosClient;
         this.directorioBase = Path.of(directorio)
                 .toAbsolutePath()
                 .normalize();
@@ -108,6 +112,7 @@ public class ArchivoService {
         String mime = archivo.getContentType();
 
         validarFormato(extension, mime, tipoNormalizado);
+        validarUsuario(idUsuario);
         validarPago(idPago, idUsuario);
 
         String nombreAlmacenado = UUID.randomUUID() + extension;
@@ -217,6 +222,57 @@ public class ArchivoService {
         archivo.setActivo(false);
 
         archivoRepository.save(archivo);
+    }
+
+    private void validarUsuario(Long idUsuario) {
+
+        UsuariosClient.UsuarioResumen usuario;
+
+        try {
+
+            usuario = usuariosClient.buscarPorId(idUsuario);
+
+        } catch (FeignException.NotFound error) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "El usuario asociado no existe"
+            );
+
+        } catch (FeignException error) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "No se pudo consultar usuarios-service",
+                    error
+            );
+        }
+
+        if (usuario == null
+                || usuario.idUsuario() == null
+                || usuario.activo() == null) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Respuesta invalida de usuarios-service"
+            );
+        }
+
+        if (!usuario.idUsuario().equals(idUsuario)) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "El usuario consultado no coincide"
+            );
+        }
+
+        if (!Boolean.TRUE.equals(usuario.activo())) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "No se pueden subir archivos con usuarios inactivos"
+            );
+        }
     }
 
     private void validarPago(Long idPago, Long idUsuario) {
