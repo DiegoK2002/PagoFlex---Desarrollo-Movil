@@ -1,6 +1,7 @@
 package cl.pagoflex.pagos.service;
 
 import cl.pagoflex.pagos.client.CompromisosClient;
+import cl.pagoflex.pagos.client.UsuariosClient;
 import cl.pagoflex.pagos.model.Pago;
 import cl.pagoflex.pagos.repository.PagoRepository;
 
@@ -18,18 +19,22 @@ public class PagoService {
 
     private final PagoRepository pagoRepository;
     private final CompromisosClient compromisosClient;
+    private final UsuariosClient usuariosClient;
 
     public PagoService(
             PagoRepository pagoRepository,
-            CompromisosClient compromisosClient
+            CompromisosClient compromisosClient,
+            UsuariosClient usuariosClient
     ) {
         this.pagoRepository = pagoRepository;
         this.compromisosClient = compromisosClient;
+        this.usuariosClient = usuariosClient;
     }
 
     public Pago registrar(Pago datos) {
 
         validarDatos(datos);
+        validarUsuario(datos.getIdUsuario(), true);
         validarCompromiso(datos);
 
         Pago pago = new Pago();
@@ -73,6 +78,7 @@ public class PagoService {
     public Pago actualizar(Long id, Pago datos) {
 
         validarDatos(datos);
+        validarUsuario(datos.getIdUsuario(), false);
         validarCompromiso(datos);
 
         Pago pago = buscarPorId(id);
@@ -96,6 +102,57 @@ public class PagoService {
         pago.setActivo(false);
 
         pagoRepository.save(pago);
+    }
+
+    private void validarUsuario(Long idUsuario, boolean exigirActivo) {
+
+        UsuariosClient.UsuarioResumen usuario;
+
+        try {
+
+            usuario = usuariosClient.buscarPorId(idUsuario);
+
+        } catch (FeignException.NotFound error) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "El usuario asociado no existe"
+            );
+
+        } catch (FeignException error) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "No se pudo consultar usuarios-service",
+                    error
+            );
+        }
+
+        if (usuario == null
+                || usuario.idUsuario() == null
+                || usuario.activo() == null) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Respuesta invalida de usuarios-service"
+            );
+        }
+
+        if (!usuario.idUsuario().equals(idUsuario)) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "El usuario consultado no coincide"
+            );
+        }
+
+        if (exigirActivo && !Boolean.TRUE.equals(usuario.activo())) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "No se pueden registrar pagos con usuarios inactivos"
+            );
+        }
     }
 
     private void validarCompromiso(Pago datos) {
