@@ -1,6 +1,7 @@
 package cl.pagoflex.compromisos.service;
 
 import cl.pagoflex.compromisos.client.EmpresasClient;
+import cl.pagoflex.compromisos.client.UsuariosClient;
 import cl.pagoflex.compromisos.model.Compromiso;
 import cl.pagoflex.compromisos.repository.CompromisoRepository;
 
@@ -18,18 +19,22 @@ public class CompromisoService {
 
     private final CompromisoRepository compromisoRepository;
     private final EmpresasClient empresasClient;
+    private final UsuariosClient usuariosClient;
 
     public CompromisoService(
             CompromisoRepository compromisoRepository,
-            EmpresasClient empresasClient
+            EmpresasClient empresasClient,
+            UsuariosClient usuariosClient
     ) {
         this.compromisoRepository = compromisoRepository;
         this.empresasClient = empresasClient;
+        this.usuariosClient = usuariosClient;
     }
 
     public Compromiso registrar(Compromiso datos) {
 
         validarDatos(datos);
+        validarUsuario(datos.getIdUsuario());
         validarEmpresa(datos.getIdEmpresa());
 
         Compromiso compromiso = new Compromiso();
@@ -67,6 +72,7 @@ public class CompromisoService {
     public Compromiso actualizar(Long id, Compromiso datos) {
 
         validarDatos(datos);
+        validarUsuario(datos.getIdUsuario());
         validarEmpresa(datos.getIdEmpresa());
 
         Compromiso compromiso = buscarPorId(id);
@@ -87,6 +93,55 @@ public class CompromisoService {
         compromiso.setActivo(false);
 
         compromisoRepository.save(compromiso);
+    }
+
+    private void validarUsuario(Long idUsuario) {
+
+        UsuariosClient.UsuarioResumen usuario;
+
+        try {
+
+            usuario = usuariosClient.buscarPorId(idUsuario);
+
+        } catch (FeignException.NotFound error) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "El usuario asociado no existe"
+            );
+
+        } catch (FeignException error) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "No se pudo consultar usuarios-service",
+                    error
+            );
+        }
+
+        if (usuario == null || usuario.idUsuario() == null) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Respuesta invalida de usuarios-service"
+            );
+        }
+
+        if (!usuario.idUsuario().equals(idUsuario)) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "El usuario consultado no coincide"
+            );
+        }
+
+        if (!Boolean.TRUE.equals(usuario.activo())) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "No se pueden registrar compromisos con usuarios inactivos"
+            );
+        }
     }
 
     private void validarEmpresa(Long idEmpresa) {
