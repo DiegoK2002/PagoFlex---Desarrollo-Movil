@@ -1,7 +1,10 @@
 package cl.pagoflex.pagos.service;
 
+import cl.pagoflex.pagos.client.CompromisosClient;
 import cl.pagoflex.pagos.model.Pago;
 import cl.pagoflex.pagos.repository.PagoRepository;
+
+import feign.FeignException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -14,14 +17,20 @@ import org.springframework.web.server.ResponseStatusException;
 public class PagoService {
 
     private final PagoRepository pagoRepository;
+    private final CompromisosClient compromisosClient;
 
-    public PagoService(PagoRepository pagoRepository) {
+    public PagoService(
+            PagoRepository pagoRepository,
+            CompromisosClient compromisosClient
+    ) {
         this.pagoRepository = pagoRepository;
+        this.compromisosClient = compromisosClient;
     }
 
     public Pago registrar(Pago datos) {
 
         validarDatos(datos);
+        validarCompromiso(datos);
 
         Pago pago = new Pago();
 
@@ -39,7 +48,6 @@ public class PagoService {
     }
 
     public List<Pago> listarTodos() {
-
         return pagoRepository.findAll();
     }
 
@@ -55,18 +63,17 @@ public class PagoService {
     }
 
     public List<Pago> listarPorUsuario(Long idUsuario) {
-
         return pagoRepository.findByIdUsuario(idUsuario);
     }
 
     public List<Pago> listarPorCompromiso(Long idCompromiso) {
-
         return pagoRepository.findByIdCompromiso(idCompromiso);
     }
 
     public Pago actualizar(Long id, Pago datos) {
 
         validarDatos(datos);
+        validarCompromiso(datos);
 
         Pago pago = buscarPorId(id);
 
@@ -89,6 +96,71 @@ public class PagoService {
         pago.setActivo(false);
 
         pagoRepository.save(pago);
+    }
+
+    private void validarCompromiso(Pago datos) {
+
+        CompromisosClient.CompromisoResumen compromiso;
+
+        try {
+
+            compromiso = compromisosClient.buscarPorId(
+                    datos.getIdCompromiso()
+            );
+
+        } catch (FeignException.NotFound error) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "El compromiso asociado no existe"
+            );
+
+        } catch (FeignException error) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "No se pudo consultar compromisos-service",
+                    error
+            );
+        }
+
+        if (compromiso == null
+                || compromiso.idCompromiso() == null
+                || compromiso.idUsuario() == null) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Respuesta invalida de compromisos-service"
+            );
+        }
+
+        if (!compromiso.idCompromiso().equals(
+                datos.getIdCompromiso()
+        )) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "El compromiso consultado no coincide"
+            );
+        }
+
+        if (!Boolean.TRUE.equals(compromiso.activo())) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "No se pueden registrar pagos en compromisos inactivos"
+            );
+        }
+
+        if (!compromiso.idUsuario().equals(
+                datos.getIdUsuario()
+        )) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El compromiso no pertenece al usuario indicado"
+            );
+        }
     }
 
     private String limpiarReferencia(String referencia) {
