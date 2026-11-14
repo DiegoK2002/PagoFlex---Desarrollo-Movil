@@ -1,0 +1,29 @@
+package cl.fintech.pagoflex.data.remote
+
+import retrofit2.http.Body
+import retrofit2.http.POST
+
+data class LoginRequest(
+    val correo: String,
+    val contrasena: String
+)
+
+data class UsuarioResponse(
+    val idUsuario: Long,
+    val rut: String,
+    val nombres: String,
+    val apellidos: String,
+    val correo: String,
+    val comuna: String,
+    val rol: String,
+    val fotoArchivoId: String?,
+    val activo: Boolean
+)
+
+interface UsuariosApi {
+
+    @POST("api/v1/usuarios/login")
+    suspend fun iniciarSesion(
+        @Body datos: LoginRequest
+    ): UsuarioResponse
+}

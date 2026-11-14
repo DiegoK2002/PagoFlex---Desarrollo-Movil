@@ -46,7 +46,9 @@ fun InicioSesionScreen(
         onCorreoCambia = viewModel::onCorreoCambia,
         onContrasenaCambia = viewModel::onContrasenaCambia,
         onAlternarVisibilidad = viewModel::onAlternarVisibilidad,
-        onIniciar = { viewModel.onIniciar()?.let { usuario -> onInicioExitoso(usuario) } },
+        onIniciar = {
+            viewModel.onIniciarRemoto(onInicioExitoso)
+        },
         onLimpiar = viewModel::onLimpiar,
         onCrearCuenta = onCrearCuenta
     )
