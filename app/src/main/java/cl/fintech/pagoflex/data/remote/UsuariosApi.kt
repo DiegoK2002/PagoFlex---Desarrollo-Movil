@@ -8,6 +8,15 @@ data class LoginRequest(
     val contrasena: String
 )
 
+data class RegistroUsuarioRequest(
+    val rut: String,
+    val nombres: String,
+    val apellidos: String,
+    val correo: String,
+    val contrasena: String,
+    val comuna: String
+)
+
 data class UsuarioResponse(
     val idUsuario: Long,
     val rut: String,
@@ -25,5 +34,10 @@ interface UsuariosApi {
     @POST("api/v1/usuarios/login")
     suspend fun iniciarSesion(
         @Body datos: LoginRequest
+    ): UsuarioResponse
+
+    @POST("api/v1/usuarios/registro")
+    suspend fun registrarUsuario(
+        @Body datos: RegistroUsuarioRequest
     ): UsuarioResponse
 }

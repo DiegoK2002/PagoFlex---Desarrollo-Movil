@@ -93,9 +93,15 @@ fun RegistroContent(
         AlertDialog(
             onDismissRequest = onRegistroExitoso,
             title = { Text("Cuenta creada") },
-            text = { Text("¡Bienvenido/a, ${uiState.nombreRegistrado}! Ya puedes iniciar sesión.") },
+            text = {
+                Text(
+                    "¡Bienvenido/a, ${uiState.nombreRegistrado}! Ya puedes iniciar sesión."
+                )
+            },
             confirmButton = {
-                TextButton(onClick = onRegistroExitoso) { Text("Aceptar") }
+                TextButton(onClick = onRegistroExitoso) {
+                    Text("Aceptar")
+                }
             }
         )
     }
@@ -143,6 +149,7 @@ fun RegistroContent(
                 icono = Icons.Default.Person,
                 error = uiState.errorNombres
             )
+
             CampoTexto(
                 valor = uiState.apellidos,
                 onValorCambia = onApellidosCambia,
@@ -164,6 +171,7 @@ fun RegistroContent(
                     tipoTeclado = KeyboardType.Number,
                     modifier = Modifier.weight(2.2f)
                 )
+
                 CampoTexto(
                     valor = uiState.rutDv,
                     onValorCambia = onRutDvCambia,
@@ -184,6 +192,7 @@ fun RegistroContent(
                 error = uiState.errorCorreo,
                 tipoTeclado = KeyboardType.Email
             )
+
             ListaDesplegable(
                 etiqueta = "Comuna",
                 opciones = uiState.comunas,
@@ -202,7 +211,7 @@ fun RegistroContent(
             CampoContrasena(
                 valor = uiState.contrasena,
                 onValorCambia = onContrasenaCambia,
-                etiqueta = "Contrase\u00f1a",
+                etiqueta = "Contraseña",
                 visible = uiState.contrasenaVisible,
                 onAlternarVisible = onAlternarContrasena,
                 error = uiState.errorContrasena
@@ -219,18 +228,33 @@ fun RegistroContent(
             CampoContrasena(
                 valor = uiState.repetirContrasena,
                 onValorCambia = onRepetirCambia,
-                etiqueta = "Repetir contrase\u00f1a",
+                etiqueta = "Repetir contraseña",
                 visible = uiState.repetirVisible,
                 onAlternarVisible = onAlternarRepetir,
                 error = uiState.errorRepetir
             )
 
+            if (uiState.errorGeneral != null) {
+                Text(
+                    text = uiState.errorGeneral,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
             BotonPrincipal(
-                texto = "Registrarme",
+                texto = if (uiState.registrando) {
+                    "Registrando..."
+                } else {
+                    "Registrarme"
+                },
                 onClick = onRegistrar,
+                habilitado = !uiState.registrando,
                 icono = Icons.Default.Check,
                 modifier = Modifier.fillMaxWidth()
             )
+
             BotonSecundario(
                 texto = "Limpiar",
                 onClick = onLimpiar,

@@ -11,7 +11,7 @@ data class RegistroUiState(
     val repetirContrasena: String = "",
 
     val comunas: List<String> = listOf(
-        "Santiago", "Providencia", "Las Condes", "\u00d1u\u00f1oa", "Maip\u00fa", "Puente Alto",
+        "Santiago", "Providencia", "Las Condes", "Ñuñoa", "Maipú", "Puente Alto",
         "San Miguel", "La Florida", "Quilicura", "San Bernardo", "Estación Central"
     ),
 
@@ -25,7 +25,9 @@ data class RegistroUiState(
     val errorComuna: String? = null,
     val errorContrasena: String? = null,
     val errorRepetir: String? = null,
+    val errorGeneral: String? = null,
 
+    val registrando: Boolean = false,
     val registroExitoso: Boolean = false,
     val nombreRegistrado: String = ""
 )
