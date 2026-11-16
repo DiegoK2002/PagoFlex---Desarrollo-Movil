@@ -44,8 +44,11 @@ fun AppNavegacion() {
             navController.navigateUp()
         }
     }
+
     val compromisos by compromisosViewModel.compromisos.collectAsStateWithLifecycle()
     val resumenCompromisos by compromisosViewModel.resumenCompromisos.collectAsStateWithLifecycle()
+    val cargandoCompromisos by compromisosViewModel.cargando.collectAsStateWithLifecycle()
+    val errorCompromisos by compromisosViewModel.errorCarga.collectAsStateWithLifecycle()
     val pagos by compromisosViewModel.pagos.collectAsStateWithLifecycle()
     val indicadorCumplimiento by compromisosViewModel.indicadorCumplimiento.collectAsStateWithLifecycle()
     val reconocimientos by compromisosViewModel.reconocimientos.collectAsStateWithLifecycle()
@@ -101,6 +104,8 @@ fun AppNavegacion() {
                     usuario = usuario,
                     compromisos = compromisos,
                     resumenCompromisos = resumenCompromisos,
+                    cargandoCompromisos = cargandoCompromisos,
+                    errorCompromisos = errorCompromisos,
                     estadoCotizaciones = estadoCotizaciones,
                     nombreEmpresa = compromisosViewModel::nombreEmpresa,
                     importeDe = compromisosViewModel::importeDe,

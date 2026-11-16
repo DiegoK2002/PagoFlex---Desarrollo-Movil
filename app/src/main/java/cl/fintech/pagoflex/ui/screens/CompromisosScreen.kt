@@ -41,6 +41,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import cl.fintech.pagoflex.viewmodel.EstadoCotizaciones
 import java.util.Locale
 import androidx.compose.foundation.layout.Row
@@ -64,7 +65,9 @@ fun CompromisosScreen(
     onVerReconocimientos: () -> Unit,
     onVerPerfil: () -> Unit,
     onSalir: () -> Unit,
-    resumenCompromisos: ResumenCompromisos? = null
+    resumenCompromisos: ResumenCompromisos? = null,
+    cargandoCompromisos: Boolean = false,
+    errorCompromisos: String? = null
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -274,7 +277,7 @@ fun CompromisosScreen(
                     }
 
 
-                    if (resumenCompromisos != null) {
+                    if (resumenCompromisos != null && !cargandoCompromisos && errorCompromisos == null) {
                         item {
                             Card(
                                 modifier = Modifier.fillMaxWidth()
@@ -313,19 +316,46 @@ fun CompromisosScreen(
                         }
                     }
 
-                    if (compromisos.isEmpty()) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 32.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("No tienes compromisos registrados")
+                    when {
+                        cargandoCompromisos -> {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 32.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator()
+                                }
                             }
                         }
-                    }
 
+                        errorCompromisos != null -> {
+                            item {
+                                Card(modifier = Modifier.fillMaxWidth()) {
+                                    Text(
+                                        text = errorCompromisos,
+                                        color = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.padding(16.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        compromisos.isEmpty() -> {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 32.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("No tienes compromisos registrados")
+                                }
+                            }
+                        }
+
+                        else -> {
                     items(compromisos) { compromiso ->
                         val importe = importeDe(compromiso)
 
@@ -358,6 +388,8 @@ fun CompromisosScreen(
                             importeConvertido = importeConvertido,
                             onClick = { onVerDetalle(compromiso.folio) }
                         )
+                    }
+                        }
                     }
 
                 }

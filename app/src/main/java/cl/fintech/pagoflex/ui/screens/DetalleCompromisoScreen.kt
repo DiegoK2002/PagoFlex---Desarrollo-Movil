@@ -65,7 +65,8 @@ fun DetalleCompromisoScreen(
     onConfirmarPago: () -> Unit,
     onVerComprobante: () -> Unit,
     onCrearReporte: (String, String) -> Boolean,
-    reporteActual: Reporte?
+    reporteActual: Reporte?,
+    operacionesHabilitadas: Boolean = false
 ) {
 
     var mostrarConfirmacion by remember { mutableStateOf(false) }
@@ -151,36 +152,47 @@ fun DetalleCompromisoScreen(
                 )
             }
 
-            if (estaPagado) {
-                BotonSecundario(
-                    texto = "Ver comprobante",
-                    onClick = onVerComprobante,
-                    modifier = Modifier.fillMaxWidth()
-                )
+            if (operacionesHabilitadas) {
+                if (estaPagado) {
+                    BotonSecundario(
+                        texto = "Ver comprobante",
+                        onClick = onVerComprobante,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else {
+                    BotonPrincipal(
+                        texto = "Pagar",
+                        onClick = { mostrarConfirmacion = true },
+                        habilitado = motivoNoPago == null,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+
+                if (
+                    compromiso.estado == EstadoCompromiso.PENDIENTE ||
+                    compromiso.estado == EstadoCompromiso.VENCIDO
+                ) {
+                    BotonSecundario(
+                        texto = "Reportar un problema",
+                        onClick = {
+                            motivoReporte = "Ya pagué por otro medio"
+                            comentarioReporte = ""
+                            errorReporte = false
+                            mostrarFormulario = true
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
             } else {
-                BotonPrincipal(
-                    texto = "Pagar",
-                    onClick = { mostrarConfirmacion = true },
-                    habilitado = motivoNoPago == null,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-
-            if (
-                compromiso.estado == EstadoCompromiso.PENDIENTE ||
-                compromiso.estado == EstadoCompromiso.VENCIDO
-            ) {
-                BotonSecundario(
-                    texto = "Reportar un problema",
-                    onClick = {
-                        motivoReporte = "Ya pagué por otro medio"
-                        comentarioReporte = ""
-                        errorReporte = false
-                        mostrarFormulario = true
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Los pagos, comprobantes y reportes estarán disponibles cuando se conecten al servidor.",
+                        modifier = Modifier.padding(Dimens.espacioMedio),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
 
             if (
@@ -243,7 +255,7 @@ fun DetalleCompromisoScreen(
                 )
             }
 
-            if (reporteActual != null) {
+            if (operacionesHabilitadas && reporteActual != null) {
                 Card(
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -271,7 +283,7 @@ fun DetalleCompromisoScreen(
         }
     }
 
-    if (mostrarConfirmacion) {
+    if (operacionesHabilitadas && mostrarConfirmacion) {
         AlertDialog(
             onDismissRequest = { mostrarConfirmacion = false },
             title = { Text("Confirmar pago") },
@@ -289,7 +301,7 @@ fun DetalleCompromisoScreen(
     }
 
 
-    if (mostrarFormulario) {
+    if (operacionesHabilitadas && mostrarFormulario) {
         val motivos = listOf(
             "Ya pagué por otro medio",
             "No reconozco este cobro",
