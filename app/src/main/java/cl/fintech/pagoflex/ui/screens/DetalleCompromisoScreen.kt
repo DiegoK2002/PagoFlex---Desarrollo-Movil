@@ -68,9 +68,10 @@ fun DetalleCompromisoScreen(
     onVolver: () -> Unit,
     onConfirmarPago: () -> Unit,
     onVerComprobante: () -> Unit,
-    onCrearReporte: (String, String) -> Boolean,
+    onCrearReporte: (String, String, (Boolean) -> Unit) -> Unit,
     reporteActual: Reporte?,
     operacionesHabilitadas: Boolean = false,
+    procesandoReporte: Boolean = false,
     pagosHabilitados: Boolean = false,
     registrandoPago: Boolean = false,
     errorPago: String? = null
@@ -393,18 +394,16 @@ fun DetalleCompromisoScreen(
             },
             confirmButton = {
                 TextButton(
-                    enabled = motivoReporte != "Otro" ||
-                            comentarioReporte.isNotBlank(),
+                    enabled = !procesandoReporte &&
+                            (motivoReporte != "Otro" || comentarioReporte.isNotBlank()),
                     onClick = {
-                        val guardado = onCrearReporte(
-                            motivoReporte,
-                            comentarioReporte
-                        )
-
-                        if (guardado) {
-                            mostrarFormulario = false
-                        } else {
-                            errorReporte = true
+                        onCrearReporte(motivoReporte, comentarioReporte) { guardado ->
+                            if (guardado) {
+                                mostrarFormulario = false
+                                errorReporte = false
+                            } else {
+                                errorReporte = true
+                            }
                         }
                     }
                 ) {

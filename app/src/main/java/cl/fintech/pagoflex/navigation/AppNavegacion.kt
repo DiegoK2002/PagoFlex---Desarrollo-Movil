@@ -67,6 +67,8 @@ fun AppNavegacion() {
     val indicadorCumplimiento by compromisosViewModel.indicadorCumplimiento.collectAsStateWithLifecycle()
     val reconocimientos by compromisosViewModel.reconocimientos.collectAsStateWithLifecycle()
     val reportes by reportesViewModel.reportes.collectAsStateWithLifecycle()
+    val operandoReporte by reportesViewModel.operando.collectAsStateWithLifecycle()
+    val errorReporteRemoto by reportesViewModel.error.collectAsStateWithLifecycle()
     val estadoCotizaciones by cotizacionesViewModel.estado.collectAsStateWithLifecycle()
     val fotoPerfil by fotoPerfilViewModel.fotoPerfil.collectAsStateWithLifecycle()
 
@@ -201,11 +203,13 @@ fun AppNavegacion() {
                     usuario = usuario,
                     onSalir = cerrarSesion,
                     reportes = reportes,
+                    operandoReporte = operandoReporte,
+                    errorReporte = errorReporteRemoto,
                     onTomarReporte = { idReporte ->
                         reportesViewModel.tomarReporte(idReporte)
                     },
-                    onResolverReporte = { idReporte, respuesta ->
-                        reportesViewModel.resolverReporte(idReporte, respuesta)
+                    onResolverReporte = { idReporte, respuesta, onResultado ->
+                        reportesViewModel.resolverReporte(idReporte, respuesta, onResultado)
                     }
                 )
             }
@@ -267,23 +271,23 @@ fun AppNavegacion() {
                         navController.navigate(Ruta.Comprobante.crear(compromiso.folio))
                     },
 
-                    onCrearReporte = { motivo, comentario ->
-                        val guardado = reportesViewModel.crearReporte(
+                    onCrearReporte = { motivo, comentario, onResultado ->
+                        reportesViewModel.crearReporte(
                             compromiso.folio,
                             motivo,
-                            comentario
+                            comentario,
+                            onResultado
                         )
-
-                        if (guardado) {
-                            compromisosViewModel.actualizar()
-                        }
-
-                        guardado
                     },
 
                     reporteActual = reportes.firstOrNull {
                         it.folio == compromiso.folio
                     },
+                    operacionesHabilitadas = usuario != null &&
+                            usuario.rol == Rol.USUARIO_FINAL &&
+                            compromiso.idUsuario == usuario.id &&
+                            compromiso.folio.startsWith("REM-"),
+                    procesandoReporte = operandoReporte,
                     pagosHabilitados = usuario != null &&
                             usuario.rol == Rol.USUARIO_FINAL &&
                             compromiso.idUsuario == usuario.id &&

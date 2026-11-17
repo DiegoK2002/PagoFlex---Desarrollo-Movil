@@ -34,8 +34,10 @@ fun InicioAgenteScreen(
     usuario: Usuario,
     onSalir: () -> Unit,
     reportes: List<Reporte> = emptyList(),
+    operandoReporte: Boolean = false,
+    errorReporte: String? = null,
     onTomarReporte: (Long) -> Unit,
-    onResolverReporte: (Long, String) -> Boolean
+    onResolverReporte: (Long, String, (Boolean) -> Unit) -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -67,6 +69,10 @@ fun InicioAgenteScreen(
         ) {
             Text(usuario.nombreCompleto, style = MaterialTheme.typography.headlineSmall)
             Text(usuario.rol.etiqueta, style = MaterialTheme.typography.bodyLarge)
+
+            if (errorReporte != null) {
+                Text(errorReporte, color = MaterialTheme.colorScheme.error)
+            }
 
             if (reportes.isEmpty()) {
                 Text(
@@ -108,7 +114,8 @@ fun InicioAgenteScreen(
                                     Button(
                                         onClick = {
                                             onTomarReporte(reporte.idReporte)
-                                        }
+                                        },
+                                        enabled = !operandoReporte
                                     ) {
                                         Text("Tomar reporte")
                                     }
@@ -132,12 +139,11 @@ fun InicioAgenteScreen(
 
                                     Button(
                                         onClick = {
-                                            mostrarError = !onResolverReporte(
-                                                reporte.idReporte,
-                                                respuesta
-                                            )
+                                            onResolverReporte(reporte.idReporte, respuesta) { correcto ->
+                                                mostrarError = !correcto
+                                            }
                                         },
-                                        enabled = respuesta.isNotBlank()
+                                        enabled = respuesta.isNotBlank() && !operandoReporte
                                     ) {
                                         Text("Resolver reporte")
                                     }

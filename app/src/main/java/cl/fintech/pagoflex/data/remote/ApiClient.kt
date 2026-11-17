@@ -1,11 +1,25 @@
 package cl.fintech.pagoflex.data.remote
 
+import android.os.Build
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object ApiClient {
 
-    private const val BASE_URL = "http://10.0.2.2:8080/"
+    private val BASE_URL: String
+        get() {
+            val esEmulador =
+                Build.FINGERPRINT.startsWith("generic") ||
+                        Build.FINGERPRINT.contains("emulator") ||
+                        Build.HARDWARE == "ranchu" ||
+                        Build.HARDWARE == "goldfish"
+
+            return if (esEmulador) {
+                "http://10.0.2.2:8080/"
+            } else {
+                "http://127.0.0.1:8080/"
+            }
+        }
 
     val retrofit: Retrofit by lazy {
         Retrofit.Builder()
@@ -28,5 +42,9 @@ object ApiClient {
 
     val pagosApi: PagosApi by lazy {
         retrofit.create(PagosApi::class.java)
+    }
+
+    val reportesApi: ReportesApi by lazy {
+        retrofit.create(ReportesApi::class.java)
     }
 }
