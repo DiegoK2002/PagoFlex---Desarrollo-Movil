@@ -2,7 +2,17 @@ package cl.fintech.pagoflex.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import java.math.BigDecimal
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -26,6 +36,8 @@ import cl.fintech.pagoflex.viewmodel.FotoPerfilViewModel
 import cl.fintech.pagoflex.viewmodel.CotizacionesViewModel
 import cl.fintech.pagoflex.ui.screens.HistorialPagosScreen
 import cl.fintech.pagoflex.ui.screens.ReconocimientosScreen
+import androidx.compose.runtime.LaunchedEffect
+import cl.fintech.pagoflex.viewmodel.PagosViewModel
 
 
 @Composable
@@ -33,6 +45,7 @@ fun AppNavegacion() {
     val navController = rememberNavController()
     val sesionViewModel: SesionViewModel = viewModel()
     val compromisosViewModel: CompromisosViewModel = viewModel()
+    val pagosViewModel: PagosViewModel = viewModel()
     val reportesViewModel: ReportesViewModel = viewModel()
     val cotizacionesViewModel: CotizacionesViewModel = viewModel()
     val fotoPerfilViewModel: FotoPerfilViewModel = viewModel()
@@ -49,7 +62,8 @@ fun AppNavegacion() {
     val resumenCompromisos by compromisosViewModel.resumenCompromisos.collectAsStateWithLifecycle()
     val cargandoCompromisos by compromisosViewModel.cargando.collectAsStateWithLifecycle()
     val errorCompromisos by compromisosViewModel.errorCarga.collectAsStateWithLifecycle()
-    val pagos by compromisosViewModel.pagos.collectAsStateWithLifecycle()
+    val registrandoPago by pagosViewModel.registrando.collectAsStateWithLifecycle()
+    val errorRegistroPago by pagosViewModel.errorRegistro.collectAsStateWithLifecycle()
     val indicadorCumplimiento by compromisosViewModel.indicadorCumplimiento.collectAsStateWithLifecycle()
     val reconocimientos by compromisosViewModel.reconocimientos.collectAsStateWithLifecycle()
     val reportes by reportesViewModel.reportes.collectAsStateWithLifecycle()
@@ -60,6 +74,7 @@ fun AppNavegacion() {
         fotoPerfilViewModel.limpiar()
         sesionViewModel.cerrarSesion()
         compromisosViewModel.limpiar()
+        pagosViewModel.limpiar()
         navController.navigate(Ruta.InicioSesion.ruta) {
             popUpTo(navController.graph.id) { inclusive = true }
         }
@@ -72,6 +87,7 @@ fun AppNavegacion() {
             InicioSesionScreen(
                 onInicioExitoso = { usuario ->
                     fotoPerfilViewModel.cargar(usuario.id)
+                    pagosViewModel.limpiar()
                     sesionViewModel.iniciarSesion(usuario)
                     compromisosViewModel.cargar(usuario.id)
                     reportesViewModel.cargar(usuario)
@@ -123,20 +139,32 @@ fun AppNavegacion() {
             }
         }
 
+
         composable(Ruta.HistorialPagos.ruta) {
             val usuario = usuarioActual
 
             if (usuario != null && usuario.rol == Rol.USUARIO_FINAL) {
+                val pagosRemotos by pagosViewModel.pagos.collectAsStateWithLifecycle()
+                val cargandoPagos by pagosViewModel.cargando.collectAsStateWithLifecycle()
+                val errorPagos by pagosViewModel.error.collectAsStateWithLifecycle()
+
+                LaunchedEffect(usuario.id) {
+                    pagosViewModel.cargar(usuario.id)
+                }
+
                 HistorialPagosScreen(
-                    pagos = pagos,
+                    pagos = pagosRemotos,
+                    compromisos = compromisos,
                     nombreEmpresa = compromisosViewModel::nombreEmpresa,
-                    indicador = indicadorCumplimiento,
+                    cargando = cargandoPagos,
+                    error = errorPagos,
+                    onActualizar = pagosViewModel::actualizar,
                     onVerComprobante = { folio ->
-                        navController.navigate(
-                            Ruta.Comprobante.crear(folio)
-                        )
+                        navController.navigate(Ruta.Comprobante.crear(folio))
                     },
-                    onVolver = { volverSiCorresponde(Ruta.HistorialPagos.ruta) }
+                    onVolver = {
+                        volverSiCorresponde(Ruta.HistorialPagos.ruta)
+                    }
                 )
             }
         }
@@ -188,6 +216,10 @@ fun AppNavegacion() {
             arguments = listOf(navArgument("folio") { type = NavType.StringType })
         ) { entrada ->
             val folio = entrada.arguments?.getString("folio") ?: ""
+            val usuario = usuarioActual
+            LaunchedEffect(folio) {
+                pagosViewModel.limpiarEstadoRegistro()
+            }
             val compromiso = compromisos.firstOrNull { it.folio == folio }
             if (compromiso != null) {
                 DetalleCompromisoScreen(
@@ -200,13 +232,35 @@ fun AppNavegacion() {
                     anterior = compromisosViewModel.anteriorPendiente(compromiso),
                     onVolver = { volverSiCorresponde(Ruta.Detalle.ruta) },
                     onConfirmarPago = {
+                        val idCompromiso = compromiso.folio
+                            .removePrefix("REM-")
+                            .toLongOrNull()
 
-                        val pago = compromisosViewModel.pagar(compromiso)
-                        if (pago != null) {
-                            navController.navigate(Ruta.Comprobante.crear(compromiso.folio)) {
-
-                                popUpTo(Ruta.Detalle.ruta) { inclusive = true }
-                            }
+                        if (
+                            usuario != null &&
+                            usuario.rol == Rol.USUARIO_FINAL &&
+                            idCompromiso != null &&
+                            compromiso.idUsuario == usuario.id &&
+                            compromiso.monto > 0 &&
+                            compromisosViewModel.motivoDe(compromiso) == null
+                        ) {
+                            pagosViewModel.registrarPago(
+                                idUsuario = usuario.id,
+                                idCompromiso = idCompromiso,
+                                monto = BigDecimal.valueOf(compromiso.monto.toLong()),
+                                onRegistrado = {
+                                    compromisosViewModel.actualizar()
+                                    if (
+                                        navController.currentDestination?.route == Ruta.Detalle.ruta &&
+                                        navController.currentBackStackEntry
+                                            ?.arguments?.getString("folio") == folio
+                                    ) {
+                                        navController.navigate(Ruta.Comprobante.crear(folio)) {
+                                            popUpTo(Ruta.Detalle.ruta) { inclusive = true }
+                                        }
+                                    }
+                                }
+                            )
                         }
                     },
                     onVerComprobante = {
@@ -229,9 +283,14 @@ fun AppNavegacion() {
 
                     reporteActual = reportes.firstOrNull {
                         it.folio == compromiso.folio
-                    }
-
-
+                    },
+                    pagosHabilitados = usuario != null &&
+                            usuario.rol == Rol.USUARIO_FINAL &&
+                            compromiso.idUsuario == usuario.id &&
+                            compromiso.folio.startsWith("REM-") &&
+                            compromiso.folio.removePrefix("REM-").toLongOrNull() != null,
+                    registrandoPago = registrandoPago,
+                    errorPago = errorRegistroPago
                 )
             }
         }
@@ -243,16 +302,51 @@ fun AppNavegacion() {
         ) { entrada ->
             val folio = entrada.arguments?.getString("folio") ?: ""
 
-            val pago = remember(folio) { compromisosViewModel.pagoDe(folio) }
             val usuario = usuarioActual
-            if (pago != null && usuario != null) {
+            val idCompromiso = folio.removePrefix("REM-").toLongOrNull()
+            val pago by pagosViewModel.comprobante.collectAsStateWithLifecycle()
+            val cargando by pagosViewModel.cargandoComprobante.collectAsStateWithLifecycle()
+            val error by pagosViewModel.errorComprobante.collectAsStateWithLifecycle()
+
+            LaunchedEffect(folio, usuario?.id) {
+                if (usuario != null && idCompromiso != null) {
+                    pagosViewModel.cargarComprobante(usuario.id, idCompromiso)
+                }
+            }
+
+            val comprobanteActual = pago?.takeIf {
+                it.idUsuario == usuario?.id && it.idCompromiso == idCompromiso
+            }
+
+            if (usuario != null && comprobanteActual != null) {
+                val compromiso = compromisos.firstOrNull { it.folio == folio }
                 ComprobanteScreen(
-                    pago = pago,
-                    nombreEmpresa = compromisosViewModel.nombreEmpresa(pago.codigoEmpresa),
+                    pago = comprobanteActual,
+                    folio = folio,
+                    concepto = compromiso?.concepto ?: "Compromiso #$idCompromiso",
+                    nombreEmpresa = compromiso?.let {
+                        compromisosViewModel.nombreEmpresa(it.codigoEmpresa)
+                    } ?: "Empresa no disponible",
                     nombrePagador = usuario.nombreCompleto,
                     rutParcial = ocultarRut(usuario.rut),
                     onVolver = { volverSiCorresponde(Ruta.Comprobante.ruta) }
                 )
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(24.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (cargando) {
+                        CircularProgressIndicator()
+                        Text("Cargando comprobante...")
+                    } else {
+                        Text(error ?: "Comprobante no disponible.")
+                        Button(onClick = { volverSiCorresponde(Ruta.Comprobante.ruta) }) {
+                            Text("Volver")
+                        }
+                    }
+                }
             }
         }
     }

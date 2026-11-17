@@ -20,24 +20,39 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import cl.fintech.pagoflex.model.Pago
+import cl.fintech.pagoflex.data.remote.PagoRemoto
 import cl.fintech.pagoflex.ui.components.BotonPrincipal
 import cl.fintech.pagoflex.ui.components.FilaDato
 import cl.fintech.pagoflex.ui.styles.EstilosTarjeta
 import cl.fintech.pagoflex.ui.theme.ColoresEstado
 import cl.fintech.pagoflex.ui.theme.Dimens
-import cl.fintech.pagoflex.util.formatearFechaHora
-import cl.fintech.pagoflex.util.formatearPesos
+import cl.fintech.pagoflex.util.formatearFecha
+import java.text.NumberFormat
+import java.time.LocalDate
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ComprobanteScreen(
-    pago: Pago,
+    pago: PagoRemoto,
+    folio: String,
+    concepto: String,
     nombreEmpresa: String,
     nombrePagador: String,
     rutParcial: String,
     onVolver: () -> Unit
 ) {
+    val formatoMonto = NumberFormat.getNumberInstance(Locale.forLanguageTag("es-CL")).apply {
+        minimumFractionDigits = 0
+        maximumFractionDigits = 2
+    }
+    val numeroComprobante = pago.referenciaComprobante
+        ?.takeIf { it.isNotBlank() }
+        ?: "Pago PagoFlex #${pago.idPago}"
+    val fecha = runCatching { formatearFecha(LocalDate.parse(pago.fechaPago)) }
+        .getOrDefault(pago.fechaPago)
+    val confirmado = pago.estadoSincronizacion.equals("CONFIRMADO", ignoreCase = true)
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -69,9 +84,9 @@ fun ComprobanteScreen(
         ) {
 
             Text(
-                "¡Pago realizado!",
+                if (confirmado) "¡Pago realizado!" else "Pago registrado, pendiente de confirmación",
                 style = MaterialTheme.typography.titleLarge,
-                color = ColoresEstado.Pagado
+                color = if (confirmado) ColoresEstado.Pagado else MaterialTheme.colorScheme.onSurface
             )
 
 
@@ -85,14 +100,14 @@ fun ComprobanteScreen(
                     modifier = Modifier.padding(Dimens.espacioMedio),
                     verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
                 ) {
-                    FilaDato("N° de comprobante", pago.numeroComprobante)
-                    FilaDato("Fecha y hora", formatearFechaHora(pago.fechaHora))
+                    FilaDato("N° de comprobante", numeroComprobante)
+                    FilaDato("Fecha de pago", fecha)
                     FilaDato("Empresa", nombreEmpresa)
-                    FilaDato("Folio", pago.folioCompromiso)
-                    FilaDato("Concepto", pago.concepto)
-                    FilaDato("Monto pagado", formatearPesos(pago.montoPagado), destacado = true)
-                    FilaDato("Medio de pago", pago.medioPago)
-                    FilaDato("Canal", pago.canal)
+                    FilaDato("Folio", folio)
+                    FilaDato("Concepto", concepto)
+                    FilaDato("Monto pagado", "$${formatoMonto.format(pago.monto)}", destacado = true)
+                    FilaDato("Medio de pago", pago.metodoPago)
+                    FilaDato("Canal", "PagoFlex")
                     FilaDato("Pagado por", nombrePagador)
                     FilaDato("RUT", rutParcial)
                 }

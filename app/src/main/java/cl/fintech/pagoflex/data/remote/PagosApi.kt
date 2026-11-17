@@ -14,6 +14,7 @@ data class PagoRemoto(
     val fechaPago: String,
     val metodoPago: String,
     val referenciaComprobante: String?,
+    val estadoSincronizacion: String?,
     val activo: Boolean
 )
 

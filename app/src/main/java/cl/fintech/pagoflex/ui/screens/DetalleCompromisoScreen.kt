@@ -2,15 +2,18 @@ package cl.fintech.pagoflex.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,6 +29,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import cl.fintech.pagoflex.model.Compromiso
 import cl.fintech.pagoflex.model.EstadoCompromiso
 import cl.fintech.pagoflex.model.MotivoNoPago
@@ -66,7 +70,10 @@ fun DetalleCompromisoScreen(
     onVerComprobante: () -> Unit,
     onCrearReporte: (String, String) -> Boolean,
     reporteActual: Reporte?,
-    operacionesHabilitadas: Boolean = false
+    operacionesHabilitadas: Boolean = false,
+    pagosHabilitados: Boolean = false,
+    registrandoPago: Boolean = false,
+    errorPago: String? = null
 ) {
 
     var mostrarConfirmacion by remember { mutableStateOf(false) }
@@ -152,47 +159,65 @@ fun DetalleCompromisoScreen(
                 )
             }
 
-            if (operacionesHabilitadas) {
-                if (estaPagado) {
+            if (estaPagado) {
+                if (operacionesHabilitadas || pagosHabilitados) {
                     BotonSecundario(
                         texto = "Ver comprobante",
                         onClick = onVerComprobante,
                         modifier = Modifier.fillMaxWidth()
                     )
                 } else {
-                    BotonPrincipal(
-                        texto = "Pagar",
-                        onClick = { mostrarConfirmacion = true },
-                        habilitado = motivoNoPago == null,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
-
-                if (
-                    compromiso.estado == EstadoCompromiso.PENDIENTE ||
-                    compromiso.estado == EstadoCompromiso.VENCIDO
-                ) {
-                    BotonSecundario(
-                        texto = "Reportar un problema",
-                        onClick = {
-                            motivoReporte = "Ya pagué por otro medio"
-                            comentarioReporte = ""
-                            errorReporte = false
-                            mostrarFormulario = true
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
-            } else {
-                Card(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "Los pagos, comprobantes y reportes estarán disponibles cuando se conecten al servidor.",
-                        modifier = Modifier.padding(Dimens.espacioMedio),
+                        "El comprobante descargable aún no está disponible.",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
+            } else if (pagosHabilitados) {
+                BotonPrincipal(
+                    texto = "Registrar pago de prueba",
+                    onClick = { mostrarConfirmacion = true },
+                    habilitado = motivoNoPago == null && !registrandoPago,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                if (registrandoPago) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(22.dp))
+                        Text("Registrando el pago en el servidor...")
+                    }
+                }
+
+                if (errorPago != null) {
+                    Text(
+                        text = errorPago,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            } else {
+                Text(
+                    "El registro de pagos estará disponible cuando se conecte al servidor.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            if (
+                operacionesHabilitadas &&
+                (compromiso.estado == EstadoCompromiso.PENDIENTE ||
+                        compromiso.estado == EstadoCompromiso.VENCIDO)
+            ) {
+                BotonSecundario(
+                    texto = "Reportar un problema",
+                    onClick = {
+                        motivoReporte = "Ya pagué por otro medio"
+                        comentarioReporte = ""
+                        errorReporte = false
+                        mostrarFormulario = true
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             if (
@@ -283,16 +308,25 @@ fun DetalleCompromisoScreen(
         }
     }
 
-    if (operacionesHabilitadas && mostrarConfirmacion) {
+    if (pagosHabilitados && mostrarConfirmacion) {
         AlertDialog(
             onDismissRequest = { mostrarConfirmacion = false },
-            title = { Text("Confirmar pago") },
-            text = { Text("Vas a pagar ${formatearPesos(total)} a $nombreEmpresa.") },
+            title = { Text("Registrar pago de prueba") },
+            text = {
+                Text(
+                    "Se registrará un pago de ${formatearPesos(compromiso.monto)} " +
+                            "para $nombreEmpresa, con método TRANSFERENCIA. " +
+                            "Esta operación es simulada: no mueve dinero real."
+                )
+            },
             confirmButton = {
-                TextButton(onClick = {
-                    mostrarConfirmacion = false
-                    onConfirmarPago()
-                }) { Text("Confirmar pago") }
+                TextButton(
+                    enabled = !registrandoPago,
+                    onClick = {
+                        mostrarConfirmacion = false
+                        onConfirmarPago()
+                    }
+                ) { Text("Registrar") }
             },
             dismissButton = {
                 TextButton(onClick = { mostrarConfirmacion = false }) { Text("Cancelar") }
