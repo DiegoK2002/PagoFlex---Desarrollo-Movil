@@ -22,6 +22,10 @@ object ApiClient {
         retrofit.create(CompromisosApi::class.java)
     }
 
+    val empresasApi: EmpresasApi by lazy {
+        retrofit.create(EmpresasApi::class.java)
+    }
+
     val pagosApi: PagosApi by lazy {
         retrofit.create(PagosApi::class.java)
     }

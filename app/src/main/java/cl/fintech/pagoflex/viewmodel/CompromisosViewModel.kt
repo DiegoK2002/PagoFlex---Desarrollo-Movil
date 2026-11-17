@@ -3,6 +3,7 @@ package cl.fintech.pagoflex.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import cl.fintech.pagoflex.data.remote.ApiClient
 import cl.fintech.pagoflex.data.remote.CompromisosRepository
 import cl.fintech.pagoflex.data.remote.aCompromiso
 import cl.fintech.pagoflex.model.Compromiso
@@ -29,6 +30,8 @@ class CompromisosViewModel(
 ) : AndroidViewModel(application) {
 
     private val repositorio = CompromisosRepository()
+    private val empresasApi = ApiClient.empresasApi
+    private var nombresEmpresas: Map<String, String> = emptyMap()
 
     private var idUsuario: Long = 0L
 
@@ -109,6 +112,7 @@ class CompromisosViewModel(
         trabajoCarga?.cancel()
         trabajoCarga = null
         idUsuario = 0L
+        nombresEmpresas = emptyMap()
         reiniciarDatos()
         _cargando.value = false
         _errorCarga.value = null
@@ -128,10 +132,21 @@ class CompromisosViewModel(
                     .listarPorUsuario(usuarioSolicitado)
                     .map { it.aCompromiso() }
 
+                val empresas = try {
+                    empresasApi.listarTodas()
+                        .filter { it.idEmpresa > 0L && it.nombre.isNotBlank() }
+                        .associate { it.idEmpresa.toString() to it.nombre.trim() }
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Exception) {
+                    emptyMap()
+                }
+
                 if (idUsuario != usuarioSolicitado) {
                     return@launch
                 }
 
+                nombresEmpresas = empresas
                 _compromisos.value = resultado
 
                 _resumenCompromisos.value =
@@ -165,7 +180,7 @@ class CompromisosViewModel(
     }
 
     fun nombreEmpresa(codigo: String): String =
-        "Empresa $codigo"
+        nombresEmpresas[codigo] ?: "Empresa $codigo"
 
     fun diasDeAtraso(compromiso: Compromiso): Int =
         calcularDiasDeAtraso(compromiso, hoy)
