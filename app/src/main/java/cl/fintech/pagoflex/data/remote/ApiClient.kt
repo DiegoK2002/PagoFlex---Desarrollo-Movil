@@ -21,4 +21,8 @@ object ApiClient {
     val compromisosApi: CompromisosApi by lazy {
         retrofit.create(CompromisosApi::class.java)
     }
+
+    val pagosApi: PagosApi by lazy {
+        retrofit.create(PagosApi::class.java)
+    }
 }
