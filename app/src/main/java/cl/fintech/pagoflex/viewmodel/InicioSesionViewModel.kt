@@ -3,13 +3,11 @@ package cl.fintech.pagoflex.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import cl.fintech.pagoflex.data.PagoFlexDbHelper
 import cl.fintech.pagoflex.data.remote.ApiClient
 import cl.fintech.pagoflex.data.remote.LoginRequest
 import cl.fintech.pagoflex.model.Rol
 import cl.fintech.pagoflex.model.SesionUiState
 import cl.fintech.pagoflex.model.Usuario
-import cl.fintech.pagoflex.util.Seguridad
 import cl.fintech.pagoflex.util.Validaciones
 import java.io.IOException
 import java.util.Locale
@@ -21,8 +19,6 @@ import kotlinx.coroutines.launch
 import retrofit2.HttpException
 
 class InicioSesionViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val bd = PagoFlexDbHelper.obtener(application)
 
     private val _uiState = MutableStateFlow(SesionUiState())
     val uiState: StateFlow<SesionUiState> = _uiState.asStateFlow()
@@ -53,35 +49,6 @@ class InicioSesionViewModel(application: Application) : AndroidViewModel(applica
         _uiState.update {
             it.copy(contrasenaVisible = !it.contrasenaVisible)
         }
-    }
-
-    fun onIniciar(): Usuario? {
-
-        if (!validarCampos()) {
-            return null
-        }
-
-        val estado = _uiState.value
-
-        val hash = Seguridad.hashContrasena(
-            estado.correo,
-            estado.contrasena
-        )
-
-        val usuario = bd.buscarPorCredenciales(
-            estado.correo,
-            hash
-        )
-
-        if (usuario == null) {
-            _uiState.update {
-                it.copy(
-                    errorGeneral = "Correo o contraseña incorrectos"
-                )
-            }
-        }
-
-        return usuario
     }
 
     fun onIniciarRemoto(onInicioExitoso: (Usuario) -> Unit) {

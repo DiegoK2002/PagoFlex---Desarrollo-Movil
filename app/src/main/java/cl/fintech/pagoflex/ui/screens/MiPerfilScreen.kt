@@ -62,7 +62,8 @@ import androidx.compose.material3.ButtonDefaults
 fun MiPerfilScreen(
     usuario: Usuario,
     fotoPerfil: ByteArray?,
-    onGuardarFoto: (Bitmap) -> Boolean,
+    onGuardarFoto: (Bitmap, (Boolean) -> Unit) -> Unit,
+    guardandoFoto: Boolean,
     onVolver: () -> Unit
 ) {
 
@@ -84,10 +85,17 @@ fun MiPerfilScreen(
         if (uri != null) {
             val bitmap = ConvertidorImagen.desdeUri(context, uri)
 
-            mensajeFoto = when {
-                bitmap == null -> "No se pudo leer la imagen."
-                onGuardarFoto(bitmap) -> "Fotografía guardada correctamente."
-                else -> "No se pudo guardar la fotografía."
+            if (bitmap == null) {
+                mensajeFoto = "No se pudo leer la imagen."
+            } else {
+                mensajeFoto = "Guardando fotografía..."
+                onGuardarFoto(bitmap) { guardado ->
+                    mensajeFoto = if (guardado) {
+                        "Fotografía guardada correctamente."
+                    } else {
+                        "No se pudo guardar la fotografía."
+                    }
+                }
             }
         }
     }
@@ -96,10 +104,13 @@ fun MiPerfilScreen(
         contract = ActivityResultContracts.TakePicturePreview()
     ) { bitmap ->
         if (bitmap != null) {
-            mensajeFoto = if (onGuardarFoto(bitmap)) {
-                "Fotografía tomada y guardada correctamente."
-            } else {
-                "No se pudo guardar la fotografía."
+            mensajeFoto = "Guardando fotografía..."
+            onGuardarFoto(bitmap) { guardado ->
+                mensajeFoto = if (guardado) {
+                    "Fotografía tomada y guardada correctamente."
+                } else {
+                    "No se pudo guardar la fotografía."
+                }
             }
         }
     }
@@ -196,6 +207,7 @@ fun MiPerfilScreen(
                             lanzadorGaleria.launch("image/*")
                         },
                         modifier = Modifier.fillMaxWidth(),
+                        enabled = !guardandoFoto,
                         colors = ButtonDefaults.outlinedButtonColors(
                             containerColor = MaterialTheme.colorScheme.surface,
                             contentColor = MaterialTheme.colorScheme.onSurface
@@ -218,6 +230,7 @@ fun MiPerfilScreen(
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
+                        enabled = !guardandoFoto,
                         colors = ButtonDefaults.outlinedButtonColors(
                             containerColor = MaterialTheme.colorScheme.surface,
                             contentColor = MaterialTheme.colorScheme.onSurface

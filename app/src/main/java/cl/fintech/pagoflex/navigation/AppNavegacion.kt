@@ -32,12 +32,12 @@ import cl.fintech.pagoflex.util.ocultarRut
 import cl.fintech.pagoflex.viewmodel.CompromisosViewModel
 import cl.fintech.pagoflex.viewmodel.SesionViewModel
 import cl.fintech.pagoflex.viewmodel.ReportesViewModel
-import cl.fintech.pagoflex.viewmodel.FotoPerfilViewModel
 import cl.fintech.pagoflex.viewmodel.CotizacionesViewModel
 import cl.fintech.pagoflex.ui.screens.HistorialPagosScreen
 import cl.fintech.pagoflex.ui.screens.ReconocimientosScreen
 import androidx.compose.runtime.LaunchedEffect
 import cl.fintech.pagoflex.viewmodel.PagosViewModel
+import cl.fintech.pagoflex.viewmodel.FotoPerfilViewModel
 
 
 @Composable
@@ -71,6 +71,7 @@ fun AppNavegacion() {
     val errorReporteRemoto by reportesViewModel.error.collectAsStateWithLifecycle()
     val estadoCotizaciones by cotizacionesViewModel.estado.collectAsStateWithLifecycle()
     val fotoPerfil by fotoPerfilViewModel.fotoPerfil.collectAsStateWithLifecycle()
+    val guardandoFoto by fotoPerfilViewModel.guardandoFoto.collectAsStateWithLifecycle()
 
     val cerrarSesion = {
         fotoPerfilViewModel.limpiar()
@@ -188,9 +189,10 @@ fun AppNavegacion() {
                 MiPerfilScreen(
                     usuario = usuario,
                     fotoPerfil = fotoPerfil,
-                    onGuardarFoto = { bitmap ->
-                        fotoPerfilViewModel.guardarFoto(bitmap)
+                    onGuardarFoto = { bitmap, onResultado ->
+                        fotoPerfilViewModel.guardarFoto(bitmap, onResultado)
                     },
+                    guardandoFoto = guardandoFoto,
                     onVolver = { volverSiCorresponde(Ruta.MiPerfil.ruta) }
                 )
             }
