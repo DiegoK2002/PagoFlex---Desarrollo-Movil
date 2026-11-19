@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import cl.fintech.pagoflex.data.remote.ApiClient
 import cl.fintech.pagoflex.data.remote.CompromisosRepository
+import cl.fintech.pagoflex.data.remote.PagosRepository
 import cl.fintech.pagoflex.data.remote.aCompromiso
 import cl.fintech.pagoflex.model.Compromiso
 import cl.fintech.pagoflex.model.EstadoCompromiso
@@ -12,6 +13,8 @@ import cl.fintech.pagoflex.model.MotivoNoPago
 import cl.fintech.pagoflex.model.Pago
 import cl.fintech.pagoflex.util.IndicadorCumplimiento
 import cl.fintech.pagoflex.util.Reconocimiento
+import cl.fintech.pagoflex.util.calcularIndicadorCumplimiento
+import cl.fintech.pagoflex.util.calcularReconocimientosPorPagos
 import cl.fintech.pagoflex.util.ResumenCompromisos
 import cl.fintech.pagoflex.util.calcularDiasDeAtraso
 import cl.fintech.pagoflex.util.calcularResumenCompromisos
@@ -30,6 +33,7 @@ class CompromisosViewModel(
 ) : AndroidViewModel(application) {
 
     private val repositorio = CompromisosRepository()
+    private val pagosRepositorio = PagosRepository()
     private val empresasApi = ApiClient.empresasApi
     private var nombresEmpresas: Map<String, String> = emptyMap()
 
@@ -132,6 +136,46 @@ class CompromisosViewModel(
                     .listarPorUsuario(usuarioSolicitado)
                     .map { it.aCompromiso() }
 
+                val pagosConfirmados = try {
+                    val compromisosPorId = resultado.associateBy {
+                        it.folio.removePrefix("REM-").toLongOrNull()
+                    }
+
+                    pagosRepositorio.listarPorUsuario(usuarioSolicitado)
+                        .filter {
+                            it.estadoSincronizacion.equals(
+                                "CONFIRMADO",
+                                ignoreCase = true
+                            )
+                        }
+                        .mapNotNull { pagoRemoto ->
+                            val compromiso = compromisosPorId[pagoRemoto.idCompromiso]
+                                ?: return@mapNotNull null
+                            val fechaPago = runCatching {
+                                LocalDate.parse(pagoRemoto.fechaPago)
+                            }.getOrNull() ?: return@mapNotNull null
+
+                            Pago(
+                                numeroComprobante = pagoRemoto.referenciaComprobante
+                                    ?.takeIf { it.isNotBlank() }
+                                    ?: "Pago ${pagoRemoto.idPago}",
+                                folioCompromiso = compromiso.folio,
+                                idUsuario = pagoRemoto.idUsuario,
+                                codigoEmpresa = compromiso.codigoEmpresa,
+                                concepto = compromiso.concepto,
+                                fechaHora = fechaPago.atStartOfDay(),
+                                montoPagado = pagoRemoto.monto.toInt(),
+                                canal = pagoRemoto.metodoPago,
+                                aTiempo = !fechaPago.isAfter(compromiso.fechaVencimiento),
+                                medioPago = pagoRemoto.metodoPago
+                            )
+                        }
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Exception) {
+                    null
+                }
+
                 val empresas = try {
                     empresasApi.listarTodas()
                         .filter { it.idEmpresa > 0L && it.nombre.isNotBlank() }
@@ -148,6 +192,14 @@ class CompromisosViewModel(
 
                 nombresEmpresas = empresas
                 _compromisos.value = resultado
+
+                if (pagosConfirmados != null) {
+                    _pagos.value = pagosConfirmados
+                    _reconocimientos.value =
+                        calcularReconocimientosPorPagos(pagosConfirmados)
+                    _indicadorCumplimiento.value =
+                        calcularIndicadorCumplimiento(resultado, pagosConfirmados, hoy)
+                }
 
                 _resumenCompromisos.value =
                     calcularResumenCompromisos(
