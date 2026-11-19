@@ -11,6 +11,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import cl.fintech.pagoflex.navigation.AppNavegacion
 import cl.fintech.pagoflex.ui.theme.PagoflexTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.ui.Modifier
 
 class MainActivity : ComponentActivity() {
 
@@ -45,10 +49,18 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
 
+
         setContent {
             PagoflexTheme {
-                AppNavegacion()
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .imePadding()
+                ) {
+                    AppNavegacion()
+                }
             }
         }
+
     }
 }
