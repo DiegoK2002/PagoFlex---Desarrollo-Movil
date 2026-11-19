@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cl.fintech.pagoflex.model.Compromiso
+import cl.fintech.pagoflex.model.EstadoCompromiso
 import cl.fintech.pagoflex.model.Usuario
 import cl.fintech.pagoflex.ui.components.TarjetaCompromiso
 import kotlinx.coroutines.launch
@@ -79,6 +80,13 @@ fun CompromisosScreen(
     }
 
     var monedaSeleccionada by rememberSaveable { mutableStateOf("CLP") }
+    var mostrarPagados by rememberSaveable { mutableStateOf(false) }
+
+    val compromisosVisibles = if (mostrarPagados) {
+        compromisos
+    } else {
+        compromisos.filter { it.estado != EstadoCompromiso.PAGADO }
+    }
 
     if (mostrarDialogo) {
         AlertDialog(
@@ -167,232 +175,246 @@ fun CompromisosScreen(
             },
             containerColor = MaterialTheme.colorScheme.background
         ) { innerPadding ->
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
 
-                    item {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                item {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            "Moneda de visualización",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
+                            listOf("CLP", "EUR", "USD").forEach { moneda ->
+                                val disponible = when (moneda) {
+                                    "EUR" -> (estadoCotizaciones.valorEuro ?: 0.0) > 0.0
+                                    "USD" -> (estadoCotizaciones.valorDolar ?: 0.0) > 0.0
+                                    else -> true
+                                }
+
+                                FilterChip(
+                                    selected = monedaSeleccionada == moneda,
+                                    onClick = {
+                                        monedaSeleccionada = moneda
+                                    },
+                                    enabled = disponible,
+                                    label = { Text(moneda) }
+                                )
+                            }
+                        }
+
+
+                        when {
+                            estadoCotizaciones.cargando -> {
+                                Text(
+                                    text = "Consultando cotizaciones de EUR y USD...",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+
+                            estadoCotizaciones.error != null -> {
+                                Text(
+                                    text = estadoCotizaciones.error,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+
+                            estadoCotizaciones.valorEuro == null || estadoCotizaciones.valorDolar == null -> {
+                                Text(
+                                    text = "Las cotizaciones aún no están disponibles.",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+
+
+                        if (monedaSeleccionada != "CLP") {
+                            val fecha = when (monedaSeleccionada) {
+                                "EUR" -> estadoCotizaciones.fechaEuro
+                                "USD" -> estadoCotizaciones.fechaDolar
+                                else -> null
+                            }
+
+                            val fechaFormateada = fecha
+                                ?.split("-")
+                                ?.reversed()
+                                ?.joinToString("-") ?: "No disponible"
+
+
+                            val cotizacionActual = when (monedaSeleccionada) {
+                                "EUR" -> estadoCotizaciones.valorEuro
+                                "USD" -> estadoCotizaciones.valorDolar
+                                else -> null
+                            }
+
+                            if (cotizacionActual != null && cotizacionActual > 0.0) {
+                                val cotizacionFormateada = String.format(
+                                    Locale.forLanguageTag("es-CL"),
+                                    "%,.2f",
+                                    cotizacionActual
+                                )
+
+                                Text(
+                                    "1 $monedaSeleccionada = $cotizacionFormateada CLP",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+
+
                             Text(
-                                "Moneda de visualización",
-                                style = MaterialTheme.typography.titleMedium
+
+                                "Conversión aproximada al $fechaFormateada. " +
+                                        "Los pagos reales se realizan en CLP. " +
+                                        "Fuente: Currency API (fawazahmed0)"
+                                ,
+                                style = MaterialTheme.typography.bodySmall
                             )
+                        }
+                    }
+                }
 
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+
+                if (resumenCompromisos != null && !cargandoCompromisos && errorCompromisos == null) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                listOf("CLP", "EUR", "USD").forEach { moneda ->
-                                    val disponible = when (moneda) {
-                                        "EUR" -> (estadoCotizaciones.valorEuro ?: 0.0) > 0.0
-                                        "USD" -> (estadoCotizaciones.valorDolar ?: 0.0) > 0.0
-                                        else -> true
-                                    }
-
-                                    FilterChip(
-                                        selected = monedaSeleccionada == moneda,
-                                        onClick = {
-                                            monedaSeleccionada = moneda
-                                        },
-                                        enabled = disponible,
-                                        label = { Text(moneda) }
-                                    )
-                                }
-                            }
-
-
-                            when {
-                                estadoCotizaciones.cargando -> {
-                                    Text(
-                                        text = "Consultando cotizaciones de EUR y USD...",
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
-                                }
-
-                                estadoCotizaciones.error != null -> {
-                                    Text(
-                                        text = estadoCotizaciones.error,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.error
-                                    )
-                                }
-
-                                estadoCotizaciones.valorEuro == null || estadoCotizaciones.valorDolar == null -> {
-                                    Text(
-                                        text = "Las cotizaciones aún no están disponibles.",
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
-                                }
-                            }
-
-
-                            if (monedaSeleccionada != "CLP") {
-                                val fecha = when (monedaSeleccionada) {
-                                    "EUR" -> estadoCotizaciones.fechaEuro
-                                    "USD" -> estadoCotizaciones.fechaDolar
-                                    else -> null
-                                }
-
-                                val fechaFormateada = fecha
-                                    ?.split("-")
-                                    ?.reversed()
-                                    ?.joinToString("-") ?: "No disponible"
-
-
-                                val cotizacionActual = when (monedaSeleccionada) {
-                                    "EUR" -> estadoCotizaciones.valorEuro
-                                    "USD" -> estadoCotizaciones.valorDolar
-                                    else -> null
-                                }
-
-                                if (cotizacionActual != null && cotizacionActual > 0.0) {
-                                    val cotizacionFormateada = String.format(
-                                        Locale.forLanguageTag("es-CL"),
-                                        "%,.2f",
-                                        cotizacionActual
-                                    )
-
-                                    Text(
-                                        "1 $monedaSeleccionada = $cotizacionFormateada CLP",
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                }
-
+                                Text(
+                                    text = "Resumen de mis compromisos",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
 
                                 Text(
 
-                                    "Conversión aproximada al $fechaFormateada. " +
-                                            "Los pagos reales se realizan en CLP. " +
-                                            "Fuente: Currency API (fawazahmed0)"
-                                    ,
-                                    style = MaterialTheme.typography.bodySmall
+                                    text = "Por pagar este mes (CLP): " +
+                                            formatearPesos(resumenCompromisos.totalPorPagarMes)
+
+                                )
+
+                                val proximoVencimiento =
+                                    resumenCompromisos.proximoVencimiento?.let {
+                                        formatearFecha(it)
+                                    } ?: "Sin próximos vencimientos"
+
+                                Text(
+                                    text = "Próximo vencimiento: $proximoVencimiento"
+                                )
+
+                                Text(
+                                    text = "Compromisos vencidos: " +
+                                            resumenCompromisos.cantidadVencidos
+                                )
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    FilterChip(
+                        selected = mostrarPagados,
+                        onClick = { mostrarPagados = !mostrarPagados },
+                        label = { Text("Mostrar pagados") }
+                    )
+                }
+
+                when {
+                    cargandoCompromisos -> {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 32.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                    }
+
+                    errorCompromisos != null -> {
+                        item {
+                            Card(modifier = Modifier.fillMaxWidth()) {
+                                Text(
+                                    text = errorCompromisos,
+                                    color = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.padding(16.dp)
                                 )
                             }
                         }
                     }
 
-
-                    if (resumenCompromisos != null && !cargandoCompromisos && errorCompromisos == null) {
+                    compromisosVisibles.isEmpty() -> {
                         item {
-                            Card(
-                                modifier = Modifier.fillMaxWidth()
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 32.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Column(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Text(
-                                        text = "Resumen de mis compromisos",
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
-
-                                    Text(
-
-                                        text = "Por pagar este mes (CLP): " +
-                                                formatearPesos(resumenCompromisos.totalPorPagarMes)
-
-                                    )
-
-                                    val proximoVencimiento =
-                                        resumenCompromisos.proximoVencimiento?.let {
-                                            formatearFecha(it)
-                                        } ?: "Sin próximos vencimientos"
-
-                                    Text(
-                                        text = "Próximo vencimiento: $proximoVencimiento"
-                                    )
-
-                                    Text(
-                                        text = "Compromisos vencidos: " +
-                                                resumenCompromisos.cantidadVencidos
-                                    )
-                                }
+                                Text(
+                                    if (compromisos.isNotEmpty() && !mostrarPagados) {
+                                        "No tienes compromisos sin pagar. Activa Mostrar pagados para ver los pagados."
+                                    } else {
+                                        "No tienes compromisos registrados"
+                                    }
+                                )
                             }
                         }
                     }
 
-                    when {
-                        cargandoCompromisos -> {
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 32.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator()
-                                }
+                    else -> {
+                        items(compromisosVisibles) { compromiso ->
+                            val importe = importeDe(compromiso)
+
+                            val cotizacion = when (monedaSeleccionada) {
+                                "EUR" -> estadoCotizaciones.valorEuro
+                                "USD" -> estadoCotizaciones.valorDolar
+                                else -> null
                             }
-                        }
 
-                        errorCompromisos != null -> {
-                            item {
-                                Card(modifier = Modifier.fillMaxWidth()) {
-                                    Text(
-                                        text = errorCompromisos,
-                                        color = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.padding(16.dp)
-                                    )
+                            val importeConvertido = if (
+                                cotizacion != null && cotizacion > 0.0
+                            ) {
+                                val idioma = if (monedaSeleccionada == "EUR") {
+                                    Locale.GERMANY
+                                } else {
+                                    Locale.US
                                 }
-                            }
-                        }
 
-                        compromisos.isEmpty() -> {
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 32.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text("No tienes compromisos registrados")
-                                }
-                            }
-                        }
+                                val monto = importe.toDouble() / cotizacion
 
-                        else -> {
-                    items(compromisos) { compromiso ->
-                        val importe = importeDe(compromiso)
-
-                        val cotizacion = when (monedaSeleccionada) {
-                            "EUR" -> estadoCotizaciones.valorEuro
-                            "USD" -> estadoCotizaciones.valorDolar
-                            else -> null
-                        }
-
-                        val importeConvertido = if (
-                            cotizacion != null && cotizacion > 0.0
-                        ) {
-                            val idioma = if (monedaSeleccionada == "EUR") {
-                                Locale.GERMANY
+                                "$monedaSeleccionada ${String.format(idioma, "%,.2f", monto)}"
                             } else {
-                                Locale.US
+                                null
                             }
 
-                            val monto = importe.toDouble() / cotizacion
-
-                            "$monedaSeleccionada ${String.format(idioma, "%,.2f", monto)}"
-                        } else {
-                            null
-                        }
-
-                        TarjetaCompromiso(
-                            compromiso = compromiso,
-                            nombreEmpresa = nombreEmpresa(compromiso.codigoEmpresa),
-                            importe = importe,
-                            importeConvertido = importeConvertido,
-                            onClick = { onVerDetalle(compromiso.folio) }
-                        )
-                    }
+                            TarjetaCompromiso(
+                                compromiso = compromiso,
+                                nombreEmpresa = nombreEmpresa(compromiso.codigoEmpresa),
+                                importe = importe,
+                                importeConvertido = importeConvertido,
+                                onClick = { onVerDetalle(compromiso.folio) }
+                            )
                         }
                     }
-
                 }
+
+            }
 
         }
     }
