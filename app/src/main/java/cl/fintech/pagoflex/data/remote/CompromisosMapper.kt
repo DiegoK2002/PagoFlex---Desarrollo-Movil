@@ -9,6 +9,17 @@ fun CompromisoRemoto.aCompromiso(): Compromiso {
     require(idUsuario > 0L)
     require(idEmpresa > 0L)
 
+    val vencimiento = LocalDate.parse(fechaVencimiento)
+    val estadoServidor = EstadoCompromiso.valueOf(estado.trim().uppercase())
+    val estadoVisible = if (
+        estadoServidor == EstadoCompromiso.PENDIENTE &&
+        vencimiento.isBefore(LocalDate.now())
+    ) {
+        EstadoCompromiso.VENCIDO
+    } else {
+        estadoServidor
+    }
+
     return Compromiso(
         folio = "REM-$idCompromiso",
         idUsuario = idUsuario,
@@ -17,9 +28,7 @@ fun CompromisoRemoto.aCompromiso(): Compromiso {
         numeroCuota = null,
         totalCuotas = null,
         monto = monto.intValueExact(),
-        fechaVencimiento = LocalDate.parse(fechaVencimiento),
-        estado = EstadoCompromiso.valueOf(
-            estado.trim().uppercase()
-        )
+        fechaVencimiento = vencimiento,
+        estado = estadoVisible
     )
 }

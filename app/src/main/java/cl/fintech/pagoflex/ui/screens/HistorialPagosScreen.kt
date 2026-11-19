@@ -35,6 +35,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import cl.fintech.pagoflex.data.remote.PagoRemoto
 import cl.fintech.pagoflex.model.Compromiso
+import cl.fintech.pagoflex.model.EstadoCompromiso
+import cl.fintech.pagoflex.ui.components.GraficoCumplimiento
 import cl.fintech.pagoflex.ui.components.ListaDesplegable
 import cl.fintech.pagoflex.ui.components.BotonSecundario
 import java.text.NumberFormat
@@ -113,6 +115,61 @@ fun HistorialPagosScreen(
         coincideEmpresa && coincidePeriodo && coincideEstado && coincideMonto
     }
 
+    val inicioEvaluacion = hoy.minusMonths(12)
+
+    val pagosConfirmadosPorCompromiso = pagos.asSequence()
+        .filter { pago ->
+            pago.activo &&
+                    pago.estadoSincronizacion.equals("CONFIRMADO", ignoreCase = true)
+        }
+        .mapNotNull { pago ->
+            val fechaPago = runCatching { LocalDate.parse(pago.fechaPago) }.getOrNull()
+                ?: return@mapNotNull null
+            (pago.idUsuario to pago.idCompromiso) to fechaPago
+        }
+        .groupBy(
+            keySelector = { it.first },
+            valueTransform = { it.second }
+        )
+        .mapValues { (_, fechas) -> fechas.minOrNull() }
+
+    val compromisosEvaluables = compromisos.filter { compromiso ->
+        val idCompromiso = compromiso.folio.removePrefix("REM-").toLongOrNull()
+        val fechaPago = idCompromiso?.let {
+            pagosConfirmadosPorCompromiso[compromiso.idUsuario to it]
+        }
+        val vencimientoEnPeriodo =
+            compromiso.fechaVencimiento.isBefore(hoy) &&
+                    !compromiso.fechaVencimiento.isBefore(inicioEvaluacion)
+        val pagoEnPeriodo = fechaPago != null &&
+                !fechaPago.isBefore(inicioEvaluacion) &&
+                !fechaPago.isAfter(hoy)
+
+        compromiso.estado != EstadoCompromiso.ANULADO &&
+                compromiso.estado != EstadoCompromiso.EN_REVISION &&
+                (vencimientoEnPeriodo || pagoEnPeriodo)
+    }
+
+    val pagosATiempo = compromisosEvaluables.count { compromiso ->
+        val idCompromiso = compromiso.folio.removePrefix("REM-").toLongOrNull()
+        val fechaPago = idCompromiso?.let {
+            pagosConfirmadosPorCompromiso[compromiso.idUsuario to it]
+        }
+        fechaPago != null && !fechaPago.isAfter(compromiso.fechaVencimiento)
+    }
+    val porcentajeCumplimiento = if (compromisosEvaluables.isEmpty()) {
+        null
+    } else {
+        pagosATiempo * 100.0 / compromisosEvaluables.size
+    }
+    val categoriaCumplimiento = when {
+        porcentajeCumplimiento == null -> null
+        compromisosEvaluables.size < 3 -> "Resultado provisional"
+        porcentajeCumplimiento >= 95.0 -> "Ejemplar"
+        porcentajeCumplimiento >= 80.0 -> "Al día"
+        else -> "En camino"
+    }
+
     val numeroFormato = NumberFormat.getNumberInstance(Locale.forLanguageTag("es-CL")).apply {
         minimumFractionDigits = 0
         maximumFractionDigits = 2
@@ -152,7 +209,32 @@ fun HistorialPagosScreen(
                     ) {
                         Text("Resumen de pagos", style = MaterialTheme.typography.titleMedium)
                         Text("Pagos registrados: ${pagos.size}")
-                        Text("Pagos confirmados: ${pagos.count { it.estadoSincronizacion == "CONFIRMADO" }}")
+                        Text("Pagos confirmados: ${pagos.count { it.activo && it.estadoSincronizacion.equals("CONFIRMADO", ignoreCase = true) }}")
+                        Text(
+                            "Cumplimiento de los últimos 12 meses",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        if (porcentajeCumplimiento == null) {
+                            Text("Todavía no hay compromisos evaluables en este período.")
+                        } else {
+                            GraficoCumplimiento(
+                                porcentaje = porcentajeCumplimiento,
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            )
+                            Text(
+                                categoriaCumplimiento.orEmpty(),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                "$pagosATiempo de ${compromisosEvaluables.size} compromisos pagados a tiempo"
+                            )
+                            if (compromisosEvaluables.size < 3) {
+                                Text(
+                                    "Porcentaje provisional: se necesitan al menos 3 compromisos evaluables para una clasificación definitiva.",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
                 }
             }
