@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -18,6 +19,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -29,6 +31,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import cl.fintech.pagoflex.data.remote.PagoRemoto
 import cl.fintech.pagoflex.model.Compromiso
@@ -54,12 +57,21 @@ fun HistorialPagosScreen(
 ) {
     var empresaSeleccionada by rememberSaveable { mutableStateOf("") }
     var periodoSeleccionado by rememberSaveable { mutableStateOf("Todo el historial") }
+    var estadoSeleccionado by rememberSaveable { mutableStateOf("Todos los estados") }
+    var montoMinimo by rememberSaveable { mutableStateOf("") }
+    var montoMaximo by rememberSaveable { mutableStateOf("") }
 
     val compromisosPorId = compromisos.mapNotNull { compromiso ->
         compromiso.folio.removePrefix("REM-").toLongOrNull()?.let { id ->
             id to compromiso
         }
     }.toMap()
+
+    val opcionesEstados = listOf(
+        "Todos los estados",
+        "Confirmados",
+        "Pendientes de confirmación"
+    )
 
     val opcionesPeriodos = listOf(
         "Todo el historial",
@@ -76,6 +88,9 @@ fun HistorialPagosScreen(
     val mesActual = YearMonth.from(hoy)
     val mesAnterior = mesActual.minusMonths(1)
 
+    val montoMinimoNumero = montoMinimo.toBigDecimalOrNull()
+    val montoMaximoNumero = montoMaximo.toBigDecimalOrNull()
+
     val pagosFiltrados = pagos.filter { pago ->
         val fecha = runCatching { LocalDate.parse(pago.fechaPago) }.getOrNull()
         val empresa = compromisosPorId[pago.idCompromiso]?.codigoEmpresa
@@ -84,10 +99,18 @@ fun HistorialPagosScreen(
             "Este mes" -> fecha != null && YearMonth.from(fecha) == mesActual
             "Mes anterior" -> fecha != null && YearMonth.from(fecha) == mesAnterior
             "Últimos 12 meses" -> fecha != null &&
-                !fecha.isBefore(hoy.minusMonths(12)) && !fecha.isAfter(hoy)
+                    !fecha.isBefore(hoy.minusMonths(12)) && !fecha.isAfter(hoy)
             else -> true
         }
-        coincideEmpresa && coincidePeriodo
+        val coincideEstado = when (estadoSeleccionado) {
+            "Confirmados" -> pago.estadoSincronizacion.equals("CONFIRMADO", ignoreCase = true)
+            "Pendientes de confirmación" -> pago.estadoSincronizacion.equals("PENDIENTE", ignoreCase = true)
+            else -> true
+        }
+        val coincideMonto =
+            (montoMinimoNumero == null || pago.monto >= montoMinimoNumero) &&
+                    (montoMaximoNumero == null || pago.monto <= montoMaximoNumero)
+        coincideEmpresa && coincidePeriodo && coincideEstado && coincideMonto
     }
 
     val numeroFormato = NumberFormat.getNumberInstance(Locale.forLanguageTag("es-CL")).apply {
@@ -174,6 +197,70 @@ fun HistorialPagosScreen(
                         onSeleccionar = { periodoSeleccionado = it },
                         modifier = Modifier.fillMaxWidth()
                     )
+                }
+
+                item {
+                    ListaDesplegable(
+                        etiqueta = "Filtrar por estado",
+                        opciones = opcionesEstados,
+                        seleccionada = estadoSeleccionado,
+                        textoDe = { it },
+                        onSeleccionar = { estadoSeleccionado = it },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                item {
+                    Text(
+                        "Filtrar por monto pagado (CLP)",
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                }
+
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = montoMinimo,
+                            onValueChange = { montoMinimo = it.filter(Char::isDigit).take(12) },
+                            label = { Text("Mínimo") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = montoMaximo,
+                            onValueChange = { montoMaximo = it.filter(Char::isDigit).take(12) },
+                            label = { Text("Máximo") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                if (
+                    empresaSeleccionada.isNotEmpty() ||
+                    periodoSeleccionado != "Todo el historial" ||
+                    estadoSeleccionado != "Todos los estados" ||
+                    montoMinimo.isNotEmpty() ||
+                    montoMaximo.isNotEmpty()
+                ) {
+                    item {
+                        BotonSecundario(
+                            texto = "Limpiar filtros",
+                            onClick = {
+                                empresaSeleccionada = ""
+                                periodoSeleccionado = "Todo el historial"
+                                estadoSeleccionado = "Todos los estados"
+                                montoMinimo = ""
+                                montoMaximo = ""
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
 
                 if (pagos.isEmpty()) {

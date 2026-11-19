@@ -2,6 +2,7 @@ package cl.fintech.pagoflex.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ButtonDefaults
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import cl.fintech.pagoflex.model.Reporte
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
@@ -39,6 +41,16 @@ fun InicioAgenteScreen(
     onTomarReporte: (Long) -> Unit,
     onResolverReporte: (Long, String, (Boolean) -> Unit) -> Unit
 ) {
+    var filtroEstado by rememberSaveable { mutableStateOf("Por resolver") }
+
+    val reportesVisibles = when (filtroEstado) {
+        "Por resolver" -> reportes.filter { it.estado == "Abierto" || it.estado == "En gestión" }
+        "Abiertos" -> reportes.filter { it.estado == "Abierto" }
+        "En gestión" -> reportes.filter { it.estado == "En gestión" }
+        "Resueltos" -> reportes.filter { it.estado == "Resuelto" }
+        else -> reportes
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -74,9 +86,28 @@ fun InicioAgenteScreen(
                 Text(errorReporte, color = MaterialTheme.colorScheme.error)
             }
 
-            if (reportes.isEmpty()) {
+            Text(
+                "Filtrar reportes",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf("Por resolver", "Abiertos", "En gestión", "Resueltos", "Todos").forEach { filtro ->
+                    FilterChip(
+                        selected = filtroEstado == filtro,
+                        onClick = { filtroEstado = filtro },
+                        label = { Text(filtro) }
+                    )
+                }
+            }
+
+            if (reportesVisibles.isEmpty()) {
                 Text(
-                    "No hay reportes para mostrar.",
+                    if (reportes.isEmpty()) "No hay reportes para mostrar."
+                    else "No hay reportes para el filtro seleccionado.",
                     style = MaterialTheme.typography.bodyMedium
                 )
             } else {
@@ -84,7 +115,7 @@ fun InicioAgenteScreen(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(reportes, key = { it.idReporte }) { reporte ->
+                    items(reportesVisibles, key = { it.idReporte }) { reporte ->
                         Card(
                             modifier = Modifier.fillMaxWidth()
                         ) {
