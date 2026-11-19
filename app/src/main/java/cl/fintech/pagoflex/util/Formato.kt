@@ -15,8 +15,15 @@ fun formatearFecha(fecha: LocalDate): String =
 fun formatearFechaHora(fechaHora: LocalDateTime): String =
     fechaHora.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"))
 
+
 fun ocultarRut(rut: String): String {
-    val primero = rut.substringBefore('.')
-    val digito = rut.substringAfterLast('-')
-    return "${primero}.***.***-${digito}"
+    val numero = rut.substringBefore('-').filter { it.isDigit() }
+    val digito = rut.substringAfterLast('-').trim().uppercase()
+
+    if (numero.length !in 7..8 || digito.length != 1) {
+        return "RUT no disponible"
+    }
+
+    val primero = numero.dropLast(6)
+    return "$primero.***.***-$digito"
 }

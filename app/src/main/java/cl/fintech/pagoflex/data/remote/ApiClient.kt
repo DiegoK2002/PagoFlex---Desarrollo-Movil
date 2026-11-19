@@ -13,11 +13,10 @@ object ApiClient {
                         Build.FINGERPRINT.contains("emulator") ||
                         Build.HARDWARE == "ranchu" ||
                         Build.HARDWARE == "goldfish"
-
             return if (esEmulador) {
                 "http://10.0.2.2:8080/"
             } else {
-                "http://127.0.0.1:8080/"
+                "https://tqc4cr9w-8080.brs.devtunnels.ms/"
             }
         }
 
