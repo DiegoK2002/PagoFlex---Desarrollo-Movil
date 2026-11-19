@@ -56,6 +56,8 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import androidx.compose.material3.ButtonDefaults
+import cl.fintech.pagoflex.ui.components.BotonPrincipal
+import cl.fintech.pagoflex.ui.components.BotonSecundario
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,6 +66,8 @@ fun MiPerfilScreen(
     fotoPerfil: ByteArray?,
     onGuardarFoto: (Bitmap, (Boolean) -> Unit) -> Unit,
     guardandoFoto: Boolean,
+    onEditarDatos: () -> Unit,
+    onCambiarContrasena: () -> Unit,
     onVolver: () -> Unit
 ) {
 
@@ -261,6 +265,18 @@ fun MiPerfilScreen(
             TarjetaPerfil(Icons.Default.Badge, "RUT", ocultarRut(usuario.rut))
             TarjetaPerfil(Icons.Default.Email, "Correo electrónico", usuario.correo)
             TarjetaPerfil(Icons.Default.LocationOn, "Comuna", usuario.comuna)
+
+            BotonPrincipal(
+                texto = "Editar datos personales",
+                onClick = onEditarDatos,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            BotonSecundario(
+                texto = "Cambiar contrase\u00f1a",
+                onClick = onCambiarContrasena,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }

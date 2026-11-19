@@ -62,6 +62,7 @@ class ReportesViewModel : ViewModel() {
                 val resultado = when (usuario.rol) {
                     Rol.AGENTE -> repositorio.listarParaAgente()
                     Rol.USUARIO_FINAL -> repositorio.listarPorUsuario(usuario.id)
+                    Rol.ADMINISTRADOR -> emptyList()
                 }
                 if (versionCarga == version && usuarioActual?.id == usuario.id) {
                     _reportes.value = resultado

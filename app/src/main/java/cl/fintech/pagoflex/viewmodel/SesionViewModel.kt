@@ -16,6 +16,11 @@ class SesionViewModel : ViewModel() {
         _usuarioActual.value = usuario
     }
 
+    // Refresca los datos del usuario tras editar el perfil
+    fun actualizarUsuario(usuario: Usuario) {
+        _usuarioActual.value = usuario
+    }
+
     fun cerrarSesion() {
         _usuarioActual.value = null
     }

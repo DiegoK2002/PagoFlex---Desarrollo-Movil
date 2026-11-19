@@ -21,7 +21,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import cl.fintech.pagoflex.model.Rol
+import cl.fintech.pagoflex.ui.screens.CambiarContrasenaScreen
 import cl.fintech.pagoflex.ui.screens.ComprobanteScreen
+import cl.fintech.pagoflex.ui.screens.EditarPerfilScreen
+import cl.fintech.pagoflex.ui.screens.RecuperarContrasenaScreen
 import cl.fintech.pagoflex.ui.screens.CompromisosScreen
 import cl.fintech.pagoflex.ui.screens.DetalleCompromisoScreen
 import cl.fintech.pagoflex.ui.screens.InicioAgenteScreen
@@ -38,6 +41,7 @@ import cl.fintech.pagoflex.ui.screens.ReconocimientosScreen
 import androidx.compose.runtime.LaunchedEffect
 import cl.fintech.pagoflex.viewmodel.PagosViewModel
 import cl.fintech.pagoflex.viewmodel.FotoPerfilViewModel
+import cl.fintech.pagoflex.ui.screens.AdministradorScreen
 
 
 @Composable
@@ -100,12 +104,22 @@ fun AppNavegacion() {
                     val destino = when (usuario.rol) {
                         Rol.USUARIO_FINAL -> Ruta.Compromisos.ruta
                         Rol.AGENTE -> Ruta.InicioAgente.ruta
+                        Rol.ADMINISTRADOR -> Ruta.Administrador.ruta
                     }
                     navController.navigate(destino) {
                         popUpTo(Ruta.InicioSesion.ruta) { inclusive = true }
                     }
                 },
-                onCrearCuenta = { navController.navigate(Ruta.Registro.ruta) }
+                onCrearCuenta = { navController.navigate(Ruta.Registro.ruta) },
+                onRecuperarContrasena = {
+                    navController.navigate(Ruta.RecuperarContrasena.ruta)
+                }
+            )
+        }
+
+        composable(Ruta.RecuperarContrasena.ruta) {
+            RecuperarContrasenaScreen(
+                onVolver = { volverSiCorresponde(Ruta.RecuperarContrasena.ruta) }
             )
         }
 
@@ -193,7 +207,44 @@ fun AppNavegacion() {
                         fotoPerfilViewModel.guardarFoto(bitmap, onResultado)
                     },
                     guardandoFoto = guardandoFoto,
+                    onEditarDatos = { navController.navigate(Ruta.EditarPerfil.ruta) },
+                    onCambiarContrasena = {
+                        navController.navigate(Ruta.CambiarContrasena.ruta)
+                    },
                     onVolver = { volverSiCorresponde(Ruta.MiPerfil.ruta) }
+                )
+            }
+        }
+
+        composable(Ruta.EditarPerfil.ruta) {
+            val usuario = usuarioActual
+            if (usuario != null) {
+                EditarPerfilScreen(
+                    usuario = usuario,
+                    onUsuarioActualizado = { actualizado ->
+                        sesionViewModel.actualizarUsuario(actualizado)
+                    },
+                    onVolver = { volverSiCorresponde(Ruta.EditarPerfil.ruta) }
+                )
+            }
+        }
+
+        composable(Ruta.CambiarContrasena.ruta) {
+            val usuario = usuarioActual
+            if (usuario != null) {
+                CambiarContrasenaScreen(
+                    usuario = usuario,
+                    onVolver = { volverSiCorresponde(Ruta.CambiarContrasena.ruta) }
+                )
+            }
+        }
+
+        composable(Ruta.Administrador.ruta) {
+            val usuario = usuarioActual
+            if (usuario != null && usuario.rol == Rol.ADMINISTRADOR) {
+                AdministradorScreen(
+                    onSalir = cerrarSesion,
+                    idUsuarioActual = usuario.id
                 )
             }
         }

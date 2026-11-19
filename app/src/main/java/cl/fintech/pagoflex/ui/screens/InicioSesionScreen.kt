@@ -37,6 +37,7 @@ import cl.fintech.pagoflex.viewmodel.InicioSesionViewModel
 fun InicioSesionScreen(
     onInicioExitoso: (Usuario) -> Unit,
     onCrearCuenta: () -> Unit,
+    onRecuperarContrasena: () -> Unit,
     viewModel: InicioSesionViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -50,7 +51,8 @@ fun InicioSesionScreen(
             viewModel.onIniciarRemoto(onInicioExitoso)
         },
         onLimpiar = viewModel::onLimpiar,
-        onCrearCuenta = onCrearCuenta
+        onCrearCuenta = onCrearCuenta,
+        onRecuperarContrasena = onRecuperarContrasena
     )
 }
 
@@ -62,7 +64,8 @@ fun InicioSesionContent(
     onAlternarVisibilidad: () -> Unit,
     onIniciar: () -> Unit,
     onLimpiar: () -> Unit,
-    onCrearCuenta: () -> Unit
+    onCrearCuenta: () -> Unit,
+    onRecuperarContrasena: () -> Unit
 ) {
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { innerPadding ->
         Column(
@@ -138,6 +141,10 @@ fun InicioSesionContent(
             }
 
             Spacer(modifier = Modifier.height(8.dp))
+
+            TextButton(onClick = onRecuperarContrasena) {
+                Text("¿Olvidaste tu contrase\u00f1a?")
+            }
 
             TextButton(onClick = onCrearCuenta) {
                 Text("¿No tienes cuenta? Regístrate")

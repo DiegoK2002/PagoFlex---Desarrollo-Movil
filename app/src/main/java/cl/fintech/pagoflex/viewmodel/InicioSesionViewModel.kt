@@ -90,6 +90,7 @@ class InicioSesionViewModel(application: Application) : AndroidViewModel(applica
                 ) {
                     "USUARIO_FINAL" -> Rol.USUARIO_FINAL
                     "AGENTE" -> Rol.AGENTE
+                    "ADMINISTRADOR" -> Rol.ADMINISTRADOR
                     else -> {
                         _uiState.update {
                             it.copy(
