@@ -2,6 +2,7 @@ package cl.fintech.pagoflex.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -80,12 +81,14 @@ fun CompromisosScreen(
     }
 
     var monedaSeleccionada by rememberSaveable { mutableStateOf("CLP") }
-    var mostrarPagados by rememberSaveable { mutableStateOf(false) }
+    var filtroEstado by rememberSaveable { mutableStateOf("Por pagar") }
 
-    val compromisosVisibles = if (mostrarPagados) {
-        compromisos
-    } else {
-        compromisos.filter { it.estado != EstadoCompromiso.PAGADO }
+    val compromisosVisibles = when (filtroEstado) {
+        "Por pagar" -> compromisos.filter { it.estado != EstadoCompromiso.PAGADO }
+        "Pendientes" -> compromisos.filter { it.estado == EstadoCompromiso.PENDIENTE }
+        "Vencidos" -> compromisos.filter { it.estado == EstadoCompromiso.VENCIDO }
+        "Pagados" -> compromisos.filter { it.estado == EstadoCompromiso.PAGADO }
+        else -> compromisos
     }
 
     if (mostrarDialogo) {
@@ -325,11 +328,27 @@ fun CompromisosScreen(
                 }
 
                 item {
-                    FilterChip(
-                        selected = mostrarPagados,
-                        onClick = { mostrarPagados = !mostrarPagados },
-                        label = { Text("Mostrar pagados") }
-                    )
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            "Filtrar compromisos",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            listOf("Por pagar", "Pendientes", "Vencidos", "Pagados", "Todos").forEach { filtro ->
+                                FilterChip(
+                                    selected = filtroEstado == filtro,
+                                    onClick = { filtroEstado = filtro },
+                                    label = { Text(filtro) }
+                                )
+                            }
+                        }
+                    }
                 }
 
                 when {
@@ -367,10 +386,13 @@ fun CompromisosScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    if (compromisos.isNotEmpty() && !mostrarPagados) {
-                                        "No tienes compromisos sin pagar. Activa Mostrar pagados para ver los pagados."
-                                    } else {
-                                        "No tienes compromisos registrados"
+                                    when {
+                                        compromisos.isEmpty() -> "No tienes compromisos registrados"
+                                        filtroEstado == "Pendientes" -> "No tienes compromisos pendientes para mostrar."
+                                        filtroEstado == "Vencidos" -> "No tienes compromisos vencidos para mostrar."
+                                        filtroEstado == "Pagados" -> "No tienes compromisos pagados para mostrar."
+                                        filtroEstado == "Por pagar" -> "No tienes compromisos por pagar. Selecciona Pagados o Todos para ver los anteriores."
+                                        else -> "No hay compromisos para mostrar."
                                     }
                                 )
                             }
