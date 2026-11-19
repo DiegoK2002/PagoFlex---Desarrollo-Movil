@@ -139,6 +139,7 @@ fun AppNavegacion() {
                     resumenCompromisos = resumenCompromisos,
                     cargandoCompromisos = cargandoCompromisos,
                     errorCompromisos = errorCompromisos,
+                    onActualizar = compromisosViewModel::actualizar,
                     estadoCotizaciones = estadoCotizaciones,
                     nombreEmpresa = compromisosViewModel::nombreEmpresa,
                     importeDe = compromisosViewModel::importeDe,

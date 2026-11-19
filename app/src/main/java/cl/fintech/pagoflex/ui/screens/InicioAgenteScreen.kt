@@ -42,13 +42,23 @@ fun InicioAgenteScreen(
     onResolverReporte: (Long, String, (Boolean) -> Unit) -> Unit
 ) {
     var filtroEstado by rememberSaveable { mutableStateOf("Por resolver") }
+    var textoBusqueda by rememberSaveable { mutableStateOf("") }
 
-    val reportesVisibles = when (filtroEstado) {
+    val reportesPorEstado = when (filtroEstado) {
         "Por resolver" -> reportes.filter { it.estado == "Abierto" || it.estado == "En gestión" }
         "Abiertos" -> reportes.filter { it.estado == "Abierto" }
         "En gestión" -> reportes.filter { it.estado == "En gestión" }
         "Resueltos" -> reportes.filter { it.estado == "Resuelto" }
         else -> reportes
+    }
+
+    val busqueda = textoBusqueda.trim()
+    val reportesVisibles = reportesPorEstado.filter { reporte ->
+        busqueda.isBlank() ||
+                reporte.idReporte.toString().contains(busqueda, ignoreCase = true) ||
+                reporte.folio.contains(busqueda, ignoreCase = true) ||
+                reporte.motivo.contains(busqueda, ignoreCase = true) ||
+                reporte.comentario?.contains(busqueda, ignoreCase = true) == true
     }
 
     Scaffold(
@@ -104,10 +114,22 @@ fun InicioAgenteScreen(
                 }
             }
 
+            OutlinedTextField(
+                value = textoBusqueda,
+                onValueChange = { textoBusqueda = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Buscar reportes") },
+                placeholder = { Text("N.º de reporte, compromiso o motivo") },
+                singleLine = true
+            )
+
             if (reportesVisibles.isEmpty()) {
                 Text(
-                    if (reportes.isEmpty()) "No hay reportes para mostrar."
-                    else "No hay reportes para el filtro seleccionado.",
+                    when {
+                        reportes.isEmpty() -> "No hay reportes para mostrar."
+                        busqueda.isNotBlank() -> "No se encontraron reportes con esa búsqueda."
+                        else -> "No hay reportes para el filtro seleccionado."
+                    },
                     style = MaterialTheme.typography.bodyMedium
                 )
             } else {
