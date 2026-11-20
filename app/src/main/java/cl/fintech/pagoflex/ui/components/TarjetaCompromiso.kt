@@ -1,5 +1,9 @@
 package cl.fintech.pagoflex.ui.components
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -18,10 +22,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -59,6 +68,17 @@ fun TarjetaCompromiso(
     importeConvertido: String? = null,
     onClick: () -> Unit = {}
 ) {
+    val origenInteraccion = remember { MutableInteractionSource() }
+    val estaPresionada by origenInteraccion.collectIsPressedAsState()
+    val escala by animateFloatAsState(
+        targetValue = if (estaPresionada) 0.987f else 1f,
+        animationSpec = tween(
+            durationMillis = if (estaPresionada) 90 else 190,
+            easing = FastOutSlowInEasing
+        ),
+        label = "PresionTarjetaCompromiso"
+    )
+
     val esOscuro = isSystemInDarkTheme()
     val colorEstado = if (esOscuro) {
         when (compromiso.estado) {
@@ -80,7 +100,13 @@ fun TarjetaCompromiso(
 
     Card(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = escala
+                scaleY = escala
+            },
+        interactionSource = origenInteraccion,
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
@@ -149,12 +175,18 @@ fun TarjetaCompromiso(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                Text(
-                    text = importeConvertido ?: formatearPesos(importe),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold
-                )
+                Crossfade(
+                    targetState = importeConvertido ?: formatearPesos(importe),
+                    animationSpec = tween(durationMillis = 240),
+                    label = "CambioMonedaCompromiso"
+                ) { montoVisible ->
+                    Text(
+                        text = montoVisible,
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
                 if (importeConvertido != null) {
                     Text(
                         text = "Equivalente aproximado · Importe real: ${formatearPesos(importe)} CLP",

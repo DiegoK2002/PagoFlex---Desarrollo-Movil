@@ -1,5 +1,9 @@
 package cl.fintech.pagoflex.ui.screens
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -37,8 +41,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -60,13 +65,6 @@ fun ReconocimientosScreen(
 ) {
     val formatoFecha = DateTimeFormatter.ofPattern("dd-MM-yyyy")
     var pestanaSeleccionada by rememberSaveable { mutableIntStateOf(0) }
-    val esConstancia = pestanaSeleccionada == 1
-    val unidad = if (esConstancia) "meses consecutivos" else "pagos a tiempo"
-    val reconocimientosVisibles = reconocimientos.filter { it.unidad == unidad }
-    val obtenidosVisibles = reconocimientosVisibles.count { it.obtenido }
-    val siguiente = reconocimientosVisibles
-        .filter { !it.obtenido }
-        .minByOrNull { it.faltantes }
     val modoOscuro = isSystemInDarkTheme()
     val coloresCabecera = if (modoOscuro) {
         listOf(Color(0xFF263A91), Color(0xFF543184))
@@ -112,7 +110,44 @@ fun ReconocimientosScreen(
                 )
             }
 
-            key(pestanaSeleccionada) {
+            Crossfade(
+                targetState = pestanaSeleccionada,
+                modifier = Modifier.fillMaxSize(),
+                animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
+                label = "Transición de reconocimientos"
+            ) { pestanaActiva ->
+                val esConstancia = pestanaActiva == 1
+                val unidad = if (esConstancia) "meses consecutivos" else "pagos a tiempo"
+                val reconocimientosVisibles = reconocimientos.filter { it.unidad == unidad }
+                val obtenidosVisibles = reconocimientosVisibles.count { it.obtenido }
+                val siguiente = reconocimientosVisibles
+                    .filter { !it.obtenido }
+                    .minByOrNull { it.faltantes }
+
+                val progresoGlobal = if (reconocimientosVisibles.isEmpty()) 0f
+                else obtenidosVisibles.toFloat() / reconocimientosVisibles.size
+                val animacionGlobal = remember(pestanaActiva) { Animatable(0f) }
+                LaunchedEffect(pestanaActiva, progresoGlobal) {
+                    animacionGlobal.animateTo(
+                        targetValue = progresoGlobal,
+                        animationSpec = tween(650, easing = FastOutSlowInEasing)
+                    )
+                }
+
+                val progresoMeta = if (siguiente != null && siguiente.meta > 0) {
+                    (siguiente.meta - siguiente.faltantes).coerceIn(0, siguiente.meta)
+                        .toFloat() / siguiente.meta
+                } else {
+                    0f
+                }
+                val animacionMeta = remember(pestanaActiva) { Animatable(0f) }
+                LaunchedEffect(pestanaActiva, progresoMeta) {
+                    animacionMeta.animateTo(
+                        targetValue = progresoMeta,
+                        animationSpec = tween(700, easing = FastOutSlowInEasing)
+                    )
+                }
+
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
@@ -170,10 +205,7 @@ fun ReconocimientosScreen(
                                     )
                                 }
                                 LinearProgressIndicator(
-                                    progress = {
-                                        if (reconocimientosVisibles.isEmpty()) 0f
-                                        else obtenidosVisibles.toFloat() / reconocimientosVisibles.size
-                                    },
+                                    progress = { animacionGlobal.value },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(8.dp)
@@ -281,7 +313,7 @@ fun ReconocimientosScreen(
                                                 )
                                             }
                                             LinearProgressIndicator(
-                                                progress = { progreso.toFloat() / meta },
+                                                progress = { animacionMeta.value },
                                                 modifier = Modifier
                                                     .fillMaxWidth()
                                                     .height(8.dp)

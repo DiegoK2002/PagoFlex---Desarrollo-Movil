@@ -1,5 +1,14 @@
 package cl.fintech.pagoflex.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -35,12 +44,15 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -77,6 +89,14 @@ fun HistorialPagosScreen(
     var estadoSeleccionado by rememberSaveable { mutableStateOf("Todos los estados") }
     var montoMinimo by rememberSaveable { mutableStateOf("") }
     var montoMaximo by rememberSaveable { mutableStateOf("") }
+
+    val entrada = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        entrada.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 420, easing = FastOutSlowInEasing)
+        )
+    }
 
     val compromisosPorId = compromisos.mapNotNull { compromiso ->
         compromiso.folio.removePrefix("REM-").toLongOrNull()?.let { id ->
@@ -238,6 +258,10 @@ fun HistorialPagosScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .graphicsLayer {
+                                alpha = entrada.value
+                                translationY = (1f - entrada.value) * 12.dp.toPx()
+                            }
                             .clip(RoundedCornerShape(26.dp))
                             .background(Brush.linearGradient(coloresCabecera))
                     ) {
@@ -251,12 +275,18 @@ fun HistorialPagosScreen(
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFFE4E8FF)
                             )
-                            Text(
-                                text = "${pagos.size}",
-                                style = MaterialTheme.typography.displaySmall,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
+                            Crossfade(
+                                targetState = pagos.size,
+                                animationSpec = tween(durationMillis = 300),
+                                label = "Cantidad de pagos"
+                            ) { cantidad ->
+                                Text(
+                                    text = "$cantidad",
+                                    style = MaterialTheme.typography.displaySmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
                             Text(
                                 text = "pagos registrados",
                                 style = MaterialTheme.typography.bodyMedium,
@@ -266,12 +296,18 @@ fun HistorialPagosScreen(
                                 color = Color.White.copy(alpha = 0.16f),
                                 shape = RoundedCornerShape(14.dp)
                             ) {
-                                Text(
-                                    text = "$totalConfirmados pagos confirmados",
-                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = Color.White
-                                )
+                                Crossfade(
+                                    targetState = totalConfirmados,
+                                    animationSpec = tween(durationMillis = 300),
+                                    label = "Pagos confirmados"
+                                ) { cantidad ->
+                                    Text(
+                                        text = "$cantidad pagos confirmados",
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = Color.White
+                                    )
+                                }
                             }
                         }
                     }
@@ -279,7 +315,12 @@ fun HistorialPagosScreen(
 
                 item {
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .graphicsLayer {
+                                alpha = entrada.value
+                                translationY = (1f - entrada.value) * 8.dp.toPx()
+                            },
                         shape = RoundedCornerShape(24.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surface
@@ -427,7 +468,13 @@ fun HistorialPagosScreen(
                                         modifier = Modifier.weight(1f)
                                     )
                                 }
-                                if (filtroActivo) {
+                                AnimatedVisibility(
+                                    visible = filtroActivo,
+                                    enter = fadeIn(animationSpec = tween(220)) +
+                                            expandVertically(animationSpec = tween(220)),
+                                    exit = fadeOut(animationSpec = tween(150)) +
+                                            shrinkVertically(animationSpec = tween(180))
+                                ) {
                                     BotonSecundario(
                                         texto = "Limpiar filtros",
                                         onClick = {
@@ -455,11 +502,17 @@ fun HistorialPagosScreen(
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold
                             )
-                            Text(
-                                "${pagosFiltrados.size} resultados",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Crossfade(
+                                targetState = pagosFiltrados.size,
+                                animationSpec = tween(durationMillis = 250),
+                                label = "Resultados filtrados"
+                            ) { cantidad ->
+                                Text(
+                                    "$cantidad resultados",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
 

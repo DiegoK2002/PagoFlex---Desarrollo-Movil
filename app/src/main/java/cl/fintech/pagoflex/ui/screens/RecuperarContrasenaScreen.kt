@@ -1,5 +1,8 @@
 package cl.fintech.pagoflex.ui.screens
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -29,10 +32,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -54,6 +62,34 @@ fun RecuperarContrasenaScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val colores = MaterialTheme.colorScheme
+    var mostrarContenido by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { mostrarContenido = true }
+
+    val avanceTitulo by animateFloatAsState(
+        targetValue = if (mostrarContenido) 1f else 0f,
+        animationSpec = tween(300, easing = FastOutSlowInEasing),
+        label = "entradaTituloRecuperar"
+    )
+    val avanceIdentidad by animateFloatAsState(
+        targetValue = if (mostrarContenido) 1f else 0f,
+        animationSpec = tween(360, delayMillis = 45, easing = FastOutSlowInEasing),
+        label = "entradaIdentidadRecuperar"
+    )
+    val avanceContrasena by animateFloatAsState(
+        targetValue = if (mostrarContenido) 1f else 0f,
+        animationSpec = tween(390, delayMillis = 90, easing = FastOutSlowInEasing),
+        label = "entradaContrasenaRecuperar"
+    )
+    val avanceAcciones by animateFloatAsState(
+        targetValue = if (mostrarContenido) 1f else 0f,
+        animationSpec = tween(410, delayMillis = 135, easing = FastOutSlowInEasing),
+        label = "entradaAccionesRecuperar"
+    )
+    val avanceExito by animateFloatAsState(
+        targetValue = if (uiState.recuperada) 1f else 0f,
+        animationSpec = tween(400, easing = FastOutSlowInEasing),
+        label = "entradaExitoRecuperar"
+    )
 
     Scaffold(
         topBar = { BarraSuperiorVolver("Recuperar contraseña", onVolver) },
@@ -69,7 +105,12 @@ fun RecuperarContrasenaScreen(
         ) {
             if (uiState.recuperada) {
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            alpha = avanceExito
+                            translationY = (1f - avanceExito) * 12.dp.toPx()
+                        },
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(containerColor = colores.surface),
                     border = BorderStroke(1.dp, colores.outlineVariant),
@@ -115,7 +156,13 @@ fun RecuperarContrasenaScreen(
                     }
                 }
             } else {
-                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Column(
+                    modifier = Modifier.graphicsLayer {
+                        alpha = avanceTitulo
+                        translationY = (1f - avanceTitulo) * 8.dp.toPx()
+                    },
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
                     Text(
                         text = "Recupera el acceso",
                         style = MaterialTheme.typography.headlineSmall,
@@ -130,7 +177,12 @@ fun RecuperarContrasenaScreen(
                 }
 
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            alpha = avanceIdentidad
+                            translationY = (1f - avanceIdentidad) * 12.dp.toPx()
+                        },
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(containerColor = colores.surface),
                     border = BorderStroke(1.dp, colores.outlineVariant),
@@ -211,7 +263,12 @@ fun RecuperarContrasenaScreen(
                 }
 
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            alpha = avanceContrasena
+                            translationY = (1f - avanceContrasena) * 12.dp.toPx()
+                        },
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(containerColor = colores.surface),
                     border = BorderStroke(1.dp, colores.outlineVariant),
@@ -284,7 +341,12 @@ fun RecuperarContrasenaScreen(
                 }
 
                 Surface(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            alpha = avanceAcciones
+                            translationY = (1f - avanceAcciones) * 8.dp.toPx()
+                        },
                     color = colores.primaryContainer.copy(alpha = 0.55f),
                     contentColor = colores.onPrimaryContainer,
                     shape = RoundedCornerShape(16.dp)
@@ -325,7 +387,12 @@ fun RecuperarContrasenaScreen(
                     texto = if (uiState.enviando) "Guardando..." else "Restablecer contraseña",
                     onClick = viewModel::onRecuperar,
                     habilitado = !uiState.enviando,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            alpha = avanceAcciones
+                            translationY = (1f - avanceAcciones) * 8.dp.toPx()
+                        }
                 )
             }
         }

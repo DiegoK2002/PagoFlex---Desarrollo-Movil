@@ -1,5 +1,8 @@
 package cl.fintech.pagoflex.ui.screens
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -27,10 +30,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -81,6 +89,24 @@ fun InicioSesionContent(
     onRecuperarContrasena: () -> Unit
 ) {
     val colores = MaterialTheme.colorScheme
+    var mostrarContenido by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { mostrarContenido = true }
+
+    val avanceCabecera by animateFloatAsState(
+        targetValue = if (mostrarContenido) 1f else 0f,
+        animationSpec = tween(380, easing = FastOutSlowInEasing),
+        label = "entradaCabeceraLogin"
+    )
+    val avanceFormulario by animateFloatAsState(
+        targetValue = if (mostrarContenido) 1f else 0f,
+        animationSpec = tween(420, delayMillis = 55, easing = FastOutSlowInEasing),
+        label = "entradaFormularioLogin"
+    )
+    val avanceAcciones by animateFloatAsState(
+        targetValue = if (mostrarContenido) 1f else 0f,
+        animationSpec = tween(420, delayMillis = 110, easing = FastOutSlowInEasing),
+        label = "entradaAccionesLogin"
+    )
 
     Scaffold(containerColor = colores.background) { innerPadding ->
         Column(
@@ -94,6 +120,10 @@ fun InicioSesionContent(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .graphicsLayer {
+                        alpha = avanceCabecera
+                        translationY = (1f - avanceCabecera) * 14.dp.toPx()
+                    }
                     .clip(RoundedCornerShape(28.dp))
                     .background(
                         Brush.linearGradient(
@@ -152,7 +182,12 @@ fun InicioSesionContent(
             }
 
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        alpha = avanceFormulario
+                        translationY = (1f - avanceFormulario) * 12.dp.toPx()
+                    },
                 shape = RoundedCornerShape(28.dp),
                 colors = CardDefaults.cardColors(containerColor = colores.surface),
                 border = BorderStroke(1.dp, colores.outlineVariant),
@@ -224,7 +259,12 @@ fun InicioSesionContent(
             }
 
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        alpha = avanceAcciones
+                        translationY = (1f - avanceAcciones) * 10.dp.toPx()
+                    },
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
@@ -239,9 +279,6 @@ fun InicioSesionContent(
                     onClick = onCrearCuenta,
                     modifier = Modifier.fillMaxWidth()
                 )
-                TextButton(onClick = onLimpiar) {
-                    Text("Limpiar campos")
-                }
             }
         }
     }

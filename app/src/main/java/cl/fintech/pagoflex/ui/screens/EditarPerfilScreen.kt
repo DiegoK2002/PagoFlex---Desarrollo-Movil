@@ -1,5 +1,8 @@
 package cl.fintech.pagoflex.ui.screens
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -28,9 +31,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -55,6 +62,29 @@ fun EditarPerfilScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val colores = MaterialTheme.colorScheme
+    var mostrarContenido by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { mostrarContenido = true }
+
+    val avanceTitulo by animateFloatAsState(
+        targetValue = if (mostrarContenido) 1f else 0f,
+        animationSpec = tween(320, easing = FastOutSlowInEasing),
+        label = "entradaTituloEditarPerfil"
+    )
+    val avancePersonales by animateFloatAsState(
+        targetValue = if (mostrarContenido) 1f else 0f,
+        animationSpec = tween(370, delayMillis = 50, easing = FastOutSlowInEasing),
+        label = "entradaDatosPersonalesEditarPerfil"
+    )
+    val avanceContacto by animateFloatAsState(
+        targetValue = if (mostrarContenido) 1f else 0f,
+        animationSpec = tween(390, delayMillis = 95, easing = FastOutSlowInEasing),
+        label = "entradaContactoEditarPerfil"
+    )
+    val avanceAcciones by animateFloatAsState(
+        targetValue = if (mostrarContenido) 1f else 0f,
+        animationSpec = tween(420, delayMillis = 140, easing = FastOutSlowInEasing),
+        label = "entradaAccionesEditarPerfil"
+    )
 
     LaunchedEffect(usuario.id) {
         viewModel.cargar(usuario)
@@ -72,7 +102,13 @@ fun EditarPerfilScreen(
                 .padding(horizontal = 20.dp, vertical = 18.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Column(
+                modifier = Modifier.graphicsLayer {
+                    alpha = avanceTitulo
+                    translationY = (1f - avanceTitulo) * 8.dp.toPx()
+                },
+                verticalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
                 Text(
                     text = "Mantén tus datos al día",
                     style = MaterialTheme.typography.headlineSmall,
@@ -87,7 +123,12 @@ fun EditarPerfilScreen(
             }
 
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        alpha = avancePersonales
+                        translationY = (1f - avancePersonales) * 12.dp.toPx()
+                    },
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = colores.surface),
                 border = BorderStroke(1.dp, colores.outlineVariant),
@@ -123,7 +164,12 @@ fun EditarPerfilScreen(
             }
 
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        alpha = avanceContacto
+                        translationY = (1f - avanceContacto) * 12.dp.toPx()
+                    },
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = colores.surface),
                 border = BorderStroke(1.dp, colores.outlineVariant),
@@ -159,7 +205,12 @@ fun EditarPerfilScreen(
             }
 
             Surface(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        alpha = avanceAcciones
+                        translationY = (1f - avanceAcciones) * 8.dp.toPx()
+                    },
                 color = colores.primaryContainer.copy(alpha = 0.55f),
                 contentColor = colores.onPrimaryContainer,
                 shape = RoundedCornerShape(16.dp)
@@ -215,13 +266,23 @@ fun EditarPerfilScreen(
                 texto = if (uiState.guardando) "Guardando..." else "Guardar cambios",
                 onClick = { viewModel.onGuardar(onUsuarioActualizado) },
                 habilitado = !uiState.guardando,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        alpha = avanceAcciones
+                        translationY = (1f - avanceAcciones) * 8.dp.toPx()
+                    }
             )
 
             BotonSecundario(
                 texto = "Volver",
                 onClick = onVolver,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        alpha = avanceAcciones
+                        translationY = (1f - avanceAcciones) * 8.dp.toPx()
+                    }
             )
         }
     }

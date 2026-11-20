@@ -1,5 +1,15 @@
 package cl.fintech.pagoflex.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -33,6 +43,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -40,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -94,6 +107,13 @@ fun InicioAgenteScreen(
         listOf(Color(0xFF3448D4), Color(0xFF7545BA))
     }
     val formatoFecha = DateTimeFormatter.ofPattern("dd/MM/yyyy · HH:mm")
+    val entradaCabecera = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        entradaCabecera.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 420, easing = FastOutSlowInEasing)
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -136,6 +156,10 @@ fun InicioAgenteScreen(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(26.dp))
                             .background(Brush.linearGradient(coloresCabecera))
+                            .graphicsLayer {
+                                alpha = entradaCabecera.value
+                                translationY = (1f - entradaCabecera.value) * 18.dp.toPx()
+                            }
                     ) {
                         Column(
                             modifier = Modifier.padding(20.dp),
@@ -255,7 +279,13 @@ fun InicioAgenteScreen(
                                 placeholder = { Text("N.º de reporte, compromiso o motivo") },
                                 singleLine = true
                             )
-                            if (filtroEstado != "Por resolver" || textoBusqueda.isNotBlank()) {
+                            AnimatedVisibility(
+                                visible = filtroEstado != "Por resolver" || textoBusqueda.isNotBlank(),
+                                enter = fadeIn(animationSpec = tween(180)) +
+                                        expandVertically(animationSpec = tween(220)),
+                                exit = fadeOut(animationSpec = tween(150)) +
+                                        shrinkVertically(animationSpec = tween(220))
+                            ) {
                                 TextButton(
                                     onClick = {
                                         filtroEstado = "Por resolver"
@@ -282,11 +312,17 @@ fun InicioAgenteScreen(
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
-                        Text(
-                            text = "${reportesVisibles.size} resultados",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Crossfade(
+                            targetState = reportesVisibles.size,
+                            animationSpec = tween(durationMillis = 240),
+                            label = "cantidadReportesVisibles"
+                        ) { cantidad ->
+                            Text(
+                                text = "$cantidad resultados",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
 
@@ -332,6 +368,11 @@ fun InicioAgenteScreen(
                             else -> MaterialTheme.colorScheme.onSurfaceVariant
                         }
 
+                        val colorAnimado by animateColorAsState(
+                            targetValue = colorEstado,
+                            animationSpec = tween(durationMillis = 280),
+                            label = "colorEstadoReporte"
+                        )
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(24.dp),
@@ -345,7 +386,7 @@ fun InicioAgenteScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .size(width = 400.dp, height = 5.dp)
-                                    .background(colorEstado)
+                                    .background(colorAnimado)
                             )
                             Column(
                                 modifier = Modifier.padding(18.dp),
@@ -387,14 +428,14 @@ fun InicioAgenteScreen(
                                 }
                                 Surface(
                                     shape = RoundedCornerShape(50),
-                                    color = colorEstado.copy(alpha = if (modoOscuro) 0.18f else 0.11f)
+                                    color = colorAnimado.copy(alpha = if (modoOscuro) 0.18f else 0.11f)
                                 ) {
                                     Text(
                                         text = reporte.estado,
                                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.Bold,
-                                        color = colorEstado
+                                        color = colorAnimado
                                     )
                                 }
                                 Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -513,12 +554,18 @@ private fun MetricaAgente(
         verticalArrangement = Arrangement.spacedBy(4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = cantidad.toString(),
-            color = Color.White,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
+        Crossfade(
+            targetState = cantidad,
+            animationSpec = tween(durationMillis = 280),
+            label = "cantidadMetricaAgente"
+        ) { valor ->
+            Text(
+                text = valor.toString(),
+                color = Color.White,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+        }
         Text(
             text = etiqueta,
             color = Color(0xFFE4E8FF),

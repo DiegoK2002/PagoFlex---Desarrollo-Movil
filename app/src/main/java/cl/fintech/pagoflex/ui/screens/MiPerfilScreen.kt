@@ -3,6 +3,9 @@ package cl.fintech.pagoflex.ui.screens
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -39,6 +42,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -75,6 +80,29 @@ fun MiPerfilScreen(
 ) {
     val context = LocalContext.current
     var mensajeFoto by remember { mutableStateOf<String?>(null) }
+    var mostrarContenido by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { mostrarContenido = true }
+
+    val avanceCabecera by animateFloatAsState(
+        targetValue = if (mostrarContenido) 1f else 0f,
+        animationSpec = tween(360, easing = FastOutSlowInEasing),
+        label = "entradaCabeceraPerfil"
+    )
+    val avanceFoto by animateFloatAsState(
+        targetValue = if (mostrarContenido) 1f else 0f,
+        animationSpec = tween(400, delayMillis = 50, easing = FastOutSlowInEasing),
+        label = "entradaControlesFotoPerfil"
+    )
+    val avanceDatos by animateFloatAsState(
+        targetValue = if (mostrarContenido) 1f else 0f,
+        animationSpec = tween(420, delayMillis = 95, easing = FastOutSlowInEasing),
+        label = "entradaDatosPerfil"
+    )
+    val avanceAcciones by animateFloatAsState(
+        targetValue = if (mostrarContenido) 1f else 0f,
+        animationSpec = tween(420, delayMillis = 130, easing = FastOutSlowInEasing),
+        label = "entradaAccionesPerfil"
+    )
     val imagenPerfil = remember(fotoPerfil) {
         fotoPerfil?.let { ConvertidorImagen.aBitmap(it)?.asImageBitmap() }
     }
@@ -153,6 +181,10 @@ fun MiPerfilScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .graphicsLayer {
+                        alpha = avanceCabecera
+                        translationY = (1f - avanceCabecera) * 12.dp.toPx()
+                    }
                     .clip(RoundedCornerShape(28.dp))
                     .background(
                         Brush.linearGradient(
@@ -207,7 +239,13 @@ fun MiPerfilScreen(
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                modifier = Modifier.graphicsLayer {
+                    alpha = avanceFoto
+                    translationY = (1f - avanceFoto) * 10.dp.toPx()
+                },
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 Text(
                     "Foto de perfil",
                     style = MaterialTheme.typography.titleMedium,
@@ -257,7 +295,13 @@ fun MiPerfilScreen(
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                modifier = Modifier.graphicsLayer {
+                    alpha = avanceDatos
+                    translationY = (1f - avanceDatos) * 10.dp.toPx()
+                },
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 Text(
                     "Datos de tu cuenta",
                     style = MaterialTheme.typography.titleLarge,
@@ -288,7 +332,13 @@ fun MiPerfilScreen(
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                modifier = Modifier.graphicsLayer {
+                    alpha = avanceAcciones
+                    translationY = (1f - avanceAcciones) * 8.dp.toPx()
+                },
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 BotonPrincipal(
                     texto = "Editar mis datos",
                     onClick = onEditarDatos,

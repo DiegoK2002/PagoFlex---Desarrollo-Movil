@@ -1,5 +1,8 @@
 package cl.fintech.pagoflex.ui.screens
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -36,8 +39,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -101,6 +109,24 @@ fun RegistroContent(
     onRegistroExitoso: () -> Unit
 ) {
     val colores = MaterialTheme.colorScheme
+    var mostrarContenido by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { mostrarContenido = true }
+
+    val avanceDatos by animateFloatAsState(
+        targetValue = if (mostrarContenido) 1f else 0f,
+        animationSpec = tween(360, easing = FastOutSlowInEasing),
+        label = "entradaDatosRegistro"
+    )
+    val avanceSeguridad by animateFloatAsState(
+        targetValue = if (mostrarContenido) 1f else 0f,
+        animationSpec = tween(400, delayMillis = 65, easing = FastOutSlowInEasing),
+        label = "entradaSeguridadRegistro"
+    )
+    val avanceAcciones by animateFloatAsState(
+        targetValue = if (mostrarContenido) 1f else 0f,
+        animationSpec = tween(420, delayMillis = 120, easing = FastOutSlowInEasing),
+        label = "entradaAccionesRegistro"
+    )
 
     if (uiState.registroExitoso) {
         AlertDialog(
@@ -147,7 +173,12 @@ fun RegistroContent(
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        alpha = avanceDatos
+                        translationY = (1f - avanceDatos) * 12.dp.toPx()
+                    },
                 shape = RoundedCornerShape(28.dp),
                 colors = CardDefaults.cardColors(containerColor = colores.surface),
                 border = BorderStroke(1.dp, colores.outlineVariant),
@@ -250,7 +281,12 @@ fun RegistroContent(
             }
 
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        alpha = avanceSeguridad
+                        translationY = (1f - avanceSeguridad) * 12.dp.toPx()
+                    },
                 shape = RoundedCornerShape(28.dp),
                 colors = CardDefaults.cardColors(containerColor = colores.surface),
                 border = BorderStroke(1.dp, colores.outlineVariant),
@@ -338,13 +374,23 @@ fun RegistroContent(
                 onClick = onRegistrar,
                 habilitado = !uiState.registrando,
                 icono = Icons.Default.Check,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        alpha = avanceAcciones
+                        translationY = (1f - avanceAcciones) * 8.dp.toPx()
+                    }
             )
 
             BotonSecundario(
                 texto = "Limpiar campos",
                 onClick = onLimpiar,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        alpha = avanceAcciones
+                        translationY = (1f - avanceAcciones) * 8.dp.toPx()
+                    }
             )
 
             Spacer(modifier = Modifier.height(4.dp))
