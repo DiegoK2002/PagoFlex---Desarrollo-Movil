@@ -16,7 +16,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 
-// Edicion de los datos personales del usuario con sesion iniciada
 class EditarPerfilViewModel(
     private val repositorio: UsuariosRepository = UsuariosRepository()
 ) : ViewModel() {
@@ -26,7 +25,6 @@ class EditarPerfilViewModel(
 
     private var usuarioOriginal: Usuario? = null
 
-    // Carga los valores actuales solo la primera vez para no pisar lo que el usuario esta escribiendo
     fun cargar(usuario: Usuario) {
         if (usuarioOriginal != null) {
             return
@@ -67,7 +65,6 @@ class EditarPerfilViewModel(
         }
     }
 
-    // Indica si hay cambios respecto de los datos guardados
     fun hayCambios(): Boolean {
         val original = usuarioOriginal ?: return false
         val estado = _uiState.value
@@ -104,7 +101,6 @@ class EditarPerfilViewModel(
         return !hayErrores
     }
 
-    // onActualizado entrega el usuario con los datos guardados para refrescar la sesion
     fun onGuardar(onActualizado: (Usuario) -> Unit) {
         val original = usuarioOriginal ?: return
 

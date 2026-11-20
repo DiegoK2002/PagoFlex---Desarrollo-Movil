@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import cl.fintech.pagoflex.data.remote.ApiClient
+import cl.fintech.pagoflex.data.remote.CredencialesSesion
 import cl.fintech.pagoflex.data.remote.LoginRequest
 import cl.fintech.pagoflex.model.Rol
 import cl.fintech.pagoflex.model.SesionUiState
@@ -111,6 +112,11 @@ class InicioSesionViewModel(application: Application) : AndroidViewModel(applica
                     rol = rol
                 )
 
+                CredencialesSesion.establecer(
+                    correo = respuesta.correo,
+                    contrasena = estado.contrasena
+                )
+                _uiState.update { it.copy(contrasena = "") }
                 onInicioExitoso(usuario)
 
             } catch (error: HttpException) {

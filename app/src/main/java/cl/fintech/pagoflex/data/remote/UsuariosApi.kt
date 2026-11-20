@@ -33,7 +33,6 @@ data class UsuarioResponse(
     val activo: Boolean
 )
 
-// Datos editables del perfil; el RUT y el rol no se pueden modificar
 data class ActualizarUsuarioRequest(
     val nombres: String,
     val apellidos: String,
@@ -46,7 +45,6 @@ data class CambiarContrasenaRequest(
     val contrasenaNueva: String
 )
 
-// La identidad se verifica con el correo y el RUT del titular
 data class RecuperarContrasenaRequest(
     val correo: String,
     val rut: String,

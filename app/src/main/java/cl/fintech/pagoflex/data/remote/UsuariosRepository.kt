@@ -2,13 +2,10 @@ package cl.fintech.pagoflex.data.remote
 
 import cl.fintech.pagoflex.model.Usuario
 
-// Acceso a las operaciones de cuenta del servicio de usuarios.
-// Recibe la API por constructor para poder reemplazarla en las pruebas.
 class UsuariosRepository(
     private val api: UsuariosApi = ApiClient.usuariosApi
 ) {
 
-    // Actualiza los datos personales y devuelve el usuario con los valores guardados
     suspend fun actualizarPerfil(
         actual: Usuario,
         nombres: String,
@@ -28,7 +25,6 @@ class UsuariosRepository(
             )
         )
 
-        // El RUT y el rol se conservan: el servidor no los modifica
         return actual.copy(
             nombres = respuesta.nombres,
             apellidos = respuesta.apellidos,

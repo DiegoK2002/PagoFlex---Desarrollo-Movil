@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- NUEVO (Bloque 3). Ícono vectorial (Material Icons, licencia Apache 2.0).
-     Vector Asset -> Clip Art -> buscar "menu" -> nombre: ic_menu -->
+
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"

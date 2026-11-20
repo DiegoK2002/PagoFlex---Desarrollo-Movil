@@ -11,7 +11,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 
-// Barra superior con flecha para volver, compartida por las pantallas secundarias
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BarraSuperiorVolver(

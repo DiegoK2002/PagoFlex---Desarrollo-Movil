@@ -15,8 +15,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 
-// Flujo para restablecer la contrasena sin haber iniciado sesion.
-// La identidad se comprueba con el correo y el RUT registrados.
 class RecuperarContrasenaViewModel(
     private val repositorio: UsuariosRepository = UsuariosRepository()
 ) : ViewModel() {
@@ -72,7 +70,6 @@ class RecuperarContrasenaViewModel(
         _uiState.update { it.copy(repetirVisible = !it.repetirVisible) }
     }
 
-    // Valida todos los campos y marca los errores encontrados; devuelve true si no hay ninguno
     private fun validarCampos(): Boolean {
         val estado = _uiState.value
 
@@ -106,7 +103,6 @@ class RecuperarContrasenaViewModel(
     }
 
     fun onRecuperar() {
-        // Evita envios duplicados mientras hay una solicitud en curso
         if (_uiState.value.enviando || !validarCampos()) {
             return
         }

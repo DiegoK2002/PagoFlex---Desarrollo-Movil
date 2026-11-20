@@ -1,6 +1,7 @@
 package cl.fintech.pagoflex.viewmodel
 
 import androidx.lifecycle.ViewModel
+import cl.fintech.pagoflex.data.remote.CredencialesSesion
 import cl.fintech.pagoflex.model.Usuario
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,12 +17,12 @@ class SesionViewModel : ViewModel() {
         _usuarioActual.value = usuario
     }
 
-    // Refresca los datos del usuario tras editar el perfil
     fun actualizarUsuario(usuario: Usuario) {
         _usuarioActual.value = usuario
     }
 
     fun cerrarSesion() {
+        CredencialesSesion.limpiar()
         _usuarioActual.value = null
     }
 }

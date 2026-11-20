@@ -16,7 +16,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 
-// Cambio de contrasena para el usuario con sesion iniciada
 class CambiarContrasenaViewModel(
     private val repositorio: UsuariosRepository = UsuariosRepository()
 ) : ViewModel() {
@@ -63,7 +62,6 @@ class CambiarContrasenaViewModel(
             null
         }
 
-        // La nueva clave sigue las mismas reglas del registro
         val errorNueva = Validaciones.validarContrasena(
             contrasena = estado.contrasenaNueva,
             correo = usuario.correo,
@@ -112,7 +110,6 @@ class CambiarContrasenaViewModel(
                     contrasenaNueva = estado.contrasenaNueva
                 )
 
-                // Se limpian los campos para no dejar claves en memoria de la pantalla
                 _uiState.value = CambiarContrasenaUiState(cambiada = true)
 
             } catch (error: CancellationException) {
