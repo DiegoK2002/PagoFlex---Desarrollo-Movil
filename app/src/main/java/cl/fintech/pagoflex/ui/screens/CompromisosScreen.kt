@@ -54,6 +54,16 @@ import cl.fintech.pagoflex.util.ResumenCompromisos
 import cl.fintech.pagoflex.util.formatearFecha
 import cl.fintech.pagoflex.util.formatearPesos
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -297,38 +307,127 @@ fun CompromisosScreen(
 
                     if (resumenCompromisos != null && !cargandoCompromisos && errorCompromisos == null) {
                         item {
-                            Card(
-                                modifier = Modifier.fillMaxWidth()
+                            val esOscuro = isSystemInDarkTheme()
+                            val proximoVencimiento = resumenCompromisos.proximoVencimiento?.let {
+                                formatearFecha(it)
+                            } ?: "Sin próximos vencimientos"
+                            val cantidadVencidos = resumenCompromisos.cantidadVencidos
+                            val coloresFondo = if (esOscuro) {
+                                listOf(Color(0xFF273A91), Color(0xFF4058AC))
+                            } else {
+                                listOf(Color(0xFF293FC2), Color(0xFF536BE1))
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(26.dp))
+                                    .background(Brush.linearGradient(coloresFondo))
+                                    .padding(20.dp)
                             ) {
-                                Column(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Text(
-                                        text = "Resumen de mis compromisos",
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
+                                Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = "TU PANORAMA FINANCIERO",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White.copy(alpha = 0.85f)
+                                        )
+                                        Surface(
+                                            shape = RoundedCornerShape(50),
+                                            color = Color.White.copy(alpha = 0.17f)
+                                        ) {
+                                            Text(
+                                                text = "ESTE MES",
+                                                modifier = Modifier.padding(
+                                                    horizontal = 10.dp,
+                                                    vertical = 5.dp
+                                                ),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = Color.White
+                                            )
+                                        }
+                                    }
 
-                                    Text(
+                                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                        Text(
+                                            text = "Por pagar este mes",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = Color.White.copy(alpha = 0.9f)
+                                        )
+                                        Text(
+                                            text = formatearPesos(resumenCompromisos.totalPorPagarMes),
+                                            style = MaterialTheme.typography.headlineLarge,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text = "Pesos chilenos · CLP",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color.White.copy(alpha = 0.76f)
+                                        )
+                                    }
 
-                                        text = "Por pagar este mes (CLP): " +
-                                                formatearPesos(resumenCompromisos.totalPorPagarMes)
+                                    HorizontalDivider(color = Color.White.copy(alpha = 0.25f))
 
-                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.Top,
+                                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.weight(1f),
+                                            verticalArrangement = Arrangement.spacedBy(5.dp)
+                                        ) {
+                                            Text(
+                                                text = "PRÓXIMO VENCIMIENTO",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = Color.White.copy(alpha = 0.8f)
+                                            )
+                                            Text(
+                                                text = proximoVencimiento,
+                                                style = MaterialTheme.typography.titleSmall,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = Color.White
+                                            )
+                                        }
 
-                                    val proximoVencimiento =
-                                        resumenCompromisos.proximoVencimiento?.let {
-                                            formatearFecha(it)
-                                        } ?: "Sin próximos vencimientos"
-
-                                    Text(
-                                        text = "Próximo vencimiento: $proximoVencimiento"
-                                    )
-
-                                    Text(
-                                        text = "Compromisos vencidos: " +
-                                                resumenCompromisos.cantidadVencidos
-                                    )
+                                        Column(
+                                            horizontalAlignment = Alignment.End,
+                                            verticalArrangement = Arrangement.spacedBy(5.dp)
+                                        ) {
+                                            Text(
+                                                text = "VENCIDOS",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = Color.White.copy(alpha = 0.8f)
+                                            )
+                                            Surface(
+                                                shape = RoundedCornerShape(50),
+                                                color = Color.White.copy(alpha = 0.17f)
+                                            ) {
+                                                Text(
+                                                    text = "$cantidadVencidos",
+                                                    modifier = Modifier.padding(
+                                                        horizontal = 14.dp,
+                                                        vertical = 5.dp
+                                                    ),
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = if (cantidadVencidos > 0) {
+                                                        Color(0xFFFFD6A1)
+                                                    } else {
+                                                        Color(0xFFA5F4D1)
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

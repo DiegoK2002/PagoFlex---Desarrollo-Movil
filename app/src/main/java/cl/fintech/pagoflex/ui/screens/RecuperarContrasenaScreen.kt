@@ -1,26 +1,39 @@
 package cl.fintech.pagoflex.ui.screens
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -40,144 +53,280 @@ fun RecuperarContrasenaScreen(
     viewModel: RecuperarContrasenaViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val colores = MaterialTheme.colorScheme
 
     Scaffold(
-        topBar = { BarraSuperiorVolver("Recuperar contrase\u00f1a", onVolver) },
-        containerColor = MaterialTheme.colorScheme.background
+        topBar = { BarraSuperiorVolver("Recuperar contraseña", onVolver) },
+        containerColor = colores.background
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(20.dp),
+                .padding(horizontal = 20.dp, vertical = 18.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-
-            // Confirmacion final: reemplaza al formulario
             if (uiState.recuperada) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = colores.surface),
+                    border = BorderStroke(1.dp, colores.outlineVariant),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        Box(
+                            modifier = Modifier
+                                .size(68.dp)
+                                .clip(RoundedCornerShape(22.dp))
+                                .background(colores.secondaryContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = colores.onSecondaryContainer,
+                                modifier = Modifier.size(36.dp)
+                            )
+                        }
                         Text(
-                            text = "Contrase\u00f1a actualizada",
+                            text = "Contraseña actualizada",
                             style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.primary
+                            fontWeight = FontWeight.Bold,
+                            color = colores.onSurface
                         )
                         Text(
-                            text = "Ya puedes iniciar sesi\u00f3n con tu nueva contrase\u00f1a.",
-                            style = MaterialTheme.typography.bodyMedium
+                            text = "Ya puedes iniciar sesión con tu nueva contraseña.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colores.onSurfaceVariant
                         )
                         BotonPrincipal(
-                            texto = "Volver al inicio de sesi\u00f3n",
+                            texto = "Volver al inicio de sesión",
                             onClick = onVolver,
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }
-                return@Column
-            }
-
-            Text(
-                text = "Para restablecer tu contrase\u00f1a confirma tu identidad con el correo y el RUT de tu cuenta.",
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    CampoTexto(
-                        valor = uiState.correo,
-                        onValorCambia = viewModel::onCorreoCambia,
-                        etiqueta = "Correo electr\u00f3nico",
-                        icono = Icons.Default.Email,
-                        error = uiState.errorCorreo,
-                        tipoTeclado = KeyboardType.Email
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text(
+                        text = "Recupera el acceso",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = colores.onBackground
                     )
+                    Text(
+                        text = "Verifica tus datos y establece una nueva contraseña.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colores.onSurfaceVariant
+                    )
+                }
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.Top
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = colores.surface),
+                    border = BorderStroke(1.dp, colores.outlineVariant),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(18.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(colores.primaryContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Badge,
+                                    contentDescription = null,
+                                    tint = colores.onPrimaryContainer,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Text(
+                                    text = "Confirma tu identidad",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "Ingresa los datos registrados en tu cuenta",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = colores.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        HorizontalDivider(color = colores.outlineVariant)
+
                         CampoTexto(
-                            valor = uiState.rutNumero,
-                            onValorCambia = viewModel::onRutNumeroCambia,
-                            etiqueta = "RUT (sin puntos ni gui\u00f3n)",
-                            icono = Icons.Default.Badge,
-                            error = uiState.errorRut,
-                            tipoTeclado = KeyboardType.Number,
-                            modifier = Modifier.weight(2.2f)
+                            valor = uiState.correo,
+                            onValorCambia = viewModel::onCorreoCambia,
+                            etiqueta = "Correo electrónico",
+                            icono = Icons.Default.Email,
+                            error = uiState.errorCorreo,
+                            tipoTeclado = KeyboardType.Email
                         )
 
-                        CampoTexto(
-                            valor = uiState.rutDv,
-                            onValorCambia = viewModel::onRutDvCambia,
-                            etiqueta = "DV",
-                            icono = Icons.Default.Check,
-                            error = uiState.errorRut,
-                            mostrarMensajeError = false,
-                            capitalizacion = KeyboardCapitalization.Characters,
-                            modifier = Modifier.weight(1f)
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            CampoTexto(
+                                valor = uiState.rutNumero,
+                                onValorCambia = viewModel::onRutNumeroCambia,
+                                etiqueta = "RUT sin puntos ni guion",
+                                icono = Icons.Default.Badge,
+                                error = uiState.errorRut,
+                                tipoTeclado = KeyboardType.Number,
+                                modifier = Modifier.weight(2.2f)
+                            )
+                            CampoTexto(
+                                valor = uiState.rutDv,
+                                onValorCambia = viewModel::onRutDvCambia,
+                                etiqueta = "DV",
+                                icono = Icons.Default.Check,
+                                error = uiState.errorRut,
+                                mostrarMensajeError = false,
+                                capitalizacion = KeyboardCapitalization.Characters,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = colores.surface),
+                    border = BorderStroke(1.dp, colores.outlineVariant),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(18.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(colores.secondaryContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Lock,
+                                    contentDescription = null,
+                                    tint = colores.onSecondaryContainer,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Text(
+                                    text = "Nueva contraseña",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "Elige una clave segura para tu cuenta",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = colores.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        HorizontalDivider(color = colores.outlineVariant)
+
+                        CampoContrasena(
+                            valor = uiState.contrasenaNueva,
+                            onValorCambia = viewModel::onContrasenaCambia,
+                            etiqueta = "Nueva contraseña",
+                            visible = uiState.contrasenaVisible,
+                            onAlternarVisible = viewModel::onAlternarContrasena,
+                            error = uiState.errorContrasena
+                        )
+
+                        RequisitosContrasena(
+                            requisitos = Validaciones.requisitosContrasena(
+                                uiState.contrasenaNueva,
+                                uiState.correo,
+                                ""
+                            )
+                        )
+
+                        CampoContrasena(
+                            valor = uiState.repetirContrasena,
+                            onValorCambia = viewModel::onRepetirCambia,
+                            etiqueta = "Repetir nueva contraseña",
+                            visible = uiState.repetirVisible,
+                            onAlternarVisible = viewModel::onAlternarRepetir,
+                            error = uiState.errorRepetir
                         )
                     }
+                }
 
-                    CampoContrasena(
-                        valor = uiState.contrasenaNueva,
-                        onValorCambia = viewModel::onContrasenaCambia,
-                        etiqueta = "Nueva contrase\u00f1a",
-                        visible = uiState.contrasenaVisible,
-                        onAlternarVisible = viewModel::onAlternarContrasena,
-                        error = uiState.errorContrasena
-                    )
-
-                    RequisitosContrasena(
-                        requisitos = Validaciones.requisitosContrasena(
-                            uiState.contrasenaNueva,
-                            uiState.correo,
-                            ""
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = colores.primaryContainer.copy(alpha = 0.55f),
+                    contentColor = colores.onPrimaryContainer,
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Shield,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
                         )
-                    )
-
-                    CampoContrasena(
-                        valor = uiState.repetirContrasena,
-                        onValorCambia = viewModel::onRepetirCambia,
-                        etiqueta = "Repetir nueva contrase\u00f1a",
-                        visible = uiState.repetirVisible,
-                        onAlternarVisible = viewModel::onAlternarRepetir,
-                        error = uiState.errorRepetir
-                    )
-
-                    if (uiState.errorGeneral != null) {
                         Text(
-                            text = uiState.errorGeneral!!,
-                            color = MaterialTheme.colorScheme.error,
+                            text = "El correo y el RUT deben pertenecer a la misma cuenta activa.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+
+                uiState.errorGeneral?.let { error ->
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = colores.errorContainer,
+                        contentColor = colores.onErrorContainer,
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text(
+                            text = error,
+                            modifier = Modifier.padding(14.dp),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
-
-                    BotonPrincipal(
-                        texto = if (uiState.enviando) "Guardando..." else "Restablecer contrase\u00f1a",
-                        onClick = viewModel::onRecuperar,
-                        habilitado = !uiState.enviando,
-                        modifier = Modifier.fillMaxWidth()
-                    )
                 }
+
+                BotonPrincipal(
+                    texto = if (uiState.enviando) "Guardando..." else "Restablecer contraseña",
+                    onClick = viewModel::onRecuperar,
+                    habilitado = !uiState.enviando,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }

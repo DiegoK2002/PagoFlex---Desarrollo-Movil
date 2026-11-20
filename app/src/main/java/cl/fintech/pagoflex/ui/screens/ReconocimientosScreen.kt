@@ -1,16 +1,25 @@
 package cl.fintech.pagoflex.ui.screens
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material3.Card
@@ -21,19 +30,24 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cl.fintech.pagoflex.util.Reconocimiento
 import java.time.format.DateTimeFormatter
@@ -53,6 +67,12 @@ fun ReconocimientosScreen(
     val siguiente = reconocimientosVisibles
         .filter { !it.obtenido }
         .minByOrNull { it.faltantes }
+    val modoOscuro = isSystemInDarkTheme()
+    val coloresCabecera = if (modoOscuro) {
+        listOf(Color(0xFF263A91), Color(0xFF543184))
+    } else {
+        listOf(Color(0xFF3448D4), Color(0xFF7545BA))
+    }
 
     Scaffold(
         topBar = {
@@ -99,29 +119,90 @@ fun ReconocimientosScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     item {
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(
-                                "Tus avances cuentan",
-                                style = MaterialTheme.typography.headlineSmall
-                            )
-                            Text(
-                                if (esConstancia) {
-                                    "Cada mes con pagos a tiempo te acerca a una nueva meta de constancia."
-                                } else {
-                                    "Cada pago realizado a tiempo te acerca a una nueva meta."
-                                },
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(26.dp))
+                                .background(Brush.linearGradient(coloresCabecera))
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(22.dp),
+                                verticalArrangement = Arrangement.spacedBy(14.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        if (esConstancia) "TU CONSTANCIA" else "TUS LOGROS",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = Color(0xFFE4E8FF),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = Color.White.copy(alpha = 0.17f)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.EmojiEvents,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.padding(10.dp)
+                                        )
+                                    }
+                                }
+                                Row(
+                                    verticalAlignment = Alignment.Bottom,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Text(
+                                        "$obtenidosVisibles / ${reconocimientosVisibles.size}",
+                                        style = MaterialTheme.typography.displaySmall,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        "metas alcanzadas",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color(0xFFE4E8FF),
+                                        modifier = Modifier.padding(bottom = 6.dp)
+                                    )
+                                }
+                                LinearProgressIndicator(
+                                    progress = {
+                                        if (reconocimientosVisibles.isEmpty()) 0f
+                                        else obtenidosVisibles.toFloat() / reconocimientosVisibles.size
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(8.dp)
+                                        .clip(RoundedCornerShape(50)),
+                                    color = Color.White,
+                                    trackColor = Color.White.copy(alpha = 0.23f)
+                                )
+                                Text(
+                                    if (esConstancia) {
+                                        "Cada mes cumplido suma a tu trayectoria."
+                                    } else {
+                                        "Cada compromiso pagado a tiempo cuenta."
+                                    },
+                                    color = Color(0xFFE4E8FF),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
                         }
                     }
 
                     if (reconocimientosVisibles.isEmpty()) {
                         item {
-                            Card(modifier = Modifier.fillMaxWidth()) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(24.dp)
+                            ) {
                                 Text(
                                     "Todavía no hay reconocimientos para mostrar. Actualiza tus compromisos e inténtalo nuevamente.",
-                                    modifier = Modifier.padding(16.dp),
+                                    modifier = Modifier.padding(20.dp),
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                             }
@@ -130,9 +211,15 @@ fun ReconocimientosScreen(
                         item {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(24.dp),
                                 colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                                )
+                                    containerColor = MaterialTheme.colorScheme.surface
+                                ),
+                                border = BorderStroke(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.outlineVariant
+                                ),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                             ) {
                                 Column(
                                     modifier = Modifier.padding(20.dp),
@@ -140,75 +227,73 @@ fun ReconocimientosScreen(
                                 ) {
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
-                                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Text(
-                                                if (esConstancia) "Tu constancia" else "Tus logros por pagos",
-                                                style = MaterialTheme.typography.titleMedium
-                                            )
-                                            Text(
-                                                "$obtenidosVisibles de ${reconocimientosVisibles.size} metas alcanzadas",
-                                                style = MaterialTheme.typography.bodyLarge
+                                        Surface(
+                                            shape = RoundedCornerShape(14.dp),
+                                            color = MaterialTheme.colorScheme.secondaryContainer
+                                        ) {
+                                            Icon(
+                                                imageVector = if (siguiente != null) {
+                                                    Icons.Filled.Flag
+                                                } else {
+                                                    Icons.Filled.CheckCircle
+                                                },
+                                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                contentDescription = null,
+                                                modifier = Modifier.padding(12.dp)
                                             )
                                         }
-                                        Icon(
-                                            imageVector = Icons.Filled.EmojiEvents,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                    LinearProgressIndicator(
-                                        progress = {
-                                            obtenidosVisibles.toFloat() / reconocimientosVisibles.size.toFloat()
-                                        },
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                }
-                            }
-                        }
-
-                        item {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                                )
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(20.dp),
-                                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
-                                    Text(
-                                        if (siguiente != null) {
-                                            if (esConstancia) "Tu próxima meta de constancia" else "Próximo logro por pagos"
-                                        } else {
-                                            if (esConstancia) "¡Metas de constancia alcanzadas!" else "¡Metas de pagos alcanzadas!"
-                                        },
-                                        style = MaterialTheme.typography.titleLarge
-                                    )
-                                    if (siguiente != null) {
-                                        Text(
-                                            siguiente.titulo,
-                                            style = MaterialTheme.typography.titleMedium
-                                        )
-                                        val meta = siguiente.meta.takeIf { it > 0 }
-                                        if (meta != null) {
-                                            val progreso = (meta - siguiente.faltantes)
-                                                .coerceIn(0, meta)
-                                            LinearProgressIndicator(
-                                                progress = { progreso.toFloat() / meta.toFloat() },
-                                                modifier = Modifier.fillMaxWidth()
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                if (siguiente != null) "SIGUIENTE META" else "TODAS COMPLETADAS",
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = MaterialTheme.colorScheme.secondary,
+                                                fontWeight = FontWeight.Bold
                                             )
                                             Text(
-                                                "$progreso de $meta ${siguiente.unidad}",
-                                                style = MaterialTheme.typography.labelLarge
+                                                siguiente?.titulo ?: "¡Conseguiste todos los logros!",
+                                                style = MaterialTheme.typography.titleLarge,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                    }
+                                    if (siguiente != null) {
+                                        val meta = siguiente.meta.takeIf { it > 0 }
+                                        if (meta != null) {
+                                            val progreso = (meta - siguiente.faltantes).coerceIn(0, meta)
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Text(
+                                                    "Tu progreso",
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                                Text(
+                                                    "$progreso / $meta",
+                                                    style = MaterialTheme.typography.labelLarge,
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            }
+                                            LinearProgressIndicator(
+                                                progress = { progreso.toFloat() / meta },
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(8.dp)
+                                                    .clip(RoundedCornerShape(50)),
+                                                color = MaterialTheme.colorScheme.secondary,
+                                                trackColor = MaterialTheme.colorScheme.secondaryContainer
                                             )
                                         }
                                         Text(
                                             mensajeFaltantes(siguiente),
-                                            style = MaterialTheme.typography.bodyMedium
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     } else {
                                         Text(
@@ -217,7 +302,8 @@ fun ReconocimientosScreen(
                                             } else {
                                                 "Completaste todas las metas de pagos a tiempo. Sigue cuidando tus fechas de pago."
                                             },
-                                            style = MaterialTheme.typography.bodyMedium
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                 }
@@ -225,93 +311,163 @@ fun ReconocimientosScreen(
                         }
 
                         item {
-                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
                                 Text(
-                                    if (esConstancia) "Logros por constancia mensual" else "Logros por pagos a tiempo",
-                                    style = MaterialTheme.typography.titleLarge
+                                    if (esConstancia) "Constancia mensual" else "Colección de logros",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold
                                 )
-                                if (esConstancia) {
-                                    Text(
-                                        "Un mes cuenta cuando realizas al menos un pago a tiempo. Para conseguir estas metas, los meses deben ser consecutivos.",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
+                                Text(
+                                    if (esConstancia) {
+                                        "Para obtener estas metas necesitas pagos a tiempo en meses consecutivos."
+                                    } else {
+                                        "Reúne tus reconocimientos con cada pago a tiempo."
+                                    },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                         }
 
                         items(reconocimientosVisibles, key = { it.titulo }) { reconocimiento ->
                             val meta = reconocimiento.meta.takeIf { it > 0 }
+                            val conseguido = reconocimiento.obtenido
+                            val colorLogro = if (conseguido) {
+                                MaterialTheme.colorScheme.secondary
+                            } else {
+                                MaterialTheme.colorScheme.primary
+                            }
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(24.dp),
                                 colors = CardDefaults.cardColors(
-                                    containerColor = if (reconocimiento.obtenido) {
-                                        MaterialTheme.colorScheme.primaryContainer
+                                    containerColor = MaterialTheme.colorScheme.surface
+                                ),
+                                border = BorderStroke(
+                                    1.dp,
+                                    if (conseguido) {
+                                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f)
                                     } else {
-                                        MaterialTheme.colorScheme.surfaceVariant
+                                        MaterialTheme.colorScheme.outlineVariant
                                     }
-                                )
+                                ),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                             ) {
                                 Column(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                    modifier = Modifier.padding(18.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Icon(
-                                            imageVector = if (reconocimiento.obtenido) {
-                                                Icons.Filled.EmojiEvents
+                                        Surface(
+                                            shape = RoundedCornerShape(16.dp),
+                                            color = if (conseguido) {
+                                                MaterialTheme.colorScheme.secondaryContainer
                                             } else {
-                                                Icons.Filled.Flag
+                                                MaterialTheme.colorScheme.primaryContainer
                                             },
-                                            contentDescription = null,
-                                            tint = if (reconocimiento.obtenido) {
-                                                MaterialTheme.colorScheme.primary
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            modifier = Modifier.size(52.dp)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Icon(
+                                                    imageVector = if (conseguido) {
+                                                        Icons.Filled.EmojiEvents
+                                                    } else {
+                                                        Icons.Filled.Flag
+                                                    },
+                                                    contentDescription = null,
+                                                    tint = if (conseguido) {
+                                                        MaterialTheme.colorScheme.onSecondaryContainer
+                                                    } else {
+                                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                                    },
+                                                    modifier = Modifier.size(28.dp)
+                                                )
                                             }
-                                        )
-                                        Column(modifier = Modifier.weight(1f)) {
+                                        }
+                                        Column(
+                                            modifier = Modifier.weight(1f),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
                                             Text(
                                                 reconocimiento.titulo,
-                                                style = MaterialTheme.typography.titleMedium
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface
                                             )
-                                            Text(
-                                                if (reconocimiento.obtenido) "Conseguido" else "En progreso",
-                                                style = MaterialTheme.typography.labelMedium
-                                            )
+                                            Surface(
+                                                shape = RoundedCornerShape(50),
+                                                color = if (conseguido) {
+                                                    MaterialTheme.colorScheme.secondaryContainer
+                                                } else {
+                                                    MaterialTheme.colorScheme.primaryContainer
+                                                }
+                                            ) {
+                                                Text(
+                                                    if (conseguido) "CONSEGUIDO" else "EN PROGRESO",
+                                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = if (conseguido) {
+                                                        MaterialTheme.colorScheme.onSecondaryContainer
+                                                    } else {
+                                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                                    }
+                                                )
+                                            }
                                         }
                                     }
                                     Text(
                                         reconocimiento.descripcion,
-                                        style = MaterialTheme.typography.bodyMedium
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     if (meta != null) {
-                                        val progreso = (meta - reconocimiento.faltantes)
-                                            .coerceIn(0, meta)
+                                        val progreso = (meta - reconocimiento.faltantes).coerceIn(0, meta)
                                         LinearProgressIndicator(
-                                            progress = { progreso.toFloat() / meta.toFloat() },
-                                            modifier = Modifier.fillMaxWidth()
+                                            progress = { progreso.toFloat() / meta },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(7.dp)
+                                                .clip(RoundedCornerShape(50)),
+                                            color = colorLogro,
+                                            trackColor = MaterialTheme.colorScheme.surfaceVariant
                                         )
-                                        Text(
-                                            "$progreso / $meta ${reconocimiento.unidad}",
-                                            style = MaterialTheme.typography.labelMedium
-                                        )
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                "$progreso / $meta ${reconocimiento.unidad}",
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            if (conseguido) {
+                                                Icon(
+                                                    Icons.Filled.CheckCircle,
+                                                    contentDescription = "Logro conseguido",
+                                                    tint = colorLogro,
+                                                    modifier = Modifier.size(19.dp)
+                                                )
+                                            }
+                                        }
                                     }
-                                    if (reconocimiento.obtenido) {
+                                    if (conseguido) {
                                         reconocimiento.fechaObtenida?.let { fecha ->
                                             Text(
                                                 "Conseguido el ${fecha.format(formatoFecha)}",
-                                                style = MaterialTheme.typography.bodySmall
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
                                     } else {
                                         Text(
                                             mensajeFaltantes(reconocimiento),
-                                            style = MaterialTheme.typography.bodySmall
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                 }
@@ -320,10 +476,11 @@ fun ReconocimientosScreen(
 
                         item {
                             Text(
-                                "Las metas se calculan a partir de pagos confirmados realizados dentro del plazo. No modifican tus compromisos ni los montos que debes pagar.",
+                                "Los reconocimientos se calculan a partir de pagos confirmados dentro del plazo. No modifican tus compromisos ni los montos pendientes.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                            Spacer(modifier = Modifier.height(4.dp))
                         }
                     }
                 }

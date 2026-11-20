@@ -1,19 +1,27 @@
 package cl.fintech.pagoflex.ui.screens
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -21,6 +29,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -31,6 +40,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -176,6 +190,19 @@ fun HistorialPagosScreen(
         maximumFractionDigits = 2
     }
     val fechaFormato = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+    val modoOscuro = isSystemInDarkTheme()
+    val coloresCabecera = if (modoOscuro) {
+        listOf(Color(0xFF263A91), Color(0xFF543184))
+    } else {
+        listOf(Color(0xFF3448D4), Color(0xFF7545BA))
+    }
+    val totalConfirmados = pagos.count {
+        it.activo && it.estadoSincronizacion.equals("CONFIRMADO", ignoreCase = true)
+    }
+    val filtroActivo = empresaSeleccionada.isNotEmpty() ||
+            periodoSeleccionado != "Todo el historial" ||
+            estadoSeleccionado != "Todos los estados" ||
+            montoMinimo.isNotEmpty() || montoMaximo.isNotEmpty()
 
     Scaffold(
         topBar = {
@@ -208,35 +235,98 @@ fun HistorialPagosScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 item {
-                    Card(modifier = Modifier.fillMaxWidth()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(26.dp))
+                            .background(Brush.linearGradient(coloresCabecera))
+                    ) {
                         Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                            modifier = Modifier.padding(22.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
-                            Text("Resumen de pagos", style = MaterialTheme.typography.titleMedium)
-                            Text("Pagos registrados: ${pagos.size}")
-                            Text("Pagos confirmados: ${pagos.count { it.activo && it.estadoSincronizacion.equals("CONFIRMADO", ignoreCase = true) }}")
+                            Text(
+                                text = "TU HISTORIAL",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFE4E8FF)
+                            )
+                            Text(
+                                text = "${pagos.size}",
+                                style = MaterialTheme.typography.displaySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Text(
+                                text = "pagos registrados",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color(0xFFE4E8FF)
+                            )
+                            Surface(
+                                color = Color.White.copy(alpha = 0.16f),
+                                shape = RoundedCornerShape(14.dp)
+                            ) {
+                                Text(
+                                    text = "$totalConfirmados pagos confirmados",
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
                             Text(
                                 "Cumplimiento de los últimos 12 meses",
-                                style = MaterialTheme.typography.titleMedium
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
                             )
                             if (porcentajeCumplimiento == null) {
-                                Text("Todavía no hay compromisos evaluables en este período.")
+                                Text(
+                                    "Todavía no hay compromisos evaluables en este período.",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             } else {
                                 GraficoCumplimiento(
                                     porcentaje = porcentajeCumplimiento,
                                     modifier = Modifier.align(Alignment.CenterHorizontally)
                                 )
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.primaryContainer
+                                ) {
+                                    Text(
+                                        categoriaCumplimiento.orEmpty(),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
                                 Text(
-                                    categoriaCumplimiento.orEmpty(),
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                Text(
-                                    "$pagosATiempo de ${compromisosEvaluables.size} compromisos pagados a tiempo"
+                                    "$pagosATiempo de ${compromisosEvaluables.size} compromisos pagados a tiempo",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 if (compromisosEvaluables.size < 3) {
                                     Text(
                                         "Porcentaje provisional: se necesitan al menos 3 compromisos evaluables para una clasificación definitiva.",
+                                        style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -264,89 +354,111 @@ fun HistorialPagosScreen(
                     }
                 } else {
                     item {
-                        ListaDesplegable(
-                            etiqueta = "Filtrar por empresa",
-                            opciones = opcionesEmpresas,
-                            seleccionada = empresaSeleccionada,
-                            textoDe = { codigo ->
-                                if (codigo.isEmpty()) "Todas las empresas" else nombreEmpresa(codigo)
-                            },
-                            onSeleccionar = { empresaSeleccionada = it },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-
-                    item {
-                        ListaDesplegable(
-                            etiqueta = "Filtrar por período",
-                            opciones = opcionesPeriodos,
-                            seleccionada = periodoSeleccionado,
-                            textoDe = { it },
-                            onSeleccionar = { periodoSeleccionado = it },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-
-                    item {
-                        ListaDesplegable(
-                            etiqueta = "Filtrar por estado",
-                            opciones = opcionesEstados,
-                            seleccionada = estadoSeleccionado,
-                            textoDe = { it },
-                            onSeleccionar = { estadoSeleccionado = it },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-
-                    item {
-                        Text(
-                            "Filtrar por monto pagado (CLP)",
-                            style = MaterialTheme.typography.titleSmall
-                        )
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(24.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            ),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(18.dp),
+                                verticalArrangement = Arrangement.spacedBy(14.dp)
+                            ) {
+                                Text(
+                                    "Explorar movimientos",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "Encuentra tus pagos por empresa, período, estado o importe.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                ListaDesplegable(
+                                    etiqueta = "Filtrar por empresa",
+                                    opciones = opcionesEmpresas,
+                                    seleccionada = empresaSeleccionada,
+                                    textoDe = { codigo ->
+                                        if (codigo.isEmpty()) "Todas las empresas" else nombreEmpresa(codigo)
+                                    },
+                                    onSeleccionar = { empresaSeleccionada = it },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                ListaDesplegable(
+                                    etiqueta = "Filtrar por período",
+                                    opciones = opcionesPeriodos,
+                                    seleccionada = periodoSeleccionado,
+                                    textoDe = { it },
+                                    onSeleccionar = { periodoSeleccionado = it },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                ListaDesplegable(
+                                    etiqueta = "Filtrar por estado",
+                                    opciones = opcionesEstados,
+                                    seleccionada = estadoSeleccionado,
+                                    textoDe = { it },
+                                    onSeleccionar = { estadoSeleccionado = it },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                Text(
+                                    "Monto pagado (CLP)",
+                                    style = MaterialTheme.typography.titleSmall
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    OutlinedTextField(
+                                        value = montoMinimo,
+                                        onValueChange = { montoMinimo = it.filter(Char::isDigit).take(12) },
+                                        label = { Text("Mínimo") },
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        singleLine = true,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    OutlinedTextField(
+                                        value = montoMaximo,
+                                        onValueChange = { montoMaximo = it.filter(Char::isDigit).take(12) },
+                                        label = { Text("Máximo") },
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        singleLine = true,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                                if (filtroActivo) {
+                                    BotonSecundario(
+                                        texto = "Limpiar filtros",
+                                        onClick = {
+                                            empresaSeleccionada = ""
+                                            periodoSeleccionado = "Todo el historial"
+                                            estadoSeleccionado = "Todos los estados"
+                                            montoMinimo = ""
+                                            montoMaximo = ""
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                            }
+                        }
                     }
 
                     item {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            OutlinedTextField(
-                                value = montoMinimo,
-                                onValueChange = { montoMinimo = it.filter(Char::isDigit).take(12) },
-                                label = { Text("Mínimo") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                singleLine = true,
-                                modifier = Modifier.weight(1f)
+                            Text(
+                                "Movimientos",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
                             )
-                            OutlinedTextField(
-                                value = montoMaximo,
-                                onValueChange = { montoMaximo = it.filter(Char::isDigit).take(12) },
-                                label = { Text("Máximo") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                singleLine = true,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                    }
-
-                    if (
-                        empresaSeleccionada.isNotEmpty() ||
-                        periodoSeleccionado != "Todo el historial" ||
-                        estadoSeleccionado != "Todos los estados" ||
-                        montoMinimo.isNotEmpty() ||
-                        montoMaximo.isNotEmpty()
-                    ) {
-                        item {
-                            BotonSecundario(
-                                texto = "Limpiar filtros",
-                                onClick = {
-                                    empresaSeleccionada = ""
-                                    periodoSeleccionado = "Todo el historial"
-                                    estadoSeleccionado = "Todos los estados"
-                                    montoMinimo = ""
-                                    montoMaximo = ""
-                                },
-                                modifier = Modifier.fillMaxWidth()
+                            Text(
+                                "${pagosFiltrados.size} resultados",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -365,36 +477,139 @@ fun HistorialPagosScreen(
                     items(pagosFiltrados, key = { it.idPago }) { pago ->
                         val compromiso = compromisosPorId[pago.idCompromiso]
                         val fecha = runCatching { LocalDate.parse(pago.fechaPago) }.getOrNull()
-                        val estado = when (pago.estadoSincronizacion?.uppercase()) {
-                            "CONFIRMADO" -> "Confirmado"
-                            "PENDIENTE" -> "Pendiente de confirmación"
+                        val confirmado = pago.estadoSincronizacion.equals("CONFIRMADO", ignoreCase = true)
+                        val pendiente = pago.estadoSincronizacion.equals("PENDIENTE", ignoreCase = true)
+                        val estado = when {
+                            confirmado -> "Confirmado"
+                            pendiente -> "Pendiente de confirmación"
                             else -> "Estado de confirmación no disponible"
                         }
+                        val colorEstado = when {
+                            confirmado -> if (modoOscuro) Color(0xFF78E6BA) else Color(0xFF087C5B)
+                            pendiente -> if (modoOscuro) Color(0xFFFFD47A) else Color(0xFF916000)
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                        val empresa = compromiso?.let { nombreEmpresa(it.codigoEmpresa) }
+                            ?: "Empresa no disponible"
 
-                        Card(modifier = Modifier.fillMaxWidth()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(24.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            ),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(5.dp)
+                                    .background(colorEstado)
+                            )
                             Column(
-                                modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                                modifier = Modifier.padding(18.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Surface(
+                                        modifier = Modifier.size(42.dp),
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = MaterialTheme.colorScheme.primaryContainer
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Text(
+                                                empresa.trim().take(1).uppercase().ifEmpty { "P" },
+                                                style = MaterialTheme.typography.titleLarge,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                            )
+                                        }
+                                    }
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            empresa,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            compromiso?.concepto ?: "Compromiso #${pago.idCompromiso}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+                                Surface(
+                                    shape = RoundedCornerShape(50),
+                                    color = colorEstado.copy(alpha = if (modoOscuro) 0.18f else 0.11f)
+                                ) {
+                                    Text(
+                                        estado,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = colorEstado
+                                    )
+                                }
+                                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                    Text(
+                                        "$${numeroFormato.format(pago.monto)}",
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        "Monto pagado · CLP",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(18.dp)
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            "FECHA DE PAGO",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            fecha?.format(fechaFormato) ?: pago.fechaPago,
+                                            style = MaterialTheme.typography.labelLarge
+                                        )
+                                    }
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            "MÉTODO",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                            pago.metodoPago,
+                                            style = MaterialTheme.typography.labelLarge,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
                                 Text(
-                                    compromiso?.let { nombreEmpresa(it.codigoEmpresa) }
-                                        ?: "Empresa no disponible",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                Text(compromiso?.concepto ?: "Compromiso #${pago.idCompromiso}")
-                                Text("Pago #${pago.idPago}")
-                                Text("Fecha: ${fecha?.format(fechaFormato) ?: pago.fechaPago}")
-                                Text(
-                                    "Monto pagado: $${numeroFormato.format(pago.monto)}",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                Text("Método: ${pago.metodoPago}")
-                                Text(
-                                    "Estado: $estado",
+                                    "Pago #${pago.idPago}",
+                                    style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 pago.referenciaComprobante?.takeIf { it.isNotBlank() }?.let {
-                                    Text("Referencia: $it")
+                                    Text(
+                                        "Referencia: $it",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
                                 BotonSecundario(
                                     texto = "Ver comprobante",
@@ -406,6 +621,7 @@ fun HistorialPagosScreen(
                             }
                         }
                     }
+
                 }
             }
         }
