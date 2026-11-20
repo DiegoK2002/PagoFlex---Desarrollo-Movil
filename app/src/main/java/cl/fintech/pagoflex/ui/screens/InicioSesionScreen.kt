@@ -4,6 +4,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,13 +42,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import cl.fintech.pagoflex.R
 import cl.fintech.pagoflex.model.SesionUiState
 import cl.fintech.pagoflex.model.Usuario
 import cl.fintech.pagoflex.ui.components.BotonPrincipal
@@ -144,11 +145,10 @@ fun InicioSesionContent(
                                 .background(Color.White.copy(alpha = 0.17f), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "P",
-                                color = Color.White,
-                                fontSize = 28.sp,
-                                fontWeight = FontWeight.Bold
+                            Image(
+                                painter = painterResource(id = R.drawable.pagoflex_splash_vector),
+                                contentDescription = "Icono de PagoFlex",
+                                modifier = Modifier.size(48.dp)
                             )
                         }
                         Spacer(modifier = Modifier.width(12.dp))

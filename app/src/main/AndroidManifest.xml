@@ -24,8 +24,8 @@
             android:name=".MainActivity"
             android:enableOnBackInvokedCallback="false"
             android:exported="true"
-            android:label="Pagoflex"
-            android:theme="@style/Theme.Pagoflex"
+            android:label="PagoFlex"
+            android:theme="@style/Theme.Pagoflex.Starting"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

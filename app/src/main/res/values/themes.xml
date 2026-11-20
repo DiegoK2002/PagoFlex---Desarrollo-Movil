@@ -6,4 +6,10 @@ colores de botones, campos y textos no se definen aqui: van en ui/theme
 <resources>
 
     <style name="Theme.Pagoflex" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <style name="Theme.Pagoflex.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#152A63</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/pagoflex_splash_vector</item>
+        <item name="postSplashScreenTheme">@style/Theme.Pagoflex</item>
+    </style>
 </resources>

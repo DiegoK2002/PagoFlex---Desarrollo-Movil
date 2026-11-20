@@ -46,6 +46,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
+    implementation("androidx.core:core-splashscreen:1.2.0")
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
     testImplementation(libs.junit)
