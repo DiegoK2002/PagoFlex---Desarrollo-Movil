@@ -71,6 +71,7 @@ fun AppNavegacion() {
     val indicadorCumplimiento by compromisosViewModel.indicadorCumplimiento.collectAsStateWithLifecycle()
     val reconocimientos by compromisosViewModel.reconocimientos.collectAsStateWithLifecycle()
     val reportes by reportesViewModel.reportes.collectAsStateWithLifecycle()
+    val cargandoReportes by reportesViewModel.cargando.collectAsStateWithLifecycle()
     val operandoReporte by reportesViewModel.operando.collectAsStateWithLifecycle()
     val errorReporteRemoto by reportesViewModel.error.collectAsStateWithLifecycle()
     val estadoCotizaciones by cotizacionesViewModel.estado.collectAsStateWithLifecycle()
@@ -259,6 +260,8 @@ fun AppNavegacion() {
                     reportes = reportes,
                     operandoReporte = operandoReporte,
                     errorReporte = errorReporteRemoto,
+                    cargandoReportes = cargandoReportes,
+                    onActualizar = reportesViewModel::actualizar,
                     onTomarReporte = { idReporte ->
                         reportesViewModel.tomarReporte(idReporte)
                     },

@@ -2,6 +2,7 @@ package cl.fintech.pagoflex.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -9,6 +10,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -38,6 +40,8 @@ fun InicioAgenteScreen(
     reportes: List<Reporte> = emptyList(),
     operandoReporte: Boolean = false,
     errorReporte: String? = null,
+    cargandoReportes: Boolean = false,
+    onActualizar: () -> Unit,
     onTomarReporte: (Long) -> Unit,
     onResolverReporte: (Long, String, (Boolean) -> Unit) -> Unit
 ) {
@@ -82,65 +86,68 @@ fun InicioAgenteScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
-        Column(
+        PullToRefreshBox(
+            isRefreshing = cargandoReportes,
+            onRefresh = onActualizar,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(usuario.nombreCompleto, style = MaterialTheme.typography.headlineSmall)
-            Text(usuario.rol.etiqueta, style = MaterialTheme.typography.bodyLarge)
-
-            if (errorReporte != null) {
-                Text(errorReporte, color = MaterialTheme.colorScheme.error)
-            }
-
-            Text(
-                "Filtrar reportes",
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                listOf("Por resolver", "Abiertos", "En gestión", "Resueltos", "Todos").forEach { filtro ->
-                    FilterChip(
-                        selected = filtroEstado == filtro,
-                        onClick = { filtroEstado = filtro },
-                        label = { Text(filtro) }
-                    )
-                }
-            }
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(usuario.nombreCompleto, style = MaterialTheme.typography.headlineSmall)
+                        Text(usuario.rol.etiqueta, style = MaterialTheme.typography.bodyLarge)
 
-            OutlinedTextField(
-                value = textoBusqueda,
-                onValueChange = { textoBusqueda = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Buscar reportes") },
-                placeholder = { Text("N.º de reporte, compromiso o motivo") },
-                singleLine = true
-            )
+                        if (errorReporte != null) {
+                            Text(errorReporte, color = MaterialTheme.colorScheme.error)
+                        }
 
-            if (reportesVisibles.isEmpty()) {
-                Text(
-                    when {
-                        reportes.isEmpty() -> "No hay reportes para mostrar."
-                        busqueda.isNotBlank() -> "No se encontraron reportes con esa búsqueda."
-                        else -> "No hay reportes para el filtro seleccionado."
-                    },
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            } else {
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(reportesVisibles, key = { it.idReporte }) { reporte ->
-                        Card(
-                            modifier = Modifier.fillMaxWidth()
+                        Text("Filtrar reportes", style = MaterialTheme.typography.titleMedium)
+
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
+                            listOf("Por resolver", "Abiertos", "En gestión", "Resueltos", "Todos").forEach { filtro ->
+                                FilterChip(
+                                    selected = filtroEstado == filtro,
+                                    onClick = { filtroEstado = filtro },
+                                    label = { Text(filtro) }
+                                )
+                            }
+                        }
+
+                        OutlinedTextField(
+                            value = textoBusqueda,
+                            onValueChange = { textoBusqueda = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text("Buscar reportes") },
+                            placeholder = { Text("N.º de reporte, compromiso o motivo") },
+                            singleLine = true
+                        )
+                    }
+                }
+
+                if (reportesVisibles.isEmpty()) {
+                    item {
+                        Text(
+                            when {
+                                cargandoReportes -> "Cargando reportes..."
+                                reportes.isEmpty() -> "No hay reportes para mostrar."
+                                busqueda.isNotBlank() -> "No se encontraron reportes con esa búsqueda."
+                                else -> "No hay reportes para el filtro seleccionado."
+                            },
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                } else {
+                    items(reportesVisibles, key = { it.idReporte }) { reporte ->
+                        Card(modifier = Modifier.fillMaxWidth()) {
                             Column(
                                 modifier = Modifier.padding(16.dp),
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -149,8 +156,6 @@ fun InicioAgenteScreen(
                                     text = "Reporte #${reporte.idReporte}",
                                     style = MaterialTheme.typography.titleMedium
                                 )
-
-
                                 Text("Compromiso: ${reporte.folio}")
                                 Text("Motivo: ${reporte.motivo}")
 
@@ -162,18 +167,14 @@ fun InicioAgenteScreen(
 
                                 Text("Estado: ${reporte.estado}")
 
-
                                 if (reporte.estado == "Abierto") {
                                     Button(
-                                        onClick = {
-                                            onTomarReporte(reporte.idReporte)
-                                        },
+                                        onClick = { onTomarReporte(reporte.idReporte) },
                                         enabled = !operandoReporte
                                     ) {
                                         Text("Tomar reporte")
                                     }
                                 }
-
 
                                 if (reporte.estado == "En gestión" && reporte.idAgente == usuario.id) {
                                     var respuesta by rememberSaveable { mutableStateOf("") }
@@ -212,14 +213,11 @@ fun InicioAgenteScreen(
                                 if (!reporte.respuesta.isNullOrBlank()) {
                                     Text("Respuesta: ${reporte.respuesta}")
                                 }
-
-
                             }
                         }
                     }
                 }
             }
-
         }
     }
 }

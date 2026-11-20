@@ -24,6 +24,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -196,207 +197,213 @@ fun HistorialPagosScreen(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(innerPadding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+        PullToRefreshBox(
+            isRefreshing = cargando,
+            onRefresh = onActualizar,
+            modifier = Modifier.fillMaxSize().padding(innerPadding)
         ) {
-            item {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text("Resumen de pagos", style = MaterialTheme.typography.titleMedium)
-                        Text("Pagos registrados: ${pagos.size}")
-                        Text("Pagos confirmados: ${pagos.count { it.activo && it.estadoSincronizacion.equals("CONFIRMADO", ignoreCase = true) }}")
-                        Text(
-                            "Cumplimiento de los últimos 12 meses",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        if (porcentajeCumplimiento == null) {
-                            Text("Todavía no hay compromisos evaluables en este período.")
-                        } else {
-                            GraficoCumplimiento(
-                                porcentaje = porcentajeCumplimiento,
-                                modifier = Modifier.align(Alignment.CenterHorizontally)
-                            )
-                            Text(
-                                categoriaCumplimiento.orEmpty(),
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(
-                                "$pagosATiempo de ${compromisosEvaluables.size} compromisos pagados a tiempo"
-                            )
-                            if (compromisosEvaluables.size < 3) {
-                                Text(
-                                    "Porcentaje provisional: se necesitan al menos 3 compromisos evaluables para una clasificación definitiva.",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (cargando) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                }
-            } else if (error != null) {
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(error, color = MaterialTheme.colorScheme.error)
-                        Button(onClick = onActualizar) { Text("Reintentar") }
-                    }
-                }
-            } else {
-                item {
-                    ListaDesplegable(
-                        etiqueta = "Filtrar por empresa",
-                        opciones = opcionesEmpresas,
-                        seleccionada = empresaSeleccionada,
-                        textoDe = { codigo ->
-                            if (codigo.isEmpty()) "Todas las empresas" else nombreEmpresa(codigo)
-                        },
-                        onSeleccionar = { empresaSeleccionada = it },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
-                item {
-                    ListaDesplegable(
-                        etiqueta = "Filtrar por período",
-                        opciones = opcionesPeriodos,
-                        seleccionada = periodoSeleccionado,
-                        textoDe = { it },
-                        onSeleccionar = { periodoSeleccionado = it },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
-                item {
-                    ListaDesplegable(
-                        etiqueta = "Filtrar por estado",
-                        opciones = opcionesEstados,
-                        seleccionada = estadoSeleccionado,
-                        textoDe = { it },
-                        onSeleccionar = { estadoSeleccionado = it },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
-                item {
-                    Text(
-                        "Filtrar por monto pagado (CLP)",
-                        style = MaterialTheme.typography.titleSmall
-                    )
-                }
-
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = montoMinimo,
-                            onValueChange = { montoMinimo = it.filter(Char::isDigit).take(12) },
-                            label = { Text("Mínimo") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            singleLine = true,
-                            modifier = Modifier.weight(1f)
-                        )
-                        OutlinedTextField(
-                            value = montoMaximo,
-                            onValueChange = { montoMaximo = it.filter(Char::isDigit).take(12) },
-                            label = { Text("Máximo") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            singleLine = true,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-
-                if (
-                    empresaSeleccionada.isNotEmpty() ||
-                    periodoSeleccionado != "Todo el historial" ||
-                    estadoSeleccionado != "Todos los estados" ||
-                    montoMinimo.isNotEmpty() ||
-                    montoMaximo.isNotEmpty()
-                ) {
-                    item {
-                        BotonSecundario(
-                            texto = "Limpiar filtros",
-                            onClick = {
-                                empresaSeleccionada = ""
-                                periodoSeleccionado = "Todo el historial"
-                                estadoSeleccionado = "Todos los estados"
-                                montoMinimo = ""
-                                montoMaximo = ""
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-
-                if (pagos.isEmpty()) {
-                    item { Text("Todavía no tienes pagos registrados en el servidor.") }
-                } else if (pagosFiltrados.isEmpty()) {
-                    item {
-                        Text(
-                            "No se encontraron pagos para los filtros seleccionados.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                items(pagosFiltrados, key = { it.idPago }) { pago ->
-                    val compromiso = compromisosPorId[pago.idCompromiso]
-                    val fecha = runCatching { LocalDate.parse(pago.fechaPago) }.getOrNull()
-                    val estado = when (pago.estadoSincronizacion?.uppercase()) {
-                        "CONFIRMADO" -> "Confirmado"
-                        "PENDIENTE" -> "Pendiente de confirmación"
-                        else -> "Estado de confirmación no disponible"
-                    }
-
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(
                             modifier = Modifier.padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
+                            Text("Resumen de pagos", style = MaterialTheme.typography.titleMedium)
+                            Text("Pagos registrados: ${pagos.size}")
+                            Text("Pagos confirmados: ${pagos.count { it.activo && it.estadoSincronizacion.equals("CONFIRMADO", ignoreCase = true) }}")
                             Text(
-                                compromiso?.let { nombreEmpresa(it.codigoEmpresa) }
-                                    ?: "Empresa no disponible",
+                                "Cumplimiento de los últimos 12 meses",
                                 style = MaterialTheme.typography.titleMedium
                             )
-                            Text(compromiso?.concepto ?: "Compromiso #${pago.idCompromiso}")
-                            Text("Pago #${pago.idPago}")
-                            Text("Fecha: ${fecha?.format(fechaFormato) ?: pago.fechaPago}")
-                            Text(
-                                "Monto pagado: $${numeroFormato.format(pago.monto)}",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text("Método: ${pago.metodoPago}")
-                            Text(
-                                "Estado: $estado",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            pago.referenciaComprobante?.takeIf { it.isNotBlank() }?.let {
-                                Text("Referencia: $it")
+                            if (porcentajeCumplimiento == null) {
+                                Text("Todavía no hay compromisos evaluables en este período.")
+                            } else {
+                                GraficoCumplimiento(
+                                    porcentaje = porcentajeCumplimiento,
+                                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                                )
+                                Text(
+                                    categoriaCumplimiento.orEmpty(),
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Text(
+                                    "$pagosATiempo de ${compromisosEvaluables.size} compromisos pagados a tiempo"
+                                )
+                                if (compromisosEvaluables.size < 3) {
+                                    Text(
+                                        "Porcentaje provisional: se necesitan al menos 3 compromisos evaluables para una clasificación definitiva.",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
+                        }
+                    }
+                }
+
+                if (cargando) {
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                } else if (error != null) {
+                    item {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(error, color = MaterialTheme.colorScheme.error)
+                            Button(onClick = onActualizar) { Text("Reintentar") }
+                        }
+                    }
+                } else {
+                    item {
+                        ListaDesplegable(
+                            etiqueta = "Filtrar por empresa",
+                            opciones = opcionesEmpresas,
+                            seleccionada = empresaSeleccionada,
+                            textoDe = { codigo ->
+                                if (codigo.isEmpty()) "Todas las empresas" else nombreEmpresa(codigo)
+                            },
+                            onSeleccionar = { empresaSeleccionada = it },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    item {
+                        ListaDesplegable(
+                            etiqueta = "Filtrar por período",
+                            opciones = opcionesPeriodos,
+                            seleccionada = periodoSeleccionado,
+                            textoDe = { it },
+                            onSeleccionar = { periodoSeleccionado = it },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    item {
+                        ListaDesplegable(
+                            etiqueta = "Filtrar por estado",
+                            opciones = opcionesEstados,
+                            seleccionada = estadoSeleccionado,
+                            textoDe = { it },
+                            onSeleccionar = { estadoSeleccionado = it },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    item {
+                        Text(
+                            "Filtrar por monto pagado (CLP)",
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                    }
+
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = montoMinimo,
+                                onValueChange = { montoMinimo = it.filter(Char::isDigit).take(12) },
+                                label = { Text("Mínimo") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
+                            )
+                            OutlinedTextField(
+                                value = montoMaximo,
+                                onValueChange = { montoMaximo = it.filter(Char::isDigit).take(12) },
+                                label = { Text("Máximo") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+
+                    if (
+                        empresaSeleccionada.isNotEmpty() ||
+                        periodoSeleccionado != "Todo el historial" ||
+                        estadoSeleccionado != "Todos los estados" ||
+                        montoMinimo.isNotEmpty() ||
+                        montoMaximo.isNotEmpty()
+                    ) {
+                        item {
                             BotonSecundario(
-                                texto = "Ver comprobante",
+                                texto = "Limpiar filtros",
                                 onClick = {
-                                    onVerComprobante("REM-${pago.idCompromiso}")
+                                    empresaSeleccionada = ""
+                                    periodoSeleccionado = "Todo el historial"
+                                    estadoSeleccionado = "Todos los estados"
+                                    montoMinimo = ""
+                                    montoMaximo = ""
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             )
+                        }
+                    }
+
+                    if (pagos.isEmpty()) {
+                        item { Text("Todavía no tienes pagos registrados en el servidor.") }
+                    } else if (pagosFiltrados.isEmpty()) {
+                        item {
+                            Text(
+                                "No se encontraron pagos para los filtros seleccionados.",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    items(pagosFiltrados, key = { it.idPago }) { pago ->
+                        val compromiso = compromisosPorId[pago.idCompromiso]
+                        val fecha = runCatching { LocalDate.parse(pago.fechaPago) }.getOrNull()
+                        val estado = when (pago.estadoSincronizacion?.uppercase()) {
+                            "CONFIRMADO" -> "Confirmado"
+                            "PENDIENTE" -> "Pendiente de confirmación"
+                            else -> "Estado de confirmación no disponible"
+                        }
+
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    compromiso?.let { nombreEmpresa(it.codigoEmpresa) }
+                                        ?: "Empresa no disponible",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Text(compromiso?.concepto ?: "Compromiso #${pago.idCompromiso}")
+                                Text("Pago #${pago.idPago}")
+                                Text("Fecha: ${fecha?.format(fechaFormato) ?: pago.fechaPago}")
+                                Text(
+                                    "Monto pagado: $${numeroFormato.format(pago.monto)}",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Text("Método: ${pago.metodoPago}")
+                                Text(
+                                    "Estado: $estado",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                pago.referenciaComprobante?.takeIf { it.isNotBlank() }?.let {
+                                    Text("Referencia: $it")
+                                }
+                                BotonSecundario(
+                                    texto = "Ver comprobante",
+                                    onClick = {
+                                        onVerComprobante("REM-${pago.idCompromiso}")
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
                         }
                     }
                 }
