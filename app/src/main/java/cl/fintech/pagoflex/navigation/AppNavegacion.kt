@@ -1,5 +1,11 @@
 package cl.fintech.pagoflex.navigation
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.activity.compose.BackHandler
 import androidx.compose.material3.AlertDialog
@@ -95,7 +101,34 @@ fun AppNavegacion() {
         reportesViewModel.limpiar()
     }
 
-    NavHost(navController = navController, startDestination = Ruta.InicioSesion.ruta) {
+    NavHost(
+        navController = navController,
+        startDestination = Ruta.InicioSesion.ruta,
+        enterTransition = {
+            slideInHorizontally(
+                initialOffsetX = { ancho -> ancho / 10 },
+                animationSpec = tween(450, easing = FastOutSlowInEasing)
+            ) + fadeIn(animationSpec = tween(400, easing = FastOutSlowInEasing))
+        },
+        exitTransition = {
+            slideOutHorizontally(
+                targetOffsetX = { ancho -> -ancho / 18 },
+                animationSpec = tween(450, easing = FastOutSlowInEasing)
+            ) + fadeOut(animationSpec = tween(400, easing = FastOutSlowInEasing))
+        },
+        popEnterTransition = {
+            slideInHorizontally(
+                initialOffsetX = { ancho -> -ancho / 18 },
+                animationSpec = tween(450, easing = FastOutSlowInEasing)
+            ) + fadeIn(animationSpec = tween(400, easing = FastOutSlowInEasing))
+        },
+        popExitTransition = {
+            slideOutHorizontally(
+                targetOffsetX = { ancho -> ancho / 10 },
+                animationSpec = tween(450, easing = FastOutSlowInEasing)
+            ) + fadeOut(animationSpec = tween(400, easing = FastOutSlowInEasing))
+        }
+    ) {
 
         composable(Ruta.InicioSesion.ruta) {
             InicioSesionScreen(

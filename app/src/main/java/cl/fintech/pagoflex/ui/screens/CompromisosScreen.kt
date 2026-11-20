@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.AlertDialog
@@ -40,6 +41,7 @@ import cl.fintech.pagoflex.model.Compromiso
 import cl.fintech.pagoflex.model.EstadoCompromiso
 import cl.fintech.pagoflex.model.Usuario
 import cl.fintech.pagoflex.ui.components.TarjetaCompromiso
+import cl.fintech.pagoflex.ui.components.indicadorDesplazamiento
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -85,6 +87,7 @@ fun CompromisosScreen(
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val estadoLista = rememberLazyListState()
 
     var mostrarDialogo by remember { mutableStateOf(false) }
 
@@ -198,7 +201,13 @@ fun CompromisosScreen(
                     .padding(innerPadding)
             ) {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
+                    state = estadoLista,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .indicadorDesplazamiento(
+                            estado = estadoLista,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.65f)
+                        ),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {

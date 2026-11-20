@@ -22,6 +22,7 @@
         android:theme="@style/Theme.Pagoflex">
         <activity
             android:name=".MainActivity"
+            android:enableOnBackInvokedCallback="false"
             android:exported="true"
             android:label="Pagoflex"
             android:theme="@style/Theme.Pagoflex"
