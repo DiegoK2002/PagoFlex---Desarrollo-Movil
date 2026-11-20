@@ -17,6 +17,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
@@ -476,615 +477,282 @@ fun AdministradorScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        PullToRefreshBox(
+            isRefreshing = cargando || (seccion == "consultar" && cargandoCompromisos),
+            onRefresh = {
+                if (!guardando && !cargando && !cargandoCompromisos) {
+                    viewModel.cargarDatos()
+                    if (seccion == "consultar") {
+                        idUsuarioConsulta?.let { viewModel.cargarCompromisosPorUsuario(it) }
+                    }
+                }
+            },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            ScrollableTabRow(
-                selectedTabIndex = when (seccion) {
-                    "asignar" -> 0
-                    "consultar" -> 1
-                    "usuarios" -> 2
-                    "empresas" -> 3
-                    else -> 0
-                },
-                modifier = Modifier.fillMaxWidth(),
-                edgePadding = 0.dp
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Tab(
-                    selected = seccion == "asignar",
-                    onClick = { seccion = "asignar" },
-                    enabled = !guardando,
-                    text = { Text("Asignar", maxLines = 1, softWrap = false) }
-                )
-                Tab(
-                    selected = seccion == "consultar",
-                    onClick = { seccion = "consultar" },
-                    enabled = !guardando,
-                    text = { Text("Consultar", maxLines = 1, softWrap = false) }
-                )
-                Tab(
-                    selected = seccion == "usuarios",
-                    onClick = { seccion = "usuarios" },
-                    enabled = !guardando,
-                    text = { Text("Usuarios", maxLines = 1, softWrap = false) }
-                )
-                Tab(
-                    selected = seccion == "empresas",
-                    onClick = { seccion = "empresas" },
-                    enabled = !guardando,
-                    text = { Text("Empresas", maxLines = 1, softWrap = false) }
-                )
-            }
-
-            if (mensaje != null) {
-                val esExito = mensaje == "Compromiso asignado correctamente." ||
-                        mensaje == "Compromiso actualizado correctamente." ||
-                        mensaje == "Compromiso anulado correctamente." ||
-                        mensaje == "Usuario registrado correctamente." ||
-                        mensaje == "Usuario actualizado correctamente." ||
-                        mensaje == "Usuario desactivado correctamente." ||
-                        mensaje == "Empresa registrada correctamente." ||
-                        mensaje == "Empresa actualizada correctamente." ||
-                        mensaje == "Empresa anulada correctamente."
-                Text(
-                    text = mensaje!!,
-                    color = if (esExito) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.error
-                    }
-                )
-            }
-
-            if (seccion == "asignar") {
-                Text(
-                    text = if (idCompromisoEnEdicion == null) {
-                        "Asignar compromiso"
-                    } else {
-                        "Editar compromiso"
-                    },
-                    style = MaterialTheme.typography.headlineSmall
-                )
-
-                Text(
-                    text = if (idCompromisoEnEdicion == null) {
-                        "Selecciona un usuario y una empresa para registrar un compromiso."
-                    } else {
-                        "Modifica los datos y pulsa Guardar cambios."
-                    },
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                if (cargando) {
-                    CircularProgressIndicator()
-                    Text("Cargando usuarios y empresas...")
-                } else {
-
-                    OutlinedTextField(
-                        value = busquedaUsuarioAsignar,
-                        onValueChange = {
-                            busquedaUsuarioAsignar = it
-                            idUsuario = null
-                            errorFormulario = null
-                        },
-                        label = { Text("Buscar usuario por nombre, RUT o correo") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-
-                    ListaDesplegable(
-                        etiqueta = "Usuario",
-                        opciones = usuariosFiltradosAsignar,
-                        seleccionada = usuarioSeleccionado,
-                        textoDe = { "${it.nombres} ${it.apellidos} - ${it.rut}" },
-                        onSeleccionar = {
-                            idUsuario = it.idUsuario
-                            errorFormulario = null
-                        }
-                    )
-
-                    OutlinedTextField(
-                        value = busquedaEmpresaAsignar,
-                        onValueChange = {
-                            busquedaEmpresaAsignar = it
-                            idEmpresa = null
-                            errorFormulario = null
-                        },
-                        label = { Text("Buscar empresa por nombre o categoría") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-
-                    ListaDesplegable(
-                        etiqueta = "Empresa",
-                        opciones = empresasFiltradasAsignar,
-                        seleccionada = empresaSeleccionada,
-                        textoDe = { it.nombre },
-                        onSeleccionar = {
-                            idEmpresa = it.idEmpresa
-                            errorFormulario = null
-                        }
-                    )
-
-                    if (usuariosActivos.isEmpty()) {
-                        Text("No hay usuarios disponibles.")
-                    }
-                    if (empresasActivas.isEmpty()) {
-                        Text("No hay empresas disponibles.")
-                    }
-                }
-
-                OutlinedTextField(
-                    value = nombre,
-                    onValueChange = {
-                        nombre = it
-                        errorFormulario = null
-                    },
-                    label = { Text("Nombre del compromiso") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
-                OutlinedTextField(
-                    value = montoTexto,
-                    onValueChange = {
-                        montoTexto = it
-                        errorFormulario = null
-                    },
-                    label = { Text("Monto en CLP") },
-                    placeholder = { Text("Ejemplo: 25000") },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true
-                )
-
-                OutlinedTextField(
-                    value = fechaTexto,
-                    onValueChange = {
-                        fechaTexto = it
-                        errorFormulario = null
-                    },
-                    label = { Text("Fecha de vencimiento") },
-                    placeholder = { Text("AAAA-MM-DD") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
-                if (errorFormulario != null) {
-                    Text(
-                        text = errorFormulario!!,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-
-                Button(
-                    onClick = {
-                        val monto = montoTexto.trim().toBigDecimalOrNull()
-                        val fecha = runCatching {
-                            LocalDate.parse(fechaTexto.trim())
-                        }.getOrNull()
-
-                        when {
-                            usuarioSeleccionado == null -> {
-                                errorFormulario = "Selecciona un usuario."
-                            }
-                            empresaSeleccionada == null -> {
-                                errorFormulario = "Selecciona una empresa."
-                            }
-                            nombre.isBlank() -> {
-                                errorFormulario = "Ingresa el nombre del compromiso."
-                            }
-                            monto == null || monto <= BigDecimal.ZERO -> {
-                                errorFormulario = "Ingresa un monto válido."
-                            }
-                            fecha == null -> {
-                                errorFormulario = "Ingresa una fecha válida (AAAA-MM-DD)."
-                            }
-                            else -> {
-                                errorFormulario = null
-                                val idEdicion = idCompromisoEnEdicion
-                                if (idEdicion != null) {
-                                    viewModel.actualizarCompromiso(
-                                        idCompromiso = idEdicion,
-                                        idUsuario = usuarioSeleccionado.idUsuario,
-                                        idEmpresa = empresaSeleccionada.idEmpresa,
-                                        nombre = nombre.trim(),
-                                        monto = monto,
-                                        fechaVencimiento = fecha.toString()
-                                    )
-                                } else {
-                                    viewModel.asignarCompromiso(
-                                        idUsuario = usuarioSeleccionado.idUsuario,
-                                        idEmpresa = empresaSeleccionada.idEmpresa,
-                                        nombre = nombre.trim(),
-                                        monto = monto,
-                                        fechaVencimiento = fecha.toString()
-                                    )
-                                }
-                            }
-                        }
+                ScrollableTabRow(
+                    selectedTabIndex = when (seccion) {
+                        "asignar" -> 0
+                        "consultar" -> 1
+                        "usuarios" -> 2
+                        "empresas" -> 3
+                        else -> 0
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = !cargando && !guardando
+                    edgePadding = 0.dp
                 ) {
+                    Tab(
+                        selected = seccion == "asignar",
+                        onClick = { seccion = "asignar" },
+                        enabled = !guardando,
+                        text = { Text("Asignar", maxLines = 1, softWrap = false) }
+                    )
+                    Tab(
+                        selected = seccion == "consultar",
+                        onClick = { seccion = "consultar" },
+                        enabled = !guardando,
+                        text = { Text("Consultar", maxLines = 1, softWrap = false) }
+                    )
+                    Tab(
+                        selected = seccion == "usuarios",
+                        onClick = { seccion = "usuarios" },
+                        enabled = !guardando,
+                        text = { Text("Usuarios", maxLines = 1, softWrap = false) }
+                    )
+                    Tab(
+                        selected = seccion == "empresas",
+                        onClick = { seccion = "empresas" },
+                        enabled = !guardando,
+                        text = { Text("Empresas", maxLines = 1, softWrap = false) }
+                    )
+                }
+
+                if (mensaje != null) {
+                    val esExito = mensaje == "Compromiso asignado correctamente." ||
+                            mensaje == "Compromiso actualizado correctamente." ||
+                            mensaje == "Compromiso anulado correctamente." ||
+                            mensaje == "Usuario registrado correctamente." ||
+                            mensaje == "Usuario actualizado correctamente." ||
+                            mensaje == "Usuario desactivado correctamente." ||
+                            mensaje == "Empresa registrada correctamente." ||
+                            mensaje == "Empresa actualizada correctamente." ||
+                            mensaje == "Empresa anulada correctamente."
                     Text(
-                        text = when {
-                            guardando -> "Guardando..."
-                            idCompromisoEnEdicion != null -> "Guardar cambios"
-                            else -> "Asignar compromiso"
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    )
-                }
-
-                if (idCompromisoEnEdicion != null) {
-                    TextButton(
-                        onClick = { limpiarFormulario() },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !guardando
-                    ) {
-                        Text("Cancelar edición")
-                    }
-                }
-            } else if (seccion == "consultar") {
-                Text(
-                    text = "Consultar y gestionar compromisos",
-                    style = MaterialTheme.typography.headlineSmall
-                )
-                Text(
-                    text = "Busca un usuario para consultar, editar o anular sus compromisos.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                if (cargando) {
-                    CircularProgressIndicator()
-                    Text("Cargando usuarios...")
-                } else {
-                    OutlinedTextField(
-                        value = busquedaUsuarioConsulta,
-                        onValueChange = {
-                            busquedaUsuarioConsulta = it
-                            idUsuarioConsulta = null
-                        },
-                        label = { Text("Buscar usuario por nombre o RUT") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-
-                    ListaDesplegable(
-                        etiqueta = "Usuario para consultar",
-
-                        opciones = if (busquedaUsuarioConsulta.trim().length < 2) {
-                            listOfNotNull(
-                                usuariosActivos.firstOrNull {
-                                    it.idUsuario == idUsuarioConsulta
-                                }
-                            )
+                        text = mensaje!!,
+                        color = if (esExito) {
+                            MaterialTheme.colorScheme.primary
                         } else {
-                            val texto = busquedaUsuarioConsulta.trim()
-
-                            usuariosActivos.filter { usuario ->
-                                usuario.nombres.contains(texto, ignoreCase = true) ||
-                                        usuario.apellidos.contains(texto, ignoreCase = true) ||
-                                        usuario.rut.contains(texto, ignoreCase = true) ||
-                                        usuario.correo.contains(texto, ignoreCase = true) ||
-                                        "${usuario.nombres} ${usuario.apellidos}"
-                                            .contains(texto, ignoreCase = true)
-                            }.take(20)
-                        },
-
-                        seleccionada = usuariosActivos.firstOrNull {
-                            it.idUsuario == idUsuarioConsulta
-                        },
-                        textoDe = { "${it.nombres} ${it.apellidos} - ${it.rut}" },
-                        onSeleccionar = {
-                            idUsuarioConsulta = it.idUsuario
+                            MaterialTheme.colorScheme.error
                         }
                     )
                 }
 
-
-                if (idUsuarioConsulta == null) {
-                    Text("Selecciona un usuario para consultar sus compromisos.")
-                } else {
-                    Text("Compromisos activos: ${compromisosActivos.size}")
-
-                    if (cargandoCompromisos) {
-                        CircularProgressIndicator()
-                        Text("Cargando compromisos...")
-                    } else if (compromisosActivos.isEmpty()) {
-                        Text("Este usuario no tiene compromisos activos.")
-                    } else {
-                        compromisosActivos
-                            .sortedByDescending { it.idCompromiso }
-                            .forEach { compromiso ->
-                            val usuario = usuarios.firstOrNull {
-                                    it.idUsuario == compromiso.idUsuario
-                                }
-                                val empresa = empresas.firstOrNull {
-                                    it.idEmpresa == compromiso.idEmpresa
-                                }
-
-                                Card(modifier = Modifier.fillMaxWidth()) {
-                                    Column(
-                                        modifier = Modifier.padding(16.dp),
-                                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Text(
-                                            text = compromiso.nombre,
-                                            style = MaterialTheme.typography.titleMedium
-                                        )
-                                        Text(
-                                            "Usuario: " + (
-                                                    usuario?.let {
-                                                        "${it.nombres} ${it.apellidos}"
-                                                    } ?: "ID ${compromiso.idUsuario}"
-                                                    )
-                                        )
-                                        Text(
-                                            "Empresa: " +
-                                                    (empresa?.nombre ?: "ID ${compromiso.idEmpresa}")
-                                        )
-                                        Text("Monto: ${compromiso.monto} CLP")
-                                        Text("Vencimiento: ${compromiso.fechaVencimiento}")
-                                        Text("Estado: ${compromiso.estado}")
-
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            TextButton(
-                                                onClick = {
-                                                    idCompromisoEnEdicion = compromiso.idCompromiso
-                                                    idUsuario = compromiso.idUsuario
-                                                    busquedaUsuarioAsignar = ""
-                                                    idEmpresa = compromiso.idEmpresa
-                                                    busquedaEmpresaAsignar = ""
-                                                    nombre = compromiso.nombre
-                                                    montoTexto = compromiso.monto.toPlainString()
-                                                    fechaTexto = compromiso.fechaVencimiento
-                                                    errorFormulario = null
-                                                    viewModel.limpiarMensaje()
-                                                    seccion = "asignar"
-                                                },
-                                                enabled = !guardando
-                                            ) {
-                                                Text("Editar")
-                                            }
-
-                                            TextButton(
-                                                onClick = {
-                                                    idCompromisoParaAnular = compromiso.idCompromiso
-                                                },
-                                                enabled = !guardando
-                                            ) {
-                                                Text(
-                                                    "Anular",
-                                                    color = MaterialTheme.colorScheme.error
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                    }
-                }
-            } else if (seccion == "usuarios") {
-                Text(
-                    text = "Gestión de usuarios",
-                    style = MaterialTheme.typography.headlineSmall
-                )
-
-                Button(
-                    onClick = {
-                        mostrarRegistroUsuario = !mostrarRegistroUsuario
-                        errorRegistroUsuario = null
-                        viewModel.limpiarMensaje()
-                        if (!mostrarRegistroUsuario) {
-                            contrasenaRegistro = ""
-                            repetirContrasenaRegistro = ""
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !guardando && !cargando
-                ) {
+                if (seccion == "asignar") {
                     Text(
-                        text = if (mostrarRegistroUsuario) {
-                            "Volver a gestionar usuarios"
+                        text = if (idCompromisoEnEdicion == null) {
+                            "Asignar compromiso"
                         } else {
-                            "Registrar nuevo usuario"
+                            "Editar compromiso"
                         },
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
+                        style = MaterialTheme.typography.headlineSmall
                     )
-                }
 
-                if (mostrarRegistroUsuario) {
                     Text(
-                        text = "Registrar usuario",
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                    Text(
-                        text = "La cuenta nueva tendrá el rol Usuario final.",
+                        text = if (idCompromisoEnEdicion == null) {
+                            "Selecciona un usuario y una empresa para registrar un compromiso."
+                        } else {
+                            "Modifica los datos y pulsa Guardar cambios."
+                        },
                         style = MaterialTheme.typography.bodyMedium
                     )
 
-                    OutlinedTextField(
-                        value = nombresRegistro,
-                        onValueChange = {
-                            nombresRegistro = it.take(40)
-                            errorRegistroUsuario = null
-                            viewModel.limpiarMensaje()
-                        },
-                        label = { Text("Nombres") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        enabled = !guardando
-                    )
+                    if (cargando) {
+                        CircularProgressIndicator()
+                        Text("Cargando usuarios y empresas...")
+                    } else {
 
-                    OutlinedTextField(
-                        value = apellidosRegistro,
-                        onValueChange = {
-                            apellidosRegistro = it.take(40)
-                            errorRegistroUsuario = null
-                            viewModel.limpiarMensaje()
-                        },
-                        label = { Text("Apellidos") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        enabled = !guardando
-                    )
-
-                    OutlinedTextField(
-                        value = rutNumeroRegistro,
-                        onValueChange = {
-                            rutNumeroRegistro = it.filter { c -> c.isDigit() }.take(8)
-                            errorRegistroUsuario = null
-                            viewModel.limpiarMensaje()
-                        },
-                        label = { Text("RUT sin puntos ni guion") },
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true,
-                        enabled = !guardando
-                    )
-
-                    OutlinedTextField(
-                        value = rutDvRegistro,
-                        onValueChange = {
-                            rutDvRegistro = it.filter { c ->
-                                c.isDigit() || c.uppercaseChar() == 'K'
-                            }.take(1).uppercase()
-                            errorRegistroUsuario = null
-                            viewModel.limpiarMensaje()
-                        },
-                        label = { Text("Dígito verificador (DV)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        enabled = !guardando
-                    )
-
-                    OutlinedTextField(
-                        value = correoRegistro,
-                        onValueChange = {
-                            correoRegistro = it.trim().take(60)
-                            errorRegistroUsuario = null
-                            viewModel.limpiarMensaje()
-                        },
-                        label = { Text("Correo electrónico") },
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        singleLine = true,
-                        enabled = !guardando
-                    )
-
-                    ListaDesplegable(
-                        etiqueta = "Comuna",
-                        opciones = comunasRegistro,
-                        seleccionada = comunaRegistro.ifBlank { null },
-                        textoDe = { it },
-                        onSeleccionar = {
-                            comunaRegistro = it
-                            errorRegistroUsuario = null
-                            viewModel.limpiarMensaje()
-                        }
-                    )
-
-                    CampoContrasena(
-                        valor = contrasenaRegistro,
-                        onValorCambia = {
-                            contrasenaRegistro = it.take(30)
-                            errorRegistroUsuario = null
-                            viewModel.limpiarMensaje()
-                        },
-                        etiqueta = "Contraseña",
-                        visible = contrasenaRegistroVisible,
-                        onAlternarVisible = {
-                            contrasenaRegistroVisible = !contrasenaRegistroVisible
-                        }
-                    )
-
-                    RequisitosContrasena(
-                        requisitos = Validaciones.requisitosContrasena(
-                            contrasena = contrasenaRegistro,
-                            correo = correoRegistro,
-                            nombres = "$nombresRegistro $apellidosRegistro"
+                        OutlinedTextField(
+                            value = busquedaUsuarioAsignar,
+                            onValueChange = {
+                                busquedaUsuarioAsignar = it
+                                idUsuario = null
+                                errorFormulario = null
+                            },
+                            label = { Text("Buscar usuario por nombre, RUT o correo") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
                         )
-                    )
 
-                    CampoContrasena(
-                        valor = repetirContrasenaRegistro,
-                        onValorCambia = {
-                            repetirContrasenaRegistro = it.take(30)
-                            errorRegistroUsuario = null
-                            viewModel.limpiarMensaje()
-                        },
-                        etiqueta = "Repetir contraseña",
-                        visible = repetirContrasenaRegistroVisible,
-                        onAlternarVisible = {
-                            repetirContrasenaRegistroVisible = !repetirContrasenaRegistroVisible
+                        ListaDesplegable(
+                            etiqueta = "Usuario",
+                            opciones = usuariosFiltradosAsignar,
+                            seleccionada = usuarioSeleccionado,
+                            textoDe = { "${it.nombres} ${it.apellidos} - ${it.rut}" },
+                            onSeleccionar = {
+                                idUsuario = it.idUsuario
+                                errorFormulario = null
+                            }
+                        )
+
+                        OutlinedTextField(
+                            value = busquedaEmpresaAsignar,
+                            onValueChange = {
+                                busquedaEmpresaAsignar = it
+                                idEmpresa = null
+                                errorFormulario = null
+                            },
+                            label = { Text("Buscar empresa por nombre o categoría") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+
+                        ListaDesplegable(
+                            etiqueta = "Empresa",
+                            opciones = empresasFiltradasAsignar,
+                            seleccionada = empresaSeleccionada,
+                            textoDe = { it.nombre },
+                            onSeleccionar = {
+                                idEmpresa = it.idEmpresa
+                                errorFormulario = null
+                            }
+                        )
+
+                        if (usuariosActivos.isEmpty()) {
+                            Text("No hay usuarios disponibles.")
                         }
+                        if (empresasActivas.isEmpty()) {
+                            Text("No hay empresas disponibles.")
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = nombre,
+                        onValueChange = {
+                            nombre = it
+                            errorFormulario = null
+                        },
+                        label = { Text("Nombre del compromiso") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
                     )
 
-                    if (errorRegistroUsuario != null) {
+                    OutlinedTextField(
+                        value = montoTexto,
+                        onValueChange = {
+                            montoTexto = it
+                            errorFormulario = null
+                        },
+                        label = { Text("Monto en CLP") },
+                        placeholder = { Text("Ejemplo: 25000") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true
+                    )
+
+                    OutlinedTextField(
+                        value = fechaTexto,
+                        onValueChange = {
+                            fechaTexto = it
+                            errorFormulario = null
+                        },
+                        label = { Text("Fecha de vencimiento") },
+                        placeholder = { Text("AAAA-MM-DD") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    if (errorFormulario != null) {
                         Text(
-                            text = errorRegistroUsuario!!,
+                            text = errorFormulario!!,
                             color = MaterialTheme.colorScheme.error
                         )
                     }
 
                     Button(
                         onClick = {
-                            errorRegistroUsuario = listOf(
-                                Validaciones.validarNombre(nombresRegistro, "nombres"),
-                                Validaciones.validarNombre(apellidosRegistro, "apellidos"),
-                                Validaciones.validarRut(rutNumeroRegistro, rutDvRegistro),
-                                Validaciones.validarCorreo(correoRegistro),
-                                Validaciones.validarComuna(comunaRegistro),
-                                Validaciones.validarContrasena(
-                                    contrasena = contrasenaRegistro,
-                                    correo = correoRegistro,
-                                    nombres = "$nombresRegistro $apellidosRegistro"
-                                ),
-                                Validaciones.validarRepeticion(
-                                    contrasenaRegistro,
-                                    repetirContrasenaRegistro
-                                )
-                            ).firstOrNull { it != null }
+                            val monto = montoTexto.trim().toBigDecimalOrNull()
+                            val fecha = runCatching {
+                                LocalDate.parse(fechaTexto.trim())
+                            }.getOrNull()
 
-                            if (errorRegistroUsuario == null) {
-                                viewModel.registrarUsuario(
-                                    rut = Validaciones.formatearRut(
-                                        rutNumeroRegistro,
-                                        rutDvRegistro
-                                    ),
-                                    nombres = Validaciones.normalizarNombre(nombresRegistro),
-                                    apellidos = Validaciones.normalizarNombre(apellidosRegistro),
-                                    correo = correoRegistro.trim(),
-                                    contrasena = contrasenaRegistro,
-                                    comuna = comunaRegistro
-                                )
+                            when {
+                                usuarioSeleccionado == null -> {
+                                    errorFormulario = "Selecciona un usuario."
+                                }
+                                empresaSeleccionada == null -> {
+                                    errorFormulario = "Selecciona una empresa."
+                                }
+                                nombre.isBlank() -> {
+                                    errorFormulario = "Ingresa el nombre del compromiso."
+                                }
+                                monto == null || monto <= BigDecimal.ZERO -> {
+                                    errorFormulario = "Ingresa un monto válido."
+                                }
+                                fecha == null -> {
+                                    errorFormulario = "Ingresa una fecha válida (AAAA-MM-DD)."
+                                }
+                                else -> {
+                                    errorFormulario = null
+                                    val idEdicion = idCompromisoEnEdicion
+                                    if (idEdicion != null) {
+                                        viewModel.actualizarCompromiso(
+                                            idCompromiso = idEdicion,
+                                            idUsuario = usuarioSeleccionado.idUsuario,
+                                            idEmpresa = empresaSeleccionada.idEmpresa,
+                                            nombre = nombre.trim(),
+                                            monto = monto,
+                                            fechaVencimiento = fecha.toString()
+                                        )
+                                    } else {
+                                        viewModel.asignarCompromiso(
+                                            idUsuario = usuarioSeleccionado.idUsuario,
+                                            idEmpresa = empresaSeleccionada.idEmpresa,
+                                            nombre = nombre.trim(),
+                                            monto = monto,
+                                            fechaVencimiento = fecha.toString()
+                                        )
+                                    }
+                                }
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = !guardando && !cargando
+                        enabled = !cargando && !guardando
                     ) {
                         Text(
-                            text = if (guardando) "Registrando..." else "Registrar usuario",
+                            text = when {
+                                guardando -> "Guardando..."
+                                idCompromisoEnEdicion != null -> "Guardar cambios"
+                                else -> "Asignar compromiso"
+                            },
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center
                         )
                     }
-                } else {
+
+                    if (idCompromisoEnEdicion != null) {
+                        TextButton(
+                            onClick = { limpiarFormulario() },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !guardando
+                        ) {
+                            Text("Cancelar edición")
+                        }
+                    }
+                } else if (seccion == "consultar") {
                     Text(
-                        text = "Busca una cuenta y modifica sus datos de contacto. " +
-                                "El RUT, el rol y la contraseña no se cambian aquí.",
+                        text = "Consultar y gestionar compromisos",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    Text(
+                        text = "Busca un usuario para consultar, editar o anular sus compromisos.",
                         style = MaterialTheme.typography.bodyMedium
                     )
 
@@ -1093,40 +761,607 @@ fun AdministradorScreen(
                         Text("Cargando usuarios...")
                     } else {
                         OutlinedTextField(
-                            value = busquedaUsuarioGestion,
+                            value = busquedaUsuarioConsulta,
                             onValueChange = {
-                                busquedaUsuarioGestion = it
-                                idUsuarioGestion = null
-                                errorUsuario = null
+                                busquedaUsuarioConsulta = it
+                                idUsuarioConsulta = null
                             },
-                            label = { Text("Buscar por nombre, RUT o correo") },
+                            label = { Text("Buscar usuario por nombre o RUT") },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
 
-                        if (textoBusquedaGestion.length < 2) {
-                            Text("Escribe al menos 2 caracteres para buscar.")
-                        }
-
                         ListaDesplegable(
-                            etiqueta = "Seleccionar usuario",
-                            opciones = usuariosFiltradosGestion,
-                            seleccionada = usuarioGestion,
+                            etiqueta = "Usuario para consultar",
+
+                            opciones = if (busquedaUsuarioConsulta.trim().length < 2) {
+                                listOfNotNull(
+                                    usuariosActivos.firstOrNull {
+                                        it.idUsuario == idUsuarioConsulta
+                                    }
+                                )
+                            } else {
+                                val texto = busquedaUsuarioConsulta.trim()
+
+                                usuariosActivos.filter { usuario ->
+                                    usuario.nombres.contains(texto, ignoreCase = true) ||
+                                            usuario.apellidos.contains(texto, ignoreCase = true) ||
+                                            usuario.rut.contains(texto, ignoreCase = true) ||
+                                            usuario.correo.contains(texto, ignoreCase = true) ||
+                                            "${usuario.nombres} ${usuario.apellidos}"
+                                                .contains(texto, ignoreCase = true)
+                                }.take(20)
+                            },
+
+                            seleccionada = usuariosActivos.firstOrNull {
+                                it.idUsuario == idUsuarioConsulta
+                            },
                             textoDe = { "${it.nombres} ${it.apellidos} - ${it.rut}" },
-                            onSeleccionar = { usuario ->
-                                idUsuarioGestion = usuario.idUsuario
-                                nombresUsuario = usuario.nombres
-                                apellidosUsuario = usuario.apellidos
-                                correoUsuario = usuario.correo
-                                comunaUsuario = usuario.comuna
-                                errorUsuario = null
-                                viewModel.limpiarMensaje()
+                            onSeleccionar = {
+                                idUsuarioConsulta = it.idUsuario
                             }
                         )
                     }
 
-                    if (usuarioGestion == null) {
-                        Text("Selecciona un usuario para editar sus datos.")
+
+                    if (idUsuarioConsulta == null) {
+                        Text("Selecciona un usuario para consultar sus compromisos.")
+                    } else {
+                        Text("Compromisos activos: ${compromisosActivos.size}")
+
+                        if (cargandoCompromisos) {
+                            CircularProgressIndicator()
+                            Text("Cargando compromisos...")
+                        } else if (compromisosActivos.isEmpty()) {
+                            Text("Este usuario no tiene compromisos activos.")
+                        } else {
+                            compromisosActivos
+                                .sortedByDescending { it.idCompromiso }
+                                .forEach { compromiso ->
+                                    val usuario = usuarios.firstOrNull {
+                                        it.idUsuario == compromiso.idUsuario
+                                    }
+                                    val empresa = empresas.firstOrNull {
+                                        it.idEmpresa == compromiso.idEmpresa
+                                    }
+
+                                    Card(modifier = Modifier.fillMaxWidth()) {
+                                        Column(
+                                            modifier = Modifier.padding(16.dp),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Text(
+                                                text = compromiso.nombre,
+                                                style = MaterialTheme.typography.titleMedium
+                                            )
+                                            Text(
+                                                "Usuario: " + (
+                                                        usuario?.let {
+                                                            "${it.nombres} ${it.apellidos}"
+                                                        } ?: "ID ${compromiso.idUsuario}"
+                                                        )
+                                            )
+                                            Text(
+                                                "Empresa: " +
+                                                        (empresa?.nombre ?: "ID ${compromiso.idEmpresa}")
+                                            )
+                                            Text("Monto: ${compromiso.monto} CLP")
+                                            Text("Vencimiento: ${compromiso.fechaVencimiento}")
+                                            Text("Estado: ${compromiso.estado}")
+
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                TextButton(
+                                                    onClick = {
+                                                        idCompromisoEnEdicion = compromiso.idCompromiso
+                                                        idUsuario = compromiso.idUsuario
+                                                        busquedaUsuarioAsignar = ""
+                                                        idEmpresa = compromiso.idEmpresa
+                                                        busquedaEmpresaAsignar = ""
+                                                        nombre = compromiso.nombre
+                                                        montoTexto = compromiso.monto.toPlainString()
+                                                        fechaTexto = compromiso.fechaVencimiento
+                                                        errorFormulario = null
+                                                        viewModel.limpiarMensaje()
+                                                        seccion = "asignar"
+                                                    },
+                                                    enabled = !guardando
+                                                ) {
+                                                    Text("Editar")
+                                                }
+
+                                                TextButton(
+                                                    onClick = {
+                                                        idCompromisoParaAnular = compromiso.idCompromiso
+                                                    },
+                                                    enabled = !guardando
+                                                ) {
+                                                    Text(
+                                                        "Anular",
+                                                        color = MaterialTheme.colorScheme.error
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                        }
+                    }
+                } else if (seccion == "usuarios") {
+                    Text(
+                        text = "Gestión de usuarios",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+
+                    Button(
+                        onClick = {
+                            mostrarRegistroUsuario = !mostrarRegistroUsuario
+                            errorRegistroUsuario = null
+                            viewModel.limpiarMensaje()
+                            if (!mostrarRegistroUsuario) {
+                                contrasenaRegistro = ""
+                                repetirContrasenaRegistro = ""
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !guardando && !cargando
+                    ) {
+                        Text(
+                            text = if (mostrarRegistroUsuario) {
+                                "Volver a gestionar usuarios"
+                            } else {
+                                "Registrar nuevo usuario"
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+
+                    if (mostrarRegistroUsuario) {
+                        Text(
+                            text = "Registrar usuario",
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                        Text(
+                            text = "La cuenta nueva tendrá el rol Usuario final.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+
+                        OutlinedTextField(
+                            value = nombresRegistro,
+                            onValueChange = {
+                                nombresRegistro = it.take(40)
+                                errorRegistroUsuario = null
+                                viewModel.limpiarMensaje()
+                            },
+                            label = { Text("Nombres") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            enabled = !guardando
+                        )
+
+                        OutlinedTextField(
+                            value = apellidosRegistro,
+                            onValueChange = {
+                                apellidosRegistro = it.take(40)
+                                errorRegistroUsuario = null
+                                viewModel.limpiarMensaje()
+                            },
+                            label = { Text("Apellidos") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            enabled = !guardando
+                        )
+
+                        OutlinedTextField(
+                            value = rutNumeroRegistro,
+                            onValueChange = {
+                                rutNumeroRegistro = it.filter { c -> c.isDigit() }.take(8)
+                                errorRegistroUsuario = null
+                                viewModel.limpiarMensaje()
+                            },
+                            label = { Text("RUT sin puntos ni guion") },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true,
+                            enabled = !guardando
+                        )
+
+                        OutlinedTextField(
+                            value = rutDvRegistro,
+                            onValueChange = {
+                                rutDvRegistro = it.filter { c ->
+                                    c.isDigit() || c.uppercaseChar() == 'K'
+                                }.take(1).uppercase()
+                                errorRegistroUsuario = null
+                                viewModel.limpiarMensaje()
+                            },
+                            label = { Text("Dígito verificador (DV)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            enabled = !guardando
+                        )
+
+                        OutlinedTextField(
+                            value = correoRegistro,
+                            onValueChange = {
+                                correoRegistro = it.trim().take(60)
+                                errorRegistroUsuario = null
+                                viewModel.limpiarMensaje()
+                            },
+                            label = { Text("Correo electrónico") },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                            singleLine = true,
+                            enabled = !guardando
+                        )
+
+                        ListaDesplegable(
+                            etiqueta = "Comuna",
+                            opciones = comunasRegistro,
+                            seleccionada = comunaRegistro.ifBlank { null },
+                            textoDe = { it },
+                            onSeleccionar = {
+                                comunaRegistro = it
+                                errorRegistroUsuario = null
+                                viewModel.limpiarMensaje()
+                            }
+                        )
+
+                        CampoContrasena(
+                            valor = contrasenaRegistro,
+                            onValorCambia = {
+                                contrasenaRegistro = it.take(30)
+                                errorRegistroUsuario = null
+                                viewModel.limpiarMensaje()
+                            },
+                            etiqueta = "Contraseña",
+                            visible = contrasenaRegistroVisible,
+                            onAlternarVisible = {
+                                contrasenaRegistroVisible = !contrasenaRegistroVisible
+                            }
+                        )
+
+                        RequisitosContrasena(
+                            requisitos = Validaciones.requisitosContrasena(
+                                contrasena = contrasenaRegistro,
+                                correo = correoRegistro,
+                                nombres = "$nombresRegistro $apellidosRegistro"
+                            )
+                        )
+
+                        CampoContrasena(
+                            valor = repetirContrasenaRegistro,
+                            onValorCambia = {
+                                repetirContrasenaRegistro = it.take(30)
+                                errorRegistroUsuario = null
+                                viewModel.limpiarMensaje()
+                            },
+                            etiqueta = "Repetir contraseña",
+                            visible = repetirContrasenaRegistroVisible,
+                            onAlternarVisible = {
+                                repetirContrasenaRegistroVisible = !repetirContrasenaRegistroVisible
+                            }
+                        )
+
+                        if (errorRegistroUsuario != null) {
+                            Text(
+                                text = errorRegistroUsuario!!,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                errorRegistroUsuario = listOf(
+                                    Validaciones.validarNombre(nombresRegistro, "nombres"),
+                                    Validaciones.validarNombre(apellidosRegistro, "apellidos"),
+                                    Validaciones.validarRut(rutNumeroRegistro, rutDvRegistro),
+                                    Validaciones.validarCorreo(correoRegistro),
+                                    Validaciones.validarComuna(comunaRegistro),
+                                    Validaciones.validarContrasena(
+                                        contrasena = contrasenaRegistro,
+                                        correo = correoRegistro,
+                                        nombres = "$nombresRegistro $apellidosRegistro"
+                                    ),
+                                    Validaciones.validarRepeticion(
+                                        contrasenaRegistro,
+                                        repetirContrasenaRegistro
+                                    )
+                                ).firstOrNull { it != null }
+
+                                if (errorRegistroUsuario == null) {
+                                    viewModel.registrarUsuario(
+                                        rut = Validaciones.formatearRut(
+                                            rutNumeroRegistro,
+                                            rutDvRegistro
+                                        ),
+                                        nombres = Validaciones.normalizarNombre(nombresRegistro),
+                                        apellidos = Validaciones.normalizarNombre(apellidosRegistro),
+                                        correo = correoRegistro.trim(),
+                                        contrasena = contrasenaRegistro,
+                                        comuna = comunaRegistro
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !guardando && !cargando
+                        ) {
+                            Text(
+                                text = if (guardando) "Registrando..." else "Registrar usuario",
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = "Busca una cuenta y modifica sus datos de contacto. " +
+                                    "El RUT, el rol y la contraseña no se cambian aquí.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+
+                        if (cargando) {
+                            CircularProgressIndicator()
+                            Text("Cargando usuarios...")
+                        } else {
+                            OutlinedTextField(
+                                value = busquedaUsuarioGestion,
+                                onValueChange = {
+                                    busquedaUsuarioGestion = it
+                                    idUsuarioGestion = null
+                                    errorUsuario = null
+                                },
+                                label = { Text("Buscar por nombre, RUT o correo") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+
+                            if (textoBusquedaGestion.length < 2) {
+                                Text("Escribe al menos 2 caracteres para buscar.")
+                            }
+
+                            ListaDesplegable(
+                                etiqueta = "Seleccionar usuario",
+                                opciones = usuariosFiltradosGestion,
+                                seleccionada = usuarioGestion,
+                                textoDe = { "${it.nombres} ${it.apellidos} - ${it.rut}" },
+                                onSeleccionar = { usuario ->
+                                    idUsuarioGestion = usuario.idUsuario
+                                    nombresUsuario = usuario.nombres
+                                    apellidosUsuario = usuario.apellidos
+                                    correoUsuario = usuario.correo
+                                    comunaUsuario = usuario.comuna
+                                    errorUsuario = null
+                                    viewModel.limpiarMensaje()
+                                }
+                            )
+                        }
+
+                        if (usuarioGestion == null) {
+                            Text("Selecciona un usuario para editar sus datos.")
+                        } else {
+                            Card(modifier = Modifier.fillMaxWidth()) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Text(
+                                        "Editar datos del usuario",
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                    Text("RUT: ${usuarioGestion.rut}")
+                                    Text("Rol: ${usuarioGestion.rol}")
+
+                                    OutlinedTextField(
+                                        value = nombresUsuario,
+                                        onValueChange = {
+                                            nombresUsuario = it
+                                            errorUsuario = null
+                                        },
+                                        label = { Text("Nombres") },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        singleLine = true
+                                    )
+                                    OutlinedTextField(
+                                        value = apellidosUsuario,
+                                        onValueChange = {
+                                            apellidosUsuario = it
+                                            errorUsuario = null
+                                        },
+                                        label = { Text("Apellidos") },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        singleLine = true
+                                    )
+                                    OutlinedTextField(
+                                        value = correoUsuario,
+                                        onValueChange = {
+                                            correoUsuario = it
+                                            errorUsuario = null
+                                        },
+                                        label = { Text("Correo electrónico") },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        keyboardOptions = KeyboardOptions(
+                                            keyboardType = KeyboardType.Email
+                                        ),
+                                        singleLine = true
+                                    )
+                                    OutlinedTextField(
+                                        value = comunaUsuario,
+                                        onValueChange = {
+                                            comunaUsuario = it
+                                            errorUsuario = null
+                                        },
+                                        label = { Text("Comuna") },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        singleLine = true
+                                    )
+
+                                    if (errorUsuario != null) {
+                                        Text(
+                                            text = errorUsuario!!,
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+
+                                    Button(
+                                        onClick = {
+                                            errorUsuario = when {
+                                                nombresUsuario.isBlank() -> "Ingresa los nombres."
+                                                apellidosUsuario.isBlank() -> "Ingresa los apellidos."
+                                                correoUsuario.isBlank() ||
+                                                        !correoUsuario.contains("@") ->
+                                                    "Ingresa un correo válido."
+                                                comunaUsuario.isBlank() -> "Ingresa la comuna."
+                                                else -> null
+                                            }
+                                            if (errorUsuario == null) {
+                                                confirmarActualizacionUsuario = true
+                                            }
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        enabled = !guardando && !cargando
+                                    ) {
+                                        Text(
+                                            text = if (guardando) "Guardando..." else "Guardar cambios",
+                                            modifier = Modifier.fillMaxWidth(),
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+
+                                    if (usuarioGestion.idUsuario != idUsuarioActual) {
+                                        TextButton(
+                                            onClick = {
+                                                idUsuarioParaDesactivar = usuarioGestion.idUsuario
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            enabled = !guardando && !cargando
+                                        ) {
+                                            Text(
+                                                text = "Desactivar usuario",
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else if (seccion == "empresas") {
+                    Text(
+                        text = "Registrar empresa",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+
+                    Text(
+                        text = "Ingresa el nombre y la categoría de la nueva empresa.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    OutlinedTextField(
+                        value = nombreEmpresaNueva,
+                        onValueChange = {
+                            nombreEmpresaNueva = it
+                            errorEmpresaNueva = null
+                            viewModel.limpiarMensaje()
+                        },
+                        label = { Text("Nombre de la empresa") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    OutlinedTextField(
+                        value = categoriaEmpresaNueva,
+                        onValueChange = {
+                            categoriaEmpresaNueva = it
+                            errorEmpresaNueva = null
+                            viewModel.limpiarMensaje()
+                        },
+                        label = { Text("Categoría") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    if (errorEmpresaNueva != null) {
+                        Text(
+                            text = errorEmpresaNueva!!,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+
+                    Button(
+                        onClick = {
+                            errorEmpresaNueva = when {
+                                nombreEmpresaNueva.isBlank() -> "Ingresa el nombre de la empresa."
+                                categoriaEmpresaNueva.isBlank() -> "Ingresa la categoría."
+                                nombreEmpresaNueva.trim().length > 100 ->
+                                    "El nombre no puede superar 100 caracteres."
+                                categoriaEmpresaNueva.trim().length > 100 ->
+                                    "La categoría no puede superar 100 caracteres."
+                                else -> null
+                            }
+
+                            if (errorEmpresaNueva == null) {
+                                viewModel.crearEmpresa(
+                                    nombre = nombreEmpresaNueva.trim(),
+                                    categoria = categoriaEmpresaNueva.trim()
+                                )
+                            }
+                        },
+                        enabled = !guardando && !cargando,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = if (guardando) "Guardando..." else "Registrar empresa",
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+
+                    Text(
+                        text = "Editar empresa",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+
+                    Text(
+                        text = "Busca una empresa existente para modificar su nombre o categoría.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    OutlinedTextField(
+                        value = busquedaEmpresaGestion,
+                        onValueChange = {
+                            busquedaEmpresaGestion = it
+                            idEmpresaGestion = null
+                            errorEmpresaEditar = null
+                            viewModel.limpiarMensaje()
+                        },
+                        label = { Text("Buscar empresa por nombre o categoría") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    if (textoBusquedaEmpresas.length < 2) {
+                        Text("Escribe al menos 2 caracteres para buscar.")
+                    }
+
+                    ListaDesplegable(
+                        etiqueta = "Seleccionar empresa",
+                        opciones = empresasFiltradas,
+                        seleccionada = empresaGestion,
+                        textoDe = { "${it.nombre} - ${it.categoria.orEmpty()}" },
+                        onSeleccionar = { empresa ->
+                            idEmpresaGestion = empresa.idEmpresa
+                            nombreEmpresaEditar = empresa.nombre
+                            categoriaEmpresaEditar = empresa.categoria.orEmpty()
+                            errorEmpresaEditar = null
+                            viewModel.limpiarMensaje()
+                        }
+                    )
+
+                    if (empresaGestion == null) {
+                        Text("Selecciona una empresa para editarla.")
                     } else {
                         Card(modifier = Modifier.fillMaxWidth()) {
                             Column(
@@ -1134,76 +1369,54 @@ fun AdministradorScreen(
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 Text(
-                                    "Editar datos del usuario",
+                                    text = "Datos de la empresa",
                                     style = MaterialTheme.typography.titleMedium
                                 )
-                                Text("RUT: ${usuarioGestion.rut}")
-                                Text("Rol: ${usuarioGestion.rol}")
 
                                 OutlinedTextField(
-                                    value = nombresUsuario,
+                                    value = nombreEmpresaEditar,
                                     onValueChange = {
-                                        nombresUsuario = it
-                                        errorUsuario = null
+                                        nombreEmpresaEditar = it
+                                        errorEmpresaEditar = null
                                     },
-                                    label = { Text("Nombres") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
-                                )
-                                OutlinedTextField(
-                                    value = apellidosUsuario,
-                                    onValueChange = {
-                                        apellidosUsuario = it
-                                        errorUsuario = null
-                                    },
-                                    label = { Text("Apellidos") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
-                                )
-                                OutlinedTextField(
-                                    value = correoUsuario,
-                                    onValueChange = {
-                                        correoUsuario = it
-                                        errorUsuario = null
-                                    },
-                                    label = { Text("Correo electrónico") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    keyboardOptions = KeyboardOptions(
-                                        keyboardType = KeyboardType.Email
-                                    ),
-                                    singleLine = true
-                                )
-                                OutlinedTextField(
-                                    value = comunaUsuario,
-                                    onValueChange = {
-                                        comunaUsuario = it
-                                        errorUsuario = null
-                                    },
-                                    label = { Text("Comuna") },
+                                    label = { Text("Nombre") },
                                     modifier = Modifier.fillMaxWidth(),
                                     singleLine = true
                                 )
 
-                                if (errorUsuario != null) {
+                                OutlinedTextField(
+                                    value = categoriaEmpresaEditar,
+                                    onValueChange = {
+                                        categoriaEmpresaEditar = it
+                                        errorEmpresaEditar = null
+                                    },
+                                    label = { Text("Categoría") },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true
+                                )
+
+                                if (errorEmpresaEditar != null) {
                                     Text(
-                                        text = errorUsuario!!,
+                                        text = errorEmpresaEditar!!,
                                         color = MaterialTheme.colorScheme.error
                                     )
                                 }
 
                                 Button(
                                     onClick = {
-                                        errorUsuario = when {
-                                            nombresUsuario.isBlank() -> "Ingresa los nombres."
-                                            apellidosUsuario.isBlank() -> "Ingresa los apellidos."
-                                            correoUsuario.isBlank() ||
-                                                    !correoUsuario.contains("@") ->
-                                                "Ingresa un correo válido."
-                                            comunaUsuario.isBlank() -> "Ingresa la comuna."
+                                        errorEmpresaEditar = when {
+                                            nombreEmpresaEditar.isBlank() ->
+                                                "Ingresa el nombre de la empresa."
+                                            categoriaEmpresaEditar.isBlank() ->
+                                                "Ingresa la categoría."
+                                            nombreEmpresaEditar.trim().length > 100 ->
+                                                "El nombre no puede superar 100 caracteres."
+                                            categoriaEmpresaEditar.trim().length > 100 ->
+                                                "La categoría no puede superar 100 caracteres."
                                             else -> null
                                         }
-                                        if (errorUsuario == null) {
-                                            confirmarActualizacionUsuario = true
+                                        if (errorEmpresaEditar == null) {
+                                            confirmarActualizacionEmpresa = true
                                         }
                                     },
                                     modifier = Modifier.fillMaxWidth(),
@@ -1216,216 +1429,18 @@ fun AdministradorScreen(
                                     )
                                 }
 
-                                if (usuarioGestion.idUsuario != idUsuarioActual) {
-                                    TextButton(
-                                        onClick = {
-                                            idUsuarioParaDesactivar = usuarioGestion.idUsuario
-                                        },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        enabled = !guardando && !cargando
-                                    ) {
-                                        Text(
-                                            text = "Desactivar usuario",
-                                            color = MaterialTheme.colorScheme.error
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            } else if (seccion == "empresas") {
-                Text(
-                    text = "Registrar empresa",
-                    style = MaterialTheme.typography.headlineSmall
-                )
-
-                Text(
-                    text = "Ingresa el nombre y la categoría de la nueva empresa.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                OutlinedTextField(
-                    value = nombreEmpresaNueva,
-                    onValueChange = {
-                        nombreEmpresaNueva = it
-                        errorEmpresaNueva = null
-                        viewModel.limpiarMensaje()
-                    },
-                    label = { Text("Nombre de la empresa") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
-                OutlinedTextField(
-                    value = categoriaEmpresaNueva,
-                    onValueChange = {
-                        categoriaEmpresaNueva = it
-                        errorEmpresaNueva = null
-                        viewModel.limpiarMensaje()
-                    },
-                    label = { Text("Categoría") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
-                if (errorEmpresaNueva != null) {
-                    Text(
-                        text = errorEmpresaNueva!!,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-
-                Button(
-                    onClick = {
-                        errorEmpresaNueva = when {
-                            nombreEmpresaNueva.isBlank() -> "Ingresa el nombre de la empresa."
-                            categoriaEmpresaNueva.isBlank() -> "Ingresa la categoría."
-                            nombreEmpresaNueva.trim().length > 100 ->
-                                "El nombre no puede superar 100 caracteres."
-                            categoriaEmpresaNueva.trim().length > 100 ->
-                                "La categoría no puede superar 100 caracteres."
-                            else -> null
-                        }
-
-                        if (errorEmpresaNueva == null) {
-                            viewModel.crearEmpresa(
-                                nombre = nombreEmpresaNueva.trim(),
-                                categoria = categoriaEmpresaNueva.trim()
-                            )
-                        }
-                    },
-                    enabled = !guardando && !cargando,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = if (guardando) "Guardando..." else "Registrar empresa",
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    )
-                }
-
-                Text(
-                    text = "Editar empresa",
-                    style = MaterialTheme.typography.headlineSmall
-                )
-
-                Text(
-                    text = "Busca una empresa existente para modificar su nombre o categoría.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                OutlinedTextField(
-                    value = busquedaEmpresaGestion,
-                    onValueChange = {
-                        busquedaEmpresaGestion = it
-                        idEmpresaGestion = null
-                        errorEmpresaEditar = null
-                        viewModel.limpiarMensaje()
-                    },
-                    label = { Text("Buscar empresa por nombre o categoría") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
-                if (textoBusquedaEmpresas.length < 2) {
-                    Text("Escribe al menos 2 caracteres para buscar.")
-                }
-
-                ListaDesplegable(
-                    etiqueta = "Seleccionar empresa",
-                    opciones = empresasFiltradas,
-                    seleccionada = empresaGestion,
-                    textoDe = { "${it.nombre} - ${it.categoria.orEmpty()}" },
-                    onSeleccionar = { empresa ->
-                        idEmpresaGestion = empresa.idEmpresa
-                        nombreEmpresaEditar = empresa.nombre
-                        categoriaEmpresaEditar = empresa.categoria.orEmpty()
-                        errorEmpresaEditar = null
-                        viewModel.limpiarMensaje()
-                    }
-                )
-
-                if (empresaGestion == null) {
-                    Text("Selecciona una empresa para editarla.")
-                } else {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Text(
-                                text = "Datos de la empresa",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-
-                            OutlinedTextField(
-                                value = nombreEmpresaEditar,
-                                onValueChange = {
-                                    nombreEmpresaEditar = it
-                                    errorEmpresaEditar = null
-                                },
-                                label = { Text("Nombre") },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true
-                            )
-
-                            OutlinedTextField(
-                                value = categoriaEmpresaEditar,
-                                onValueChange = {
-                                    categoriaEmpresaEditar = it
-                                    errorEmpresaEditar = null
-                                },
-                                label = { Text("Categoría") },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true
-                            )
-
-                            if (errorEmpresaEditar != null) {
-                                Text(
-                                    text = errorEmpresaEditar!!,
-                                    color = MaterialTheme.colorScheme.error
-                                )
-                            }
-
-                            Button(
-                                onClick = {
-                                    errorEmpresaEditar = when {
-                                        nombreEmpresaEditar.isBlank() ->
-                                            "Ingresa el nombre de la empresa."
-                                        categoriaEmpresaEditar.isBlank() ->
-                                            "Ingresa la categoría."
-                                        nombreEmpresaEditar.trim().length > 100 ->
-                                            "El nombre no puede superar 100 caracteres."
-                                        categoriaEmpresaEditar.trim().length > 100 ->
-                                            "La categoría no puede superar 100 caracteres."
-                                        else -> null
-                                    }
-                                    if (errorEmpresaEditar == null) {
-                                        confirmarActualizacionEmpresa = true
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                enabled = !guardando && !cargando
-                            ) {
-                                Text(
-                                    text = if (guardando) "Guardando..." else "Guardar cambios",
+                                TextButton(
+                                    onClick = {
+                                        idEmpresaParaAnular = empresaGestion.idEmpresa
+                                    },
                                     modifier = Modifier.fillMaxWidth(),
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-
-                            TextButton(
-                                onClick = {
-                                    idEmpresaParaAnular = empresaGestion.idEmpresa
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                enabled = !guardando && !cargando
-                            ) {
-                                Text(
-                                    text = "Anular empresa",
-                                    color = MaterialTheme.colorScheme.error
-                                )
+                                    enabled = !guardando && !cargando
+                                ) {
+                                    Text(
+                                        text = "Anular empresa",
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
                             }
                         }
                     }
