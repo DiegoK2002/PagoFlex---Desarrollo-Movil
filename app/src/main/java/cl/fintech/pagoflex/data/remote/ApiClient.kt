@@ -1,25 +1,12 @@
 package cl.fintech.pagoflex.data.remote
 
-import android.os.Build
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object ApiClient {
 
-    private val BASE_URL: String
-        get() {
-            val esEmulador =
-                Build.FINGERPRINT.startsWith("generic") ||
-                        Build.FINGERPRINT.contains("emulator") ||
-                        Build.HARDWARE == "ranchu" ||
-                        Build.HARDWARE == "goldfish"
-            return if (esEmulador) {
-                "http://10.0.2.2:8080/"
-            } else {
-                "https://tqc4cr9w-8080.brs.devtunnels.ms/"
-            }
-        }
+    private const val BASE_URL = "https://tqc4cr9w-8080.brs.devtunnels.ms/"
 
     private val clienteHttp: OkHttpClient by lazy {
         OkHttpClient.Builder()
