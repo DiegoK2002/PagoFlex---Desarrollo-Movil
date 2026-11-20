@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.fintech.pagoflex.model.RegistroUiState
+import cl.fintech.pagoflex.ui.components.indicadorDesplazamiento
 import cl.fintech.pagoflex.ui.components.CampoContrasena
 import cl.fintech.pagoflex.ui.components.ListaDesplegable
 import cl.fintech.pagoflex.ui.components.RequisitosContrasena
@@ -78,6 +79,7 @@ fun AdministradorScreen(
     val mensaje by viewModel.mensaje.collectAsStateWithLifecycle()
 
     var seccion by rememberSaveable { mutableStateOf("asignar") }
+    val estadoDesplazamiento = rememberScrollState()
 
     var idUsuario by rememberSaveable { mutableStateOf<Long?>(null) }
     var busquedaUsuarioAsignar by rememberSaveable {
@@ -518,11 +520,15 @@ fun AdministradorScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .indicadorDesplazamiento(
+                    estado = estadoDesplazamiento,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.65f)
+                )
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(estadoDesplazamiento)
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {

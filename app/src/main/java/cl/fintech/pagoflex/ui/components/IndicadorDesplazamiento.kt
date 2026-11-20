@@ -1,5 +1,6 @@
 package cl.fintech.pagoflex.ui.components
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -86,4 +87,35 @@ fun Modifier.indicadorDesplazamiento(
             cornerRadius = CornerRadius(grosor / 2f)
         )
     }
+}
+
+fun Modifier.indicadorDesplazamiento(
+    estado: ScrollState,
+    color: Color
+): Modifier = drawWithContent {
+    drawContent()
+
+    val desplazamientoTotal = estado.maxValue
+    if (desplazamientoTotal <= 0 || size.height <= 0f) {
+        return@drawWithContent
+    }
+
+    val margen = 6.dp.toPx()
+    val grosor = 3.dp.toPx()
+    val altoPista = (size.height - 2f * margen).coerceAtLeast(0f)
+    if (altoPista <= 0f) return@drawWithContent
+
+    val altoContenido = size.height + desplazamientoTotal.toFloat()
+    val altoIndicador = (altoPista * size.height / altoContenido)
+        .coerceIn(28.dp.toPx().coerceAtMost(altoPista), altoPista)
+    val avance = (estado.value.toFloat() / desplazamientoTotal).coerceIn(0f, 1f)
+    val posicionY = margen + (altoPista - altoIndicador) * avance
+    val posicionX = (size.width - grosor - 3.dp.toPx()).coerceAtLeast(0f)
+
+    drawRoundRect(
+        color = color,
+        topLeft = Offset(posicionX, posicionY),
+        size = Size(grosor, altoIndicador),
+        cornerRadius = CornerRadius(grosor / 2f)
+    )
 }

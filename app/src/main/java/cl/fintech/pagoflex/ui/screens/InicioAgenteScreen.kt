@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -60,6 +61,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cl.fintech.pagoflex.model.Reporte
 import cl.fintech.pagoflex.model.Usuario
+import cl.fintech.pagoflex.ui.components.indicadorDesplazamiento
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,6 +79,7 @@ fun InicioAgenteScreen(
 ) {
     var filtroEstado by rememberSaveable { mutableStateOf("Por resolver") }
     var textoBusqueda by rememberSaveable { mutableStateOf("") }
+    val estadoLista = rememberLazyListState()
 
     val abiertos = reportes.count { it.estado == "Abierto" }
     val enGestion = reportes.count { it.estado == "En gestión" }
@@ -146,7 +149,13 @@ fun InicioAgenteScreen(
                 .padding(innerPadding)
         ) {
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                state = estadoLista,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .indicadorDesplazamiento(
+                        estado = estadoLista,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.65f)
+                    ),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {

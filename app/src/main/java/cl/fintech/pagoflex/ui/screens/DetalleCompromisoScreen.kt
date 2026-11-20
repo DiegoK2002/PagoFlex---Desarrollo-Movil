@@ -53,6 +53,7 @@ import cl.fintech.pagoflex.model.MotivoNoPago
 import cl.fintech.pagoflex.model.Reporte
 import cl.fintech.pagoflex.ui.components.BotonPrincipal
 import cl.fintech.pagoflex.ui.components.BotonSecundario
+import cl.fintech.pagoflex.ui.components.indicadorDesplazamiento
 import cl.fintech.pagoflex.ui.components.colorDeEstado
 import cl.fintech.pagoflex.ui.components.textoConcepto
 import cl.fintech.pagoflex.ui.theme.Dimens
@@ -89,6 +90,7 @@ fun DetalleCompromisoScreen(
     var comentarioReporte by remember { mutableStateOf("") }
     var errorReporte by remember { mutableStateOf(false) }
     var mostrarReferencia by rememberSaveable { mutableStateOf(false) }
+    val estadoDesplazamiento = rememberScrollState()
 
     val estaPagado = compromiso.estado == EstadoCompromiso.PAGADO
     val admiteGestiones = compromiso.estado == EstadoCompromiso.PENDIENTE ||
@@ -174,260 +176,269 @@ fun DetalleCompromisoScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(Dimens.espacioPantalla),
-            verticalArrangement = Arrangement.spacedBy(18.dp)
+                .indicadorDesplazamiento(
+                    estado = estadoDesplazamiento,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.65f)
+                )
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text(
-                    text = nombreEmpresa,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = textoConcepto(compromiso),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
-
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(1.dp, colorEstado.copy(alpha = 0.45f))
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(estadoDesplazamiento)
+                    .padding(Dimens.espacioPantalla),
+                verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(9.dp)
-                            .background(colorEstado, RoundedCornerShape(50))
-                    )
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(5.dp)
-                    ) {
-                        Text(
-                            text = "Situación actual · ${compromiso.estado.etiqueta}",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = mensajeOrientacion,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(26.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
+                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text(
-                        text = when {
-                            estaPagado -> "PAGO REGISTRADO"
-                            admiteGestiones -> "REGISTRAR PAGO"
-                            else -> "ESTADO DEL COMPROMISO"
-                        },
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        text = nombreEmpresa,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Text(
+                        text = textoConcepto(compromiso),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
 
-                    if (estaPagado || admiteGestiones) {
-                        Text(
-                            text = formatearPesos(total),
-                            style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.Bold
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, colorEstado.copy(alpha = 0.45f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.Top,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(9.dp)
+                                .background(colorEstado, RoundedCornerShape(50))
                         )
-                        Text(
-                            text = if (estaPagado) "Importe registrado" else "Total a registrar en CLP",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    if (recargo > 0 && (estaPagado || admiteGestiones)) {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            shape = RoundedCornerShape(14.dp)
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(5.dp)
                         ) {
-                            Column(
-                                modifier = Modifier.padding(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text("Monto original", style = MaterialTheme.typography.bodySmall)
-                                    Text(formatearPesos(compromiso.monto), style = MaterialTheme.typography.bodySmall)
-                                }
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text("Recargo por atraso", style = MaterialTheme.typography.bodySmall)
-                                    Text(formatearPesos(recargo), style = MaterialTheme.typography.bodySmall)
-                                }
-                            }
-                        }
-                    }
-
-                    if (estaPagado) {
-                        if (operacionesHabilitadas || pagosHabilitados) {
-                            BotonPrincipal(
-                                texto = "Consultar comprobante",
-                                onClick = onVerComprobante,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        } else {
                             Text(
-                                "El comprobante descargable aún no está disponible.",
+                                text = "Situación actual · ${compromiso.estado.etiqueta}",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = mensajeOrientacion,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                    } else if (admiteGestiones && pagosHabilitados) {
-                        BotonPrincipal(
-                            texto = "Registrar pago",
-                            onClick = { mostrarConfirmacion = true },
-                            habilitado = motivoNoPago == null && !registrandoPago,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        if (registrandoPago) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                CircularProgressIndicator(modifier = Modifier.size(22.dp))
-                                Text("Registrando el pago en el servidor...")
-                            }
-                        }
-                        if (errorPago != null) {
-                            Text(errorPago, color = MaterialTheme.colorScheme.error)
-                        }
-                    } else if (admiteGestiones) {
-                        Text(
-                            "El registro de pagos no está disponible en este momento.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    } else {
-                        Text(
-                            "No hay acciones de pago disponibles para este estado.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
                     }
                 }
-            }
 
-            if (puedeAgendar || puedeReportar) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(
-                        "También puedes",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    if (puedeAgendar) {
-                        BotonSecundario(
-                            texto = "Agendar vencimiento en calendario",
-                            onClick = agregarAlCalendario,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                    if (puedeReportar) {
-                        BotonSecundario(
-                            texto = "Reportar un problema con este cobro",
-                            onClick = {
-                                motivoReporte = "Ya pagué por otro medio"
-                                comentarioReporte = ""
-                                errorReporte = false
-                                mostrarFormulario = true
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-            }
-
-            if (operacionesHabilitadas && reporteActual != null) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(26.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                    )
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            "Seguimiento de tu reporte",
+                            text = when {
+                                estaPagado -> "PAGO REGISTRADO"
+                                admiteGestiones -> "REGISTRAR PAGO"
+                                else -> "ESTADO DEL COMPROMISO"
+                            },
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+
+                        if (estaPagado || admiteGestiones) {
+                            Text(
+                                text = formatearPesos(total),
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = if (estaPagado) "Importe registrado" else "Total a registrar en CLP",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        if (recargo > 0 && (estaPagado || admiteGestiones)) {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shape = RoundedCornerShape(14.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text("Monto original", style = MaterialTheme.typography.bodySmall)
+                                        Text(formatearPesos(compromiso.monto), style = MaterialTheme.typography.bodySmall)
+                                    }
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text("Recargo por atraso", style = MaterialTheme.typography.bodySmall)
+                                        Text(formatearPesos(recargo), style = MaterialTheme.typography.bodySmall)
+                                    }
+                                }
+                            }
+                        }
+
+                        if (estaPagado) {
+                            if (operacionesHabilitadas || pagosHabilitados) {
+                                BotonPrincipal(
+                                    texto = "Consultar comprobante",
+                                    onClick = onVerComprobante,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            } else {
+                                Text(
+                                    "El comprobante descargable aún no está disponible.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        } else if (admiteGestiones && pagosHabilitados) {
+                            BotonPrincipal(
+                                texto = "Registrar pago",
+                                onClick = { mostrarConfirmacion = true },
+                                habilitado = motivoNoPago == null && !registrandoPago,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            if (registrandoPago) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    CircularProgressIndicator(modifier = Modifier.size(22.dp))
+                                    Text("Registrando el pago en el servidor...")
+                                }
+                            }
+                            if (errorPago != null) {
+                                Text(errorPago, color = MaterialTheme.colorScheme.error)
+                            }
+                        } else if (admiteGestiones) {
+                            Text(
+                                "El registro de pagos no está disponible en este momento.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        } else {
+                            Text(
+                                "No hay acciones de pago disponibles para este estado.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                if (puedeAgendar || puedeReportar) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            "También puedes",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold
                         )
-                        Text("Estado: ${reporteActual.estado}")
-                        Text("Motivo: ${reporteActual.motivo}")
-                        if (reporteActual.respuesta.isNullOrBlank()) {
-                            Text("Todavía no hay respuesta del agente.")
-                        } else {
-                            Text("Respuesta del agente: ${reporteActual.respuesta}")
+                        if (puedeAgendar) {
+                            BotonSecundario(
+                                texto = "Agendar vencimiento en calendario",
+                                onClick = agregarAlCalendario,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                        if (puedeReportar) {
+                            BotonSecundario(
+                                texto = "Reportar un problema con este cobro",
+                                onClick = {
+                                    motivoReporte = "Ya pagué por otro medio"
+                                    comentarioReporte = ""
+                                    errorReporte = false
+                                    mostrarFormulario = true
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
                     }
                 }
-            }
 
-            TextButton(
-                onClick = { mostrarReferencia = !mostrarReferencia },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    if (mostrarReferencia) "Ocultar datos de referencia  ▲"
-                    else "Consultar datos de referencia  ▼"
-                )
-            }
-
-            if (mostrarReferencia) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                if (operacionesHabilitadas && reporteActual != null) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                        )
                     ) {
-                        Text("Folio: ${compromiso.folio}")
-                        Text("Vencimiento: ${formatearFecha(compromiso.fechaVencimiento)}")
-                        if (compromiso.numeroCuota != null && compromiso.totalCuotas != null) {
-                            Text("Cuota ${compromiso.numeroCuota} de ${compromiso.totalCuotas}")
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                "Seguimiento de tu reporte",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text("Estado: ${reporteActual.estado}")
+                            Text("Motivo: ${reporteActual.motivo}")
+                            if (reporteActual.respuesta.isNullOrBlank()) {
+                                Text("Todavía no hay respuesta del agente.")
+                            } else {
+                                Text("Respuesta del agente: ${reporteActual.respuesta}")
+                            }
                         }
-                        if (recargo == 0 && (estaPagado || admiteGestiones)) {
-                            Text("Importe original: ${formatearPesos(compromiso.monto)}")
+                    }
+                }
+
+                TextButton(
+                    onClick = { mostrarReferencia = !mostrarReferencia },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        if (mostrarReferencia) "Ocultar datos de referencia  ▲"
+                        else "Consultar datos de referencia  ▼"
+                    )
+                }
+
+                if (mostrarReferencia) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text("Folio: ${compromiso.folio}")
+                            Text("Vencimiento: ${formatearFecha(compromiso.fechaVencimiento)}")
+                            if (compromiso.numeroCuota != null && compromiso.totalCuotas != null) {
+                                Text("Cuota ${compromiso.numeroCuota} de ${compromiso.totalCuotas}")
+                            }
+                            if (recargo == 0 && (estaPagado || admiteGestiones)) {
+                                Text("Importe original: ${formatearPesos(compromiso.monto)}")
+                            }
                         }
                     }
                 }

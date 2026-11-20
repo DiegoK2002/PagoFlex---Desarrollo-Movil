@@ -39,6 +39,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import cl.fintech.pagoflex.data.remote.PagoRemoto
 import cl.fintech.pagoflex.ui.components.BotonPrincipal
+import cl.fintech.pagoflex.ui.components.indicadorDesplazamiento
 import cl.fintech.pagoflex.util.formatearFecha
 import java.text.NumberFormat
 import java.time.LocalDate
@@ -73,6 +74,7 @@ fun ComprobanteScreen(
     }
     val colorEstado = if (confirmado) Color(0xFF0C6B53) else Color(0xFF8B5518)
     val fondoEstado = if (confirmado) Color(0xFFD8F8E9) else Color(0xFFFFEDCA)
+    val estadoDesplazamiento = rememberScrollState()
 
     Scaffold(
         topBar = {
@@ -95,132 +97,141 @@ fun ComprobanteScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .indicadorDesplazamiento(
+                    estado = estadoDesplazamiento,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.65f)
+                )
         ) {
-            Box(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(26.dp))
-                    .background(Brush.linearGradient(coloresCabecera))
+                    .fillMaxSize()
+                    .verticalScroll(estadoDesplazamiento)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Column(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 26.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                        .clip(RoundedCornerShape(26.dp))
+                        .background(Brush.linearGradient(coloresCabecera))
                 ) {
-                    Text(
-                        "PAGOFLEX · COMPROBANTE DIGITAL",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFFE4E8FF),
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        "$${formatoMonto.format(pago.monto)}",
-                        style = MaterialTheme.typography.displaySmall,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        "Monto registrado en CLP",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFFE4E8FF)
-                    )
-                    Surface(
-                        shape = RoundedCornerShape(50),
-                        color = fondoEstado
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 26.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
-                            horizontalArrangement = Arrangement.spacedBy(7.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Text(
+                            "PAGOFLEX · COMPROBANTE DIGITAL",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFE4E8FF),
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            "$${formatoMonto.format(pago.monto)}",
+                            style = MaterialTheme.typography.displaySmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            "Monto registrado en CLP",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFFE4E8FF)
+                        )
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = fondoEstado
                         ) {
-                            if (confirmado) {
-                                Icon(
-                                    imageVector = Icons.Filled.CheckCircle,
-                                    contentDescription = null,
-                                    tint = colorEstado
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+                                horizontalArrangement = Arrangement.spacedBy(7.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (confirmado) {
+                                    Icon(
+                                        imageVector = Icons.Filled.CheckCircle,
+                                        contentDescription = null,
+                                        tint = colorEstado
+                                    )
+                                }
+                                Text(
+                                    if (confirmado) "Pago confirmado" else "Pendiente de confirmación",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = colorEstado
                                 )
                             }
-                            Text(
-                                if (confirmado) "Pago confirmado" else "Pendiente de confirmación",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = colorEstado
-                            )
                         }
                     }
                 }
-            }
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
-                    Text(
-                        "Datos de la operación",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    DatoRecibo("Fecha de pago", fecha)
-                    DatoRecibo("Empresa", nombreEmpresa)
-                    DatoRecibo("Concepto", concepto)
-                    DatoRecibo("Medio de pago", pago.metodoPago)
-                    DatoRecibo("Canal", "PagoFlex")
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Text(
+                            "Datos de la operación",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        DatoRecibo("Fecha de pago", fecha)
+                        DatoRecibo("Empresa", nombreEmpresa)
+                        DatoRecibo("Concepto", concepto)
+                        DatoRecibo("Medio de pago", pago.metodoPago)
+                        DatoRecibo("Canal", "PagoFlex")
 
-                    Divider(color = MaterialTheme.colorScheme.outlineVariant)
+                        Divider(color = MaterialTheme.colorScheme.outlineVariant)
 
-                    Text(
-                        "Identificación",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    DatoRecibo("N.° de comprobante", numeroComprobante)
-                    DatoRecibo("Folio del compromiso", folio)
+                        Text(
+                            "Identificación",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        DatoRecibo("N.° de comprobante", numeroComprobante)
+                        DatoRecibo("Folio del compromiso", folio)
 
-                    Divider(color = MaterialTheme.colorScheme.outlineVariant)
+                        Divider(color = MaterialTheme.colorScheme.outlineVariant)
 
-                    Text(
-                        "Titular",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    DatoRecibo("Pagado por", nombrePagador)
-                    DatoRecibo("RUT", rutParcial)
+                        Text(
+                            "Titular",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        DatoRecibo("Pagado por", nombrePagador)
+                        DatoRecibo("RUT", rutParcial)
+                    }
                 }
+
+                Text(
+                    "Este comprobante muestra la información del pago registrada en PagoFlex.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                BotonPrincipal(
+                    texto = "Volver",
+                    onClick = onVolver,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
-
-            Text(
-                "Este comprobante muestra la información del pago registrada en PagoFlex.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            BotonPrincipal(
-                texto = "Volver",
-                onClick = onVolver,
-                modifier = Modifier.fillMaxWidth()
-            )
         }
     }
 }

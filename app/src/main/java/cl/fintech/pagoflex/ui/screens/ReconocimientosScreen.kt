@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -54,6 +55,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import cl.fintech.pagoflex.ui.components.indicadorDesplazamiento
 import cl.fintech.pagoflex.util.Reconocimiento
 import java.time.format.DateTimeFormatter
 
@@ -148,8 +150,15 @@ fun ReconocimientosScreen(
                     )
                 }
 
+                val estadoLista = rememberLazyListState()
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
+                    state = estadoLista,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .indicadorDesplazamiento(
+                            estado = estadoLista,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.65f)
+                        ),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {

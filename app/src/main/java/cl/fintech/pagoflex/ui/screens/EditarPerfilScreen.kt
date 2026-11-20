@@ -51,6 +51,7 @@ import cl.fintech.pagoflex.ui.components.BotonPrincipal
 import cl.fintech.pagoflex.ui.components.BotonSecundario
 import cl.fintech.pagoflex.ui.components.CampoTexto
 import cl.fintech.pagoflex.ui.components.ListaDesplegable
+import cl.fintech.pagoflex.ui.components.indicadorDesplazamiento
 import cl.fintech.pagoflex.viewmodel.EditarPerfilViewModel
 
 @Composable
@@ -62,6 +63,7 @@ fun EditarPerfilScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val colores = MaterialTheme.colorScheme
+    val estadoDesplazamiento = rememberScrollState()
     var mostrarContenido by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { mostrarContenido = true }
 
@@ -94,196 +96,205 @@ fun EditarPerfilScreen(
         topBar = { BarraSuperiorVolver("Editar datos personales", onVolver) },
         containerColor = colores.background
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .indicadorDesplazamiento(
+                    estado = estadoDesplazamiento,
+                    color = colores.primary.copy(alpha = 0.65f)
+                )
         ) {
             Column(
-                modifier = Modifier.graphicsLayer {
-                    alpha = avanceTitulo
-                    translationY = (1f - avanceTitulo) * 8.dp.toPx()
-                },
-                verticalArrangement = Arrangement.spacedBy(5.dp)
-            ) {
-                Text(
-                    text = "Mantén tus datos al día",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = colores.onBackground
-                )
-                Text(
-                    text = "Actualiza solo lo que necesites. Los cambios se guardarán en tu cuenta.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = colores.onSurfaceVariant
-                )
-            }
-
-            Card(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        alpha = avancePersonales
-                        translationY = (1f - avancePersonales) * 12.dp.toPx()
-                    },
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = colores.surface),
-                border = BorderStroke(1.dp, colores.outlineVariant),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    .fillMaxSize()
+                    .verticalScroll(estadoDesplazamiento)
+                    .padding(horizontal = 20.dp, vertical = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    EncabezadoSeccionEditarPerfil(
-                        icono = Icons.Default.Person,
-                        titulo = "Datos personales",
-                        subtitulo = "El nombre que aparece en tu perfil"
-                    )
-                    HorizontalDivider(color = colores.outlineVariant)
-                    CampoTexto(
-                        valor = uiState.nombres,
-                        onValorCambia = viewModel::onNombresCambia,
-                        etiqueta = "Nombres",
-                        icono = Icons.Default.Person,
-                        error = uiState.errorNombres,
-                        capitalizacion = KeyboardCapitalization.Words
-                    )
-                    CampoTexto(
-                        valor = uiState.apellidos,
-                        onValorCambia = viewModel::onApellidosCambia,
-                        etiqueta = "Apellidos",
-                        icono = Icons.Default.Person,
-                        error = uiState.errorApellidos,
-                        capitalizacion = KeyboardCapitalization.Words
-                    )
-                }
-            }
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        alpha = avanceContacto
-                        translationY = (1f - avanceContacto) * 12.dp.toPx()
+                    modifier = Modifier.graphicsLayer {
+                        alpha = avanceTitulo
+                        translationY = (1f - avanceTitulo) * 8.dp.toPx()
                     },
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = colores.surface),
-                border = BorderStroke(1.dp, colores.outlineVariant),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    EncabezadoSeccionEditarPerfil(
-                        icono = Icons.Default.Email,
-                        titulo = "Contacto",
-                        subtitulo = "Correo y comuna asociados a tu cuenta"
-                    )
-                    HorizontalDivider(color = colores.outlineVariant)
-                    CampoTexto(
-                        valor = uiState.correo,
-                        onValorCambia = viewModel::onCorreoCambia,
-                        etiqueta = "Correo electrónico",
-                        icono = Icons.Default.Email,
-                        error = uiState.errorCorreo,
-                        tipoTeclado = KeyboardType.Email
-                    )
-                    ListaDesplegable(
-                        etiqueta = "Comuna",
-                        opciones = uiState.comunas,
-                        seleccionada = uiState.comuna.ifEmpty { null },
-                        textoDe = { it },
-                        onSeleccionar = viewModel::onComunaSeleccionada,
-                        error = uiState.errorComuna
-                    )
-                }
-            }
-
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        alpha = avanceAcciones
-                        translationY = (1f - avanceAcciones) * 8.dp.toPx()
-                    },
-                color = colores.primaryContainer.copy(alpha = 0.55f),
-                contentColor = colores.onPrimaryContainer,
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(14.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Text(
-                        text = "Tu RUT está vinculado a la cuenta y no puede modificarse aquí.",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-
-            uiState.errorGeneral?.let { error ->
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = colores.errorContainer,
-                    contentColor = colores.onErrorContainer,
-                    shape = RoundedCornerShape(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
                     Text(
-                        text = error,
-                        modifier = Modifier.padding(14.dp),
-                        style = MaterialTheme.typography.bodyMedium
+                        text = "Mantén tus datos al día",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = colores.onBackground
+                    )
+                    Text(
+                        text = "Actualiza solo lo que necesites. Los cambios se guardarán en tu cuenta.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colores.onSurfaceVariant
                     )
                 }
-            }
 
-            if (uiState.guardado) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            alpha = avancePersonales
+                            translationY = (1f - avancePersonales) * 12.dp.toPx()
+                        },
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = colores.surface),
+                    border = BorderStroke(1.dp, colores.outlineVariant),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(18.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        EncabezadoSeccionEditarPerfil(
+                            icono = Icons.Default.Person,
+                            titulo = "Datos personales",
+                            subtitulo = "El nombre que aparece en tu perfil"
+                        )
+                        HorizontalDivider(color = colores.outlineVariant)
+                        CampoTexto(
+                            valor = uiState.nombres,
+                            onValorCambia = viewModel::onNombresCambia,
+                            etiqueta = "Nombres",
+                            icono = Icons.Default.Person,
+                            error = uiState.errorNombres,
+                            capitalizacion = KeyboardCapitalization.Words
+                        )
+                        CampoTexto(
+                            valor = uiState.apellidos,
+                            onValorCambia = viewModel::onApellidosCambia,
+                            etiqueta = "Apellidos",
+                            icono = Icons.Default.Person,
+                            error = uiState.errorApellidos,
+                            capitalizacion = KeyboardCapitalization.Words
+                        )
+                    }
+                }
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            alpha = avanceContacto
+                            translationY = (1f - avanceContacto) * 12.dp.toPx()
+                        },
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = colores.surface),
+                    border = BorderStroke(1.dp, colores.outlineVariant),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(18.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        EncabezadoSeccionEditarPerfil(
+                            icono = Icons.Default.Email,
+                            titulo = "Contacto",
+                            subtitulo = "Correo y comuna asociados a tu cuenta"
+                        )
+                        HorizontalDivider(color = colores.outlineVariant)
+                        CampoTexto(
+                            valor = uiState.correo,
+                            onValorCambia = viewModel::onCorreoCambia,
+                            etiqueta = "Correo electrónico",
+                            icono = Icons.Default.Email,
+                            error = uiState.errorCorreo,
+                            tipoTeclado = KeyboardType.Email
+                        )
+                        ListaDesplegable(
+                            etiqueta = "Comuna",
+                            opciones = uiState.comunas,
+                            seleccionada = uiState.comuna.ifEmpty { null },
+                            textoDe = { it },
+                            onSeleccionar = viewModel::onComunaSeleccionada,
+                            error = uiState.errorComuna
+                        )
+                    }
+                }
+
                 Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = colores.primaryContainer,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            alpha = avanceAcciones
+                            translationY = (1f - avanceAcciones) * 8.dp.toPx()
+                        },
+                    color = colores.primaryContainer.copy(alpha = 0.55f),
                     contentColor = colores.onPrimaryContainer,
                     shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text(
-                        text = "Datos actualizados correctamente.",
+                    Row(
                         modifier = Modifier.padding(14.dp),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = "Tu RUT está vinculado a la cuenta y no puede modificarse aquí.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
+
+                uiState.errorGeneral?.let { error ->
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = colores.errorContainer,
+                        contentColor = colores.onErrorContainer,
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text(
+                            text = error,
+                            modifier = Modifier.padding(14.dp),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+
+                if (uiState.guardado) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = colores.primaryContainer,
+                        contentColor = colores.onPrimaryContainer,
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text(
+                            text = "Datos actualizados correctamente.",
+                            modifier = Modifier.padding(14.dp),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+
+                BotonPrincipal(
+                    texto = if (uiState.guardando) "Guardando..." else "Guardar cambios",
+                    onClick = { viewModel.onGuardar(onUsuarioActualizado) },
+                    habilitado = !uiState.guardando,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            alpha = avanceAcciones
+                            translationY = (1f - avanceAcciones) * 8.dp.toPx()
+                        }
+                )
+
+                BotonSecundario(
+                    texto = "Volver",
+                    onClick = onVolver,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            alpha = avanceAcciones
+                            translationY = (1f - avanceAcciones) * 8.dp.toPx()
+                        }
+                )
             }
-
-            BotonPrincipal(
-                texto = if (uiState.guardando) "Guardando..." else "Guardar cambios",
-                onClick = { viewModel.onGuardar(onUsuarioActualizado) },
-                habilitado = !uiState.guardando,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        alpha = avanceAcciones
-                        translationY = (1f - avanceAcciones) * 8.dp.toPx()
-                    }
-            )
-
-            BotonSecundario(
-                texto = "Volver",
-                onClick = onVolver,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        alpha = avanceAcciones
-                        translationY = (1f - avanceAcciones) * 8.dp.toPx()
-                    }
-            )
         }
     }
 }

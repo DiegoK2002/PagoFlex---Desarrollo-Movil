@@ -54,6 +54,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.fintech.pagoflex.model.RegistroUiState
 import cl.fintech.pagoflex.ui.components.BotonPrincipal
+import cl.fintech.pagoflex.ui.components.indicadorDesplazamiento
 import cl.fintech.pagoflex.ui.components.BotonSecundario
 import cl.fintech.pagoflex.ui.components.CampoContrasena
 import cl.fintech.pagoflex.ui.components.CampoTexto
@@ -109,6 +110,7 @@ fun RegistroContent(
     onRegistroExitoso: () -> Unit
 ) {
     val colores = MaterialTheme.colorScheme
+    val estadoDesplazamiento = rememberScrollState()
     var mostrarContenido by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { mostrarContenido = true }
 
@@ -164,236 +166,245 @@ fun RegistroContent(
         },
         containerColor = colores.background
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp)
+                .indicadorDesplazamiento(
+                    estado = estadoDesplazamiento,
+                    color = colores.primary.copy(alpha = 0.65f)
+                )
         ) {
-            Card(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        alpha = avanceDatos
-                        translationY = (1f - avanceDatos) * 12.dp.toPx()
-                    },
-                shape = RoundedCornerShape(28.dp),
-                colors = CardDefaults.cardColors(containerColor = colores.surface),
-                border = BorderStroke(1.dp, colores.outlineVariant),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    .fillMaxSize()
+                    .verticalScroll(estadoDesplazamiento)
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            alpha = avanceDatos
+                            translationY = (1f - avanceDatos) * 12.dp.toPx()
+                        },
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = colores.surface),
+                    border = BorderStroke(1.dp, colores.outlineVariant),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .background(colores.primaryContainer, RoundedCornerShape(14.dp)),
-                            contentAlignment = Alignment.Center
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = null,
-                                tint = colores.onPrimaryContainer
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .background(colores.primaryContainer, RoundedCornerShape(14.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = colores.onPrimaryContainer
+                                )
+                            }
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    text = "Datos personales",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = colores.onSurface
+                                )
+                                Text(
+                                    text = "Tu información para identificar tu cuenta",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = colores.onSurfaceVariant
+                                )
+                            }
                         }
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text(
-                                text = "Datos personales",
-                                style = MaterialTheme.typography.titleLarge,
-                                color = colores.onSurface
-                            )
-                            Text(
-                                text = "Tu información para identificar tu cuenta",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = colores.onSurfaceVariant
-                            )
-                        }
-                    }
 
-                    CampoTexto(
-                        valor = uiState.nombres,
-                        onValorCambia = onNombresCambia,
-                        etiqueta = "Nombres",
-                        icono = Icons.Default.Person,
-                        error = uiState.errorNombres
-                    )
-
-                    CampoTexto(
-                        valor = uiState.apellidos,
-                        onValorCambia = onApellidosCambia,
-                        etiqueta = "Apellidos",
-                        icono = Icons.Default.Person,
-                        error = uiState.errorApellidos
-                    )
-
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.Top
-                    ) {
                         CampoTexto(
-                            valor = uiState.rutNumero,
-                            onValorCambia = onRutNumeroCambia,
-                            etiqueta = "RUT (sin puntos ni guion)",
-                            icono = Icons.Default.Badge,
-                            error = uiState.errorRut,
-                            tipoTeclado = KeyboardType.Number,
-                            modifier = Modifier.weight(2.2f)
+                            valor = uiState.nombres,
+                            onValorCambia = onNombresCambia,
+                            etiqueta = "Nombres",
+                            icono = Icons.Default.Person,
+                            error = uiState.errorNombres
                         )
 
                         CampoTexto(
-                            valor = uiState.rutDv,
-                            onValorCambia = onRutDvCambia,
-                            etiqueta = "DV",
-                            icono = Icons.Default.Check,
-                            error = uiState.errorRut,
-                            mostrarMensajeError = false,
-                            capitalizacion = KeyboardCapitalization.Characters,
-                            modifier = Modifier.weight(1f)
+                            valor = uiState.apellidos,
+                            onValorCambia = onApellidosCambia,
+                            etiqueta = "Apellidos",
+                            icono = Icons.Default.Person,
+                            error = uiState.errorApellidos
                         )
-                    }
 
-                    CampoTexto(
-                        valor = uiState.correo,
-                        onValorCambia = onCorreoCambia,
-                        etiqueta = "Correo electrónico",
-                        icono = Icons.Default.Email,
-                        error = uiState.errorCorreo,
-                        tipoTeclado = KeyboardType.Email
-                    )
-
-                    ListaDesplegable(
-                        etiqueta = "Comuna",
-                        opciones = uiState.comunas,
-                        seleccionada = uiState.comuna.ifEmpty { null },
-                        textoDe = { it },
-                        onSeleccionar = onComunaSeleccionada,
-                        error = uiState.errorComuna
-                    )
-                }
-            }
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        alpha = avanceSeguridad
-                        translationY = (1f - avanceSeguridad) * 12.dp.toPx()
-                    },
-                shape = RoundedCornerShape(28.dp),
-                colors = CardDefaults.cardColors(containerColor = colores.surface),
-                border = BorderStroke(1.dp, colores.outlineVariant),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .background(colores.secondaryContainer, RoundedCornerShape(14.dp)),
-                            contentAlignment = Alignment.Center
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.Top
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Lock,
-                                contentDescription = null,
-                                tint = colores.onSecondaryContainer
+                            CampoTexto(
+                                valor = uiState.rutNumero,
+                                onValorCambia = onRutNumeroCambia,
+                                etiqueta = "RUT (sin puntos ni guion)",
+                                icono = Icons.Default.Badge,
+                                error = uiState.errorRut,
+                                tipoTeclado = KeyboardType.Number,
+                                modifier = Modifier.weight(2.2f)
+                            )
+
+                            CampoTexto(
+                                valor = uiState.rutDv,
+                                onValorCambia = onRutDvCambia,
+                                etiqueta = "DV",
+                                icono = Icons.Default.Check,
+                                error = uiState.errorRut,
+                                mostrarMensajeError = false,
+                                capitalizacion = KeyboardCapitalization.Characters,
+                                modifier = Modifier.weight(1f)
                             )
                         }
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text(
-                                text = "Seguridad de tu cuenta",
-                                style = MaterialTheme.typography.titleLarge,
-                                color = colores.onSurface
-                            )
-                            Text(
-                                text = "Define una contraseña segura",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = colores.onSurfaceVariant
-                            )
-                        }
-                    }
 
-                    CampoContrasena(
-                        valor = uiState.contrasena,
-                        onValorCambia = onContrasenaCambia,
-                        etiqueta = "Contraseña",
-                        visible = uiState.contrasenaVisible,
-                        onAlternarVisible = onAlternarContrasena,
-                        error = uiState.errorContrasena
-                    )
-
-                    RequisitosContrasena(
-                        requisitos = Validaciones.requisitosContrasena(
-                            contrasena = uiState.contrasena,
-                            correo = uiState.correo,
-                            nombres = "${uiState.nombres} ${uiState.apellidos}"
+                        CampoTexto(
+                            valor = uiState.correo,
+                            onValorCambia = onCorreoCambia,
+                            etiqueta = "Correo electrónico",
+                            icono = Icons.Default.Email,
+                            error = uiState.errorCorreo,
+                            tipoTeclado = KeyboardType.Email
                         )
-                    )
 
-                    CampoContrasena(
-                        valor = uiState.repetirContrasena,
-                        onValorCambia = onRepetirCambia,
-                        etiqueta = "Repetir contraseña",
-                        visible = uiState.repetirVisible,
-                        onAlternarVisible = onAlternarRepetir,
-                        error = uiState.errorRepetir
-                    )
+                        ListaDesplegable(
+                            etiqueta = "Comuna",
+                            opciones = uiState.comunas,
+                            seleccionada = uiState.comuna.ifEmpty { null },
+                            textoDe = { it },
+                            onSeleccionar = onComunaSeleccionada,
+                            error = uiState.errorComuna
+                        )
+                    }
                 }
-            }
 
-            if (uiState.errorGeneral != null) {
-                Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    color = colores.errorContainer,
-                    modifier = Modifier.fillMaxWidth()
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            alpha = avanceSeguridad
+                            translationY = (1f - avanceSeguridad) * 12.dp.toPx()
+                        },
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = colores.surface),
+                    border = BorderStroke(1.dp, colores.outlineVariant),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
-                    Text(
-                        text = uiState.errorGeneral,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = colores.onErrorContainer,
-                        modifier = Modifier.padding(14.dp)
-                    )
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .background(colores.secondaryContainer, RoundedCornerShape(14.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Lock,
+                                    contentDescription = null,
+                                    tint = colores.onSecondaryContainer
+                                )
+                            }
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    text = "Seguridad de tu cuenta",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = colores.onSurface
+                                )
+                                Text(
+                                    text = "Define una contraseña segura",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = colores.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        CampoContrasena(
+                            valor = uiState.contrasena,
+                            onValorCambia = onContrasenaCambia,
+                            etiqueta = "Contraseña",
+                            visible = uiState.contrasenaVisible,
+                            onAlternarVisible = onAlternarContrasena,
+                            error = uiState.errorContrasena
+                        )
+
+                        RequisitosContrasena(
+                            requisitos = Validaciones.requisitosContrasena(
+                                contrasena = uiState.contrasena,
+                                correo = uiState.correo,
+                                nombres = "${uiState.nombres} ${uiState.apellidos}"
+                            )
+                        )
+
+                        CampoContrasena(
+                            valor = uiState.repetirContrasena,
+                            onValorCambia = onRepetirCambia,
+                            etiqueta = "Repetir contraseña",
+                            visible = uiState.repetirVisible,
+                            onAlternarVisible = onAlternarRepetir,
+                            error = uiState.errorRepetir
+                        )
+                    }
                 }
+
+                if (uiState.errorGeneral != null) {
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = colores.errorContainer,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = uiState.errorGeneral,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colores.onErrorContainer,
+                            modifier = Modifier.padding(14.dp)
+                        )
+                    }
+                }
+
+                BotonPrincipal(
+                    texto = if (uiState.registrando) "Registrando..." else "Crear mi cuenta",
+                    onClick = onRegistrar,
+                    habilitado = !uiState.registrando,
+                    icono = Icons.Default.Check,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            alpha = avanceAcciones
+                            translationY = (1f - avanceAcciones) * 8.dp.toPx()
+                        }
+                )
+
+                BotonSecundario(
+                    texto = "Limpiar campos",
+                    onClick = onLimpiar,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            alpha = avanceAcciones
+                            translationY = (1f - avanceAcciones) * 8.dp.toPx()
+                        }
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
             }
-
-            BotonPrincipal(
-                texto = if (uiState.registrando) "Registrando..." else "Crear mi cuenta",
-                onClick = onRegistrar,
-                habilitado = !uiState.registrando,
-                icono = Icons.Default.Check,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        alpha = avanceAcciones
-                        translationY = (1f - avanceAcciones) * 8.dp.toPx()
-                    }
-            )
-
-            BotonSecundario(
-                texto = "Limpiar campos",
-                onClick = onLimpiar,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        alpha = avanceAcciones
-                        translationY = (1f - avanceAcciones) * 8.dp.toPx()
-                    }
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
         }
     }
 }

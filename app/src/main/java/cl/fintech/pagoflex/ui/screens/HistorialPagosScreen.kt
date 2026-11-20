@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -66,6 +67,7 @@ import cl.fintech.pagoflex.model.EstadoCompromiso
 import cl.fintech.pagoflex.ui.components.GraficoCumplimiento
 import cl.fintech.pagoflex.ui.components.ListaDesplegable
 import cl.fintech.pagoflex.ui.components.BotonSecundario
+import cl.fintech.pagoflex.ui.components.indicadorDesplazamiento
 import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.YearMonth
@@ -89,6 +91,7 @@ fun HistorialPagosScreen(
     var estadoSeleccionado by rememberSaveable { mutableStateOf("Todos los estados") }
     var montoMinimo by rememberSaveable { mutableStateOf("") }
     var montoMaximo by rememberSaveable { mutableStateOf("") }
+    val estadoLista = rememberLazyListState()
 
     val entrada = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
@@ -250,7 +253,13 @@ fun HistorialPagosScreen(
             modifier = Modifier.fillMaxSize().padding(innerPadding)
         ) {
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                state = estadoLista,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .indicadorDesplazamiento(
+                        estado = estadoLista,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.65f)
+                    ),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {

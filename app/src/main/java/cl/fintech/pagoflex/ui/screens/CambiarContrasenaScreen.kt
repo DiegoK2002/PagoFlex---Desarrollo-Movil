@@ -48,6 +48,7 @@ import cl.fintech.pagoflex.ui.components.BotonPrincipal
 import cl.fintech.pagoflex.ui.components.BotonSecundario
 import cl.fintech.pagoflex.ui.components.CampoContrasena
 import cl.fintech.pagoflex.ui.components.RequisitosContrasena
+import cl.fintech.pagoflex.ui.components.indicadorDesplazamiento
 import cl.fintech.pagoflex.util.Validaciones
 import cl.fintech.pagoflex.viewmodel.CambiarContrasenaViewModel
 
@@ -59,6 +60,7 @@ fun CambiarContrasenaScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val colores = MaterialTheme.colorScheme
+    val estadoDesplazamiento = rememberScrollState()
     var mostrarContenido by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { mostrarContenido = true }
 
@@ -87,173 +89,142 @@ fun CambiarContrasenaScreen(
         topBar = { BarraSuperiorVolver("Cambiar contraseña", onVolver) },
         containerColor = colores.background
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .indicadorDesplazamiento(
+                    estado = estadoDesplazamiento,
+                    color = colores.primary.copy(alpha = 0.65f)
+                )
         ) {
             Column(
-                modifier = Modifier.graphicsLayer {
-                    alpha = avanceTitulo
-                    translationY = (1f - avanceTitulo) * 8.dp.toPx()
-                },
-                verticalArrangement = Arrangement.spacedBy(5.dp)
-            ) {
-                Text(
-                    text = "Protege tu cuenta",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = colores.onBackground
-                )
-                Text(
-                    text = "Actualiza tu contraseña para mantener tu información segura.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = colores.onSurfaceVariant
-                )
-            }
-
-            Card(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        alpha = avanceFormulario
-                        translationY = (1f - avanceFormulario) * 12.dp.toPx()
-                    },
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = colores.surface),
-                border = BorderStroke(1.dp, colores.outlineVariant),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    .fillMaxSize()
+                    .verticalScroll(estadoDesplazamiento)
+                    .padding(horizontal = 20.dp, vertical = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(colores.primaryContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Lock,
-                                contentDescription = null,
-                                tint = colores.onPrimaryContainer,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-                        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text(
-                                text = "Seguridad de la cuenta",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = colores.onSurface
-                            )
-                            Text(
-                                text = "Confirma tu identidad y define una clave nueva",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = colores.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    HorizontalDivider(color = colores.outlineVariant)
-
-                    CampoContrasena(
-                        valor = uiState.contrasenaActual,
-                        onValorCambia = viewModel::onActualCambia,
-                        etiqueta = "Contraseña actual",
-                        visible = uiState.actualVisible,
-                        onAlternarVisible = viewModel::onAlternarActual,
-                        error = uiState.errorActual
-                    )
-
-                    HorizontalDivider(color = colores.outlineVariant)
-
-                    CampoContrasena(
-                        valor = uiState.contrasenaNueva,
-                        onValorCambia = viewModel::onNuevaCambia,
-                        etiqueta = "Nueva contraseña",
-                        visible = uiState.nuevaVisible,
-                        onAlternarVisible = viewModel::onAlternarNueva,
-                        error = uiState.errorNueva
-                    )
-
-                    RequisitosContrasena(
-                        requisitos = Validaciones.requisitosContrasena(
-                            uiState.contrasenaNueva,
-                            usuario.correo,
-                            usuario.nombres
-                        )
-                    )
-
-                    CampoContrasena(
-                        valor = uiState.repetirContrasena,
-                        onValorCambia = viewModel::onRepetirCambia,
-                        etiqueta = "Repetir nueva contraseña",
-                        visible = uiState.repetirVisible,
-                        onAlternarVisible = viewModel::onAlternarRepetir,
-                        error = uiState.errorRepetir
-                    )
-                }
-            }
-
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        alpha = avanceAviso
-                        translationY = (1f - avanceAviso) * 8.dp.toPx()
+                    modifier = Modifier.graphicsLayer {
+                        alpha = avanceTitulo
+                        translationY = (1f - avanceTitulo) * 8.dp.toPx()
                     },
-                color = colores.primaryContainer.copy(alpha = 0.55f),
-                contentColor = colores.onPrimaryContainer,
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(14.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Text(
-                        text = "La nueva contraseña debe ser diferente de la actual.",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-
-            uiState.errorGeneral?.let { error ->
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = colores.errorContainer,
-                    contentColor = colores.onErrorContainer,
-                    shape = RoundedCornerShape(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
                     Text(
-                        text = error,
-                        modifier = Modifier.padding(14.dp),
-                        style = MaterialTheme.typography.bodyMedium
+                        text = "Protege tu cuenta",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = colores.onBackground
+                    )
+                    Text(
+                        text = "Actualiza tu contraseña para mantener tu información segura.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colores.onSurfaceVariant
                     )
                 }
-            }
 
-            if (uiState.cambiada) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            alpha = avanceFormulario
+                            translationY = (1f - avanceFormulario) * 12.dp.toPx()
+                        },
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = colores.surface),
+                    border = BorderStroke(1.dp, colores.outlineVariant),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(18.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(colores.primaryContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Lock,
+                                    contentDescription = null,
+                                    tint = colores.onPrimaryContainer,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Text(
+                                    text = "Seguridad de la cuenta",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = colores.onSurface
+                                )
+                                Text(
+                                    text = "Confirma tu identidad y define una clave nueva",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = colores.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        HorizontalDivider(color = colores.outlineVariant)
+
+                        CampoContrasena(
+                            valor = uiState.contrasenaActual,
+                            onValorCambia = viewModel::onActualCambia,
+                            etiqueta = "Contraseña actual",
+                            visible = uiState.actualVisible,
+                            onAlternarVisible = viewModel::onAlternarActual,
+                            error = uiState.errorActual
+                        )
+
+                        HorizontalDivider(color = colores.outlineVariant)
+
+                        CampoContrasena(
+                            valor = uiState.contrasenaNueva,
+                            onValorCambia = viewModel::onNuevaCambia,
+                            etiqueta = "Nueva contraseña",
+                            visible = uiState.nuevaVisible,
+                            onAlternarVisible = viewModel::onAlternarNueva,
+                            error = uiState.errorNueva
+                        )
+
+                        RequisitosContrasena(
+                            requisitos = Validaciones.requisitosContrasena(
+                                uiState.contrasenaNueva,
+                                usuario.correo,
+                                usuario.nombres
+                            )
+                        )
+
+                        CampoContrasena(
+                            valor = uiState.repetirContrasena,
+                            onValorCambia = viewModel::onRepetirCambia,
+                            etiqueta = "Repetir nueva contraseña",
+                            visible = uiState.repetirVisible,
+                            onAlternarVisible = viewModel::onAlternarRepetir,
+                            error = uiState.errorRepetir
+                        )
+                    }
+                }
+
                 Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = colores.secondaryContainer,
-                    contentColor = colores.onSecondaryContainer,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            alpha = avanceAviso
+                            translationY = (1f - avanceAviso) * 8.dp.toPx()
+                        },
+                    color = colores.primaryContainer.copy(alpha = 0.55f),
+                    contentColor = colores.onPrimaryContainer,
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Row(
@@ -262,40 +233,80 @@ fun CambiarContrasenaScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = Icons.Default.CheckCircle,
+                            imageVector = Icons.Default.Info,
                             contentDescription = null,
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            text = "Contraseña actualizada correctamente.",
+                            text = "La nueva contraseña debe ser diferente de la actual.",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+
+                uiState.errorGeneral?.let { error ->
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = colores.errorContainer,
+                        contentColor = colores.onErrorContainer,
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text(
+                            text = error,
+                            modifier = Modifier.padding(14.dp),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
                 }
+
+                if (uiState.cambiada) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = colores.secondaryContainer,
+                        contentColor = colores.onSecondaryContainer,
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(14.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = "Contraseña actualizada correctamente.",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
+
+                BotonPrincipal(
+                    texto = if (uiState.guardando) "Guardando..." else "Cambiar contraseña",
+                    onClick = { viewModel.onCambiar(usuario) },
+                    habilitado = !uiState.guardando,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            alpha = avanceAcciones
+                            translationY = (1f - avanceAcciones) * 8.dp.toPx()
+                        }
+                )
+
+                BotonSecundario(
+                    texto = "Volver",
+                    onClick = onVolver,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            alpha = avanceAcciones
+                            translationY = (1f - avanceAcciones) * 8.dp.toPx()
+                        }
+                )
             }
-
-            BotonPrincipal(
-                texto = if (uiState.guardando) "Guardando..." else "Cambiar contraseña",
-                onClick = { viewModel.onCambiar(usuario) },
-                habilitado = !uiState.guardando,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        alpha = avanceAcciones
-                        translationY = (1f - avanceAcciones) * 8.dp.toPx()
-                    }
-            )
-
-            BotonSecundario(
-                texto = "Volver",
-                onClick = onVolver,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        alpha = avanceAcciones
-                        translationY = (1f - avanceAcciones) * 8.dp.toPx()
-                    }
-            )
         }
     }
 }

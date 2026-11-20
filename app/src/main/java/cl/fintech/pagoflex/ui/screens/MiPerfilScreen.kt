@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import cl.fintech.pagoflex.model.Usuario
 import cl.fintech.pagoflex.ui.components.BotonPrincipal
+import cl.fintech.pagoflex.ui.components.indicadorDesplazamiento
 import cl.fintech.pagoflex.ui.components.BotonSecundario
 import cl.fintech.pagoflex.util.ConvertidorImagen
 import cl.fintech.pagoflex.util.ocultarRut
@@ -79,6 +80,7 @@ fun MiPerfilScreen(
     onVolver: () -> Unit
 ) {
     val context = LocalContext.current
+    val estadoDesplazamiento = rememberScrollState()
     var mensajeFoto by remember { mutableStateOf<String?>(null) }
     var mostrarContenido by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { mostrarContenido = true }
@@ -170,185 +172,194 @@ fun MiPerfilScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+                .indicadorDesplazamiento(
+                    estado = estadoDesplazamiento,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.65f)
+                )
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        alpha = avanceCabecera
-                        translationY = (1f - avanceCabecera) * 12.dp.toPx()
-                    }
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(
-                        Brush.linearGradient(
-                            listOf(Color(0xFF2938AF), Color(0xFF4757D4), Color(0xFF6C48B8))
-                        )
-                    )
-                    .padding(horizontal = 22.dp, vertical = 28.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .fillMaxSize()
+                    .verticalScroll(estadoDesplazamiento)
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                Box(
+                Column(
                     modifier = Modifier
-                        .size(104.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.18f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (imagenPerfil != null) {
-                        Image(
-                            bitmap = imagenPerfil,
-                            contentDescription = "Fotografía de perfil",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize().clip(CircleShape)
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            alpha = avanceCabecera
+                            translationY = (1f - avanceCabecera) * 12.dp.toPx()
+                        }
+                        .clip(RoundedCornerShape(28.dp))
+                        .background(
+                            Brush.linearGradient(
+                                listOf(Color(0xFF2938AF), Color(0xFF4757D4), Color(0xFF6C48B8))
+                            )
                         )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = null,
-                            modifier = Modifier.size(58.dp),
-                            tint = Color.White
+                        .padding(horizontal = 22.dp, vertical = 28.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(104.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.18f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (imagenPerfil != null) {
+                            Image(
+                                bitmap = imagenPerfil,
+                                contentDescription = "Fotografía de perfil",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize().clip(CircleShape)
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                modifier = Modifier.size(58.dp),
+                                tint = Color.White
+                            )
+                        }
+                    }
+                    Text(
+                        text = usuario.nombreCompleto,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        textAlign = TextAlign.Center
+                    )
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(Color.White.copy(alpha = 0.18f))
+                            .padding(horizontal = 14.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = usuario.rol.etiqueta,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = Color.White
                         )
                     }
                 }
-                Text(
-                    text = usuario.nombreCompleto,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    textAlign = TextAlign.Center
-                )
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(50))
-                        .background(Color.White.copy(alpha = 0.18f))
-                        .padding(horizontal = 14.dp, vertical = 6.dp)
+
+                Column(
+                    modifier = Modifier.graphicsLayer {
+                        alpha = avanceFoto
+                        translationY = (1f - avanceFoto) * 10.dp.toPx()
+                    },
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
-                        text = usuario.rol.etiqueta,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = Color.White
+                        "Foto de perfil",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
                     )
-                }
-            }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { lanzadorGaleria.launch("image/*") },
+                            modifier = Modifier.weight(1f),
+                            enabled = !guardandoFoto,
+                            shape = RoundedCornerShape(16.dp),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                                horizontal = 8.dp, vertical = 12.dp
+                            )
+                        ) { Text("Galería", maxLines = 1) }
 
-            Column(
-                modifier = Modifier.graphicsLayer {
-                    alpha = avanceFoto
-                    translationY = (1f - avanceFoto) * 10.dp.toPx()
-                },
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Text(
-                    "Foto de perfil",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = { lanzadorGaleria.launch("image/*") },
-                        modifier = Modifier.weight(1f),
-                        enabled = !guardandoFoto,
-                        shape = RoundedCornerShape(16.dp),
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                            horizontal = 8.dp, vertical = 12.dp
+                        OutlinedButton(
+                            onClick = {
+                                val tienePermiso = ContextCompat.checkSelfPermission(
+                                    context, Manifest.permission.CAMERA
+                                ) == PackageManager.PERMISSION_GRANTED
+                                if (tienePermiso) {
+                                    lanzadorCamara.launch(null)
+                                } else {
+                                    lanzadorPermisoCamara.launch(Manifest.permission.CAMERA)
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                            enabled = !guardandoFoto,
+                            shape = RoundedCornerShape(16.dp),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                                horizontal = 8.dp, vertical = 12.dp
+                            )
+                        ) { Text("Cámara", maxLines = 1) }
+                    }
+                    if (guardandoFoto || mensajeFoto != null) {
+                        Text(
+                            text = if (guardandoFoto) "Guardando fotografía..." else mensajeFoto.orEmpty(),
+                            color = if (mensajeFoto?.startsWith("No se pudo") == true ||
+                                mensajeFoto?.startsWith("Permiso") == true
+                            ) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall
                         )
-                    ) { Text("Galería", maxLines = 1) }
-
-                    OutlinedButton(
-                        onClick = {
-                            val tienePermiso = ContextCompat.checkSelfPermission(
-                                context, Manifest.permission.CAMERA
-                            ) == PackageManager.PERMISSION_GRANTED
-                            if (tienePermiso) {
-                                lanzadorCamara.launch(null)
-                            } else {
-                                lanzadorPermisoCamara.launch(Manifest.permission.CAMERA)
-                            }
-                        },
-                        modifier = Modifier.weight(1f),
-                        enabled = !guardandoFoto,
-                        shape = RoundedCornerShape(16.dp),
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                            horizontal = 8.dp, vertical = 12.dp
-                        )
-                    ) { Text("Cámara", maxLines = 1) }
-                }
-                if (guardandoFoto || mensajeFoto != null) {
-                    Text(
-                        text = if (guardandoFoto) "Guardando fotografía..." else mensajeFoto.orEmpty(),
-                        color = if (mensajeFoto?.startsWith("No se pudo") == true ||
-                            mensajeFoto?.startsWith("Permiso") == true
-                        ) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-
-            Column(
-                modifier = Modifier.graphicsLayer {
-                    alpha = avanceDatos
-                    translationY = (1f - avanceDatos) * 10.dp.toPx()
-                },
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Text(
-                    "Datos de tu cuenta",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp)) {
-                        FilaDatoPerfil(Icons.Default.Badge, "RUT", ocultarRut(usuario.rut))
-                        Box(
-                            modifier = Modifier.fillMaxWidth()
-                                .height(1.dp)
-                                .background(MaterialTheme.colorScheme.outlineVariant)
-                        )
-                        FilaDatoPerfil(Icons.Default.Email, "Correo electrónico", usuario.correo)
-                        Box(
-                            modifier = Modifier.fillMaxWidth()
-                                .height(1.dp)
-                                .background(MaterialTheme.colorScheme.outlineVariant)
-                        )
-                        FilaDatoPerfil(Icons.Default.LocationOn, "Comuna", usuario.comuna)
                     }
                 }
-            }
 
-            Column(
-                modifier = Modifier.graphicsLayer {
-                    alpha = avanceAcciones
-                    translationY = (1f - avanceAcciones) * 8.dp.toPx()
-                },
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                BotonPrincipal(
-                    texto = "Editar mis datos",
-                    onClick = onEditarDatos,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                BotonSecundario(
-                    texto = "Cambiar contraseña",
-                    onClick = onCambiarContrasena,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column(
+                    modifier = Modifier.graphicsLayer {
+                        alpha = avanceDatos
+                        translationY = (1f - avanceDatos) * 10.dp.toPx()
+                    },
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        "Datos de tu cuenta",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp)) {
+                            FilaDatoPerfil(Icons.Default.Badge, "RUT", ocultarRut(usuario.rut))
+                            Box(
+                                modifier = Modifier.fillMaxWidth()
+                                    .height(1.dp)
+                                    .background(MaterialTheme.colorScheme.outlineVariant)
+                            )
+                            FilaDatoPerfil(Icons.Default.Email, "Correo electrónico", usuario.correo)
+                            Box(
+                                modifier = Modifier.fillMaxWidth()
+                                    .height(1.dp)
+                                    .background(MaterialTheme.colorScheme.outlineVariant)
+                            )
+                            FilaDatoPerfil(Icons.Default.LocationOn, "Comuna", usuario.comuna)
+                        }
+                    }
+                }
+
+                Column(
+                    modifier = Modifier.graphicsLayer {
+                        alpha = avanceAcciones
+                        translationY = (1f - avanceAcciones) * 8.dp.toPx()
+                    },
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    BotonPrincipal(
+                        texto = "Editar mis datos",
+                        onClick = onEditarDatos,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    BotonSecundario(
+                        texto = "Cambiar contraseña",
+                        onClick = onCambiarContrasena,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         }
     }
