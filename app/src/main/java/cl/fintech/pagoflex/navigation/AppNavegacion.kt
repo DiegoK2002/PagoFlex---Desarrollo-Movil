@@ -1,6 +1,12 @@
 package cl.fintech.pagoflex.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.activity.compose.BackHandler
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -244,8 +250,21 @@ fun AppNavegacion() {
         composable(Ruta.Administrador.ruta) {
             val usuario = usuarioActual
             if (usuario != null && usuario.rol == Rol.ADMINISTRADOR) {
+                var mostrarConfirmacionSalida by rememberSaveable { mutableStateOf(false) }
+                BackHandler(enabled = !mostrarConfirmacionSalida) {
+                    mostrarConfirmacionSalida = true
+                }
+                if (mostrarConfirmacionSalida) {
+                    ConfirmacionCerrarSesion(
+                        onCancelar = { mostrarConfirmacionSalida = false },
+                        onConfirmar = {
+                            mostrarConfirmacionSalida = false
+                            cerrarSesion()
+                        }
+                    )
+                }
                 AdministradorScreen(
-                    onSalir = cerrarSesion,
+                    onSalir = { mostrarConfirmacionSalida = true },
                     idUsuarioActual = usuario.id
                 )
             }
@@ -253,10 +272,23 @@ fun AppNavegacion() {
 
         composable(Ruta.InicioAgente.ruta) {
             val usuario = usuarioActual
-            if (usuario != null) {
+            if (usuario != null && usuario.rol == Rol.AGENTE) {
+                var mostrarConfirmacionSalida by rememberSaveable { mutableStateOf(false) }
+                BackHandler(enabled = !mostrarConfirmacionSalida) {
+                    mostrarConfirmacionSalida = true
+                }
+                if (mostrarConfirmacionSalida) {
+                    ConfirmacionCerrarSesion(
+                        onCancelar = { mostrarConfirmacionSalida = false },
+                        onConfirmar = {
+                            mostrarConfirmacionSalida = false
+                            cerrarSesion()
+                        }
+                    )
+                }
                 InicioAgenteScreen(
                     usuario = usuario,
-                    onSalir = cerrarSesion,
+                    onSalir = { mostrarConfirmacionSalida = true },
                     reportes = reportes,
                     operandoReporte = operandoReporte,
                     errorReporte = errorReporteRemoto,
@@ -411,4 +443,22 @@ fun AppNavegacion() {
             }
         }
     }
+}
+
+@Composable
+private fun ConfirmacionCerrarSesion(
+    onCancelar: () -> Unit,
+    onConfirmar: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onCancelar,
+        title = { Text("Cerrar sesión") },
+        text = { Text("¿Estás seguro que deseas cerrar tu sesión actual?") },
+        confirmButton = {
+            TextButton(onClick = onConfirmar) { Text("Cerrar sesión") }
+        },
+        dismissButton = {
+            TextButton(onClick = onCancelar) { Text("Cancelar") }
+        }
+    )
 }
